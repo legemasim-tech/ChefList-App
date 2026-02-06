@@ -23,6 +23,7 @@ client = openai.OpenAI(api_key=api_key)
 # --- FUNKTIONEN ---
 
 def download_audio(video_url):
+    # Tarnkappe: Wir geben uns als normaler Browser aus
     ydl_opts = {
         'format': 'bestaudio/best',
         'postprocessors': [{
@@ -32,14 +33,21 @@ def download_audio(video_url):
         }],
         'outtmpl': 'temp_audio.%(ext)s',
         'quiet': True,
-        'no_warnings': True
+        'no_warnings': True,
+        # WICHTIG: Das hier verhindert den 403 Fehler oft:
+        'nocheckcertificate': True,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+        }
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([video_url])
         return "temp_audio.mp3"
     except Exception as e:
-        st.error(f"Download-Fehler: {str(e)}")
+        st.error(f"Download-Fehler (YouTube blockiert): {str(e)}")
         return None
 
 def transcribe_audio(file_path):
