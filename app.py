@@ -152,72 +152,39 @@ def generate_smart_list(text, tag):
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- PDF GENERATOR (DER "TEXT-ONLY" FIX) ---
+# --- PDF GENERATOR (HOLZHAMMER-METHODE) ---
 def create_pdf(text_content):
-    """Nimmt nur die ersten beiden Spalten der Tabelle und druckt sie als simplen Text."""
+    """Reinigt den Text aggressiv und druckt ihn einfach ab."""
     pdf = FPDF()
     pdf.add_page()
-    # Wir nutzen Helvetica, das ist Standard und macht am wenigsten Probleme
-    pdf.set_font("Helvetica", size=11)
+    pdf.set_font("Arial", size=11)
     
     # Titel
-    pdf.set_font("Helvetica", style="B", size=14)
+    pdf.set_font("Arial", style="B", size=14)
     pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
     pdf.ln(5)
     
-    pdf.set_font("Helvetica", size=11)
+    pdf.set_font("Arial", size=11)
     
-    # Wir zerlegen den Text in Zeilen
-    lines = text_content.split('\n')
+    # 1. Links entfernen: [Mehl](http...) -> Mehl
+    # Wir löschen alles was in runden Klammern (http...) steht, wenn davor eckige Klammern waren
+    text_content = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text_content)
     
-    for line in lines:
-        line = line.strip()
-        if not line: continue
-        
-        # Trennlinien (---) ignorieren
-        if '---' in line: continue
-        
-        clean_line = ""
-        
-        # Ist es eine Tabelle? (Erkennbar am senkrechten Strich |)
-        if '|' in line:
-            # Wir zerhacken die Zeile an den Strichen
-            parts = line.split('|')
-            # Leere Teile (ganz am Anfang/Ende) entfernen
-            parts = [p.strip() for p in parts if p.strip()]
-            
-            # Wir nehmen NUR die ersten zwei Teile (Menge und Zutat)
-            # Alles was danach kommt (Links, Emojis) ignorieren wir komplett!
-            if len(parts) >= 2:
-                menge = parts[0].replace('*', '') # Keine Sternchen
-                zutat = parts[1].replace('*', '')
-                
-                # Wir bauen eine einfache Textzeile
-                clean_line = f"[ ] {menge}: {zutat}"
-                
-                # Falls es die Überschrift ist, machen wir sie fett
-                if "Menge" in menge and "Zutat" in zutat:
-                    pdf.set_font("Helvetica", 'B', 11)
-                    clean_line = "MENGE  -  ZUTAT"
-                else:
-                    pdf.set_font("Helvetica", '', 11)
-        else:
-            # Kein Tabellen-Strich? Dann ist es normaler Einleitungstext.
-            # Aber wir löschen sicherheitshalber alle Links raus.
-            clean_line = re.sub(r'\[.*?\]\(.*?\)', '', line)
-            clean_line = clean_line.replace('*', '') # Keine Sternchen
+    # 2. Markdown aufräumen
+    text_content = text_content.replace('**', '').replace('__', '')
+    text_content = text_content.replace('---', '')
+    
+    # 3. Tabellenstriche durch einfache Leerzeichen ersetzen
+    text_content = text_content.replace('|', '  ')
 
-        # FEUERFREI: Wir schreiben die Zeile ins PDF
-        if clean_line:
-            try:
-                # Wir konvertieren den Text in "Latin-1".
-                # Alle Zeichen, die das PDF nicht kennt (z.B. Emojis, kyrillisch),
-                # werden durch 'replace' einfach durch ein Fragezeichen ersetzt.
-                # So stürzt nichts mehr ab!
-                safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
-                pdf.multi_cell(0, 7, txt=safe_text, align='L')
-            except:
-                pass # Wenn eine Zeile immer noch bockt, ignorieren wir sie einfach
+    # 4. Aggressive Encodierung
+    # Wir zwingen den Text in Latin-1. Alles was nicht passt (Emojis etc.), 
+    # wird durch ein Fragezeichen (?) ersetzt.
+    # Das verhindert den Absturz und das leere Blatt!
+    safe_text = text_content.encode('latin-1', 'replace').decode('latin-1')
+    
+    # 5. Einfach den ganzen Block drucken
+    pdf.multi_cell(0, 8, txt=safe_text, align='L')
 
     return bytes(pdf.output())
 
