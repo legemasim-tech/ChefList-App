@@ -27,8 +27,7 @@ def extract_video_id(url):
         return url.split("shorts/")[1][:11]
     else:
         return None
-        
-
+                
 # --- DIE PROFI-LÖSUNG: UNTERTITEL ÜBER PROXY-SERVER HOLEN ---
 def get_transcript(video_url):
     """Holt Untertitel über die YouTube-API (Neue Syntax V1.0+ mit Proxy)"""
@@ -38,8 +37,7 @@ def get_transcript(video_url):
             st.error("❌ Link-Format nicht erkannt.")
             return None
 
-        # NEU: Der Proxy wird jetzt über das GenericProxyConfig-Modul geladen
-        # WICHTIG: Ersetze USERNAME und PASSWORD durch deine echten Webshare-Daten!
+        # Hier wieder DEINE Webshare-Daten eintragen!
         proxy_url = "http://dgashpyp:izspbf3gjypg@31.59.20.176:6754"
         
         proxy_config = GenericProxyConfig(
@@ -50,17 +48,19 @@ def get_transcript(video_url):
         # 1. Wir initialisieren die API direkt "getarnt" mit dem Proxy
         api = YouTubeTranscriptApi(proxy_config=proxy_config)
         
-        # 2. Wir rufen die Liste der Untertitel ab (Der Befehl heißt jetzt nur noch "list")
+        # 2. Wir rufen die Liste der Untertitel ab
         transcript_list = api.list(video_id)
         
         # 3. Wir suchen gezielt nach Deutsch oder Englisch
         transcript = transcript_list.find_transcript(['de', 'en'])
         
-        # 4. Wir laden den Text herunter
+        # 4. Wir laden den Text herunter (Das ist jetzt ein Objekt!)
         transcript_data = transcript.fetch()
         
-        # 5. Text extrahieren und bereinigen
-        clean_text = " ".join([fragment['text'] for fragment in transcript_data])
+        # 5. DER FIX: Wir nutzen fragment.text (mit Punkt) statt eckiger Klammern!
+        clean_text = " ".join([fragment.text for fragment in transcript_data])
+        
+        # 6. Text bereinigen
         clean_text = " ".join(clean_text.split())
         
         return clean_text
@@ -122,6 +122,7 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
 
 
