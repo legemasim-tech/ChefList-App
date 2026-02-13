@@ -1,12 +1,10 @@
-import time
 import streamlit as st
 import openai
 import requests
 import re
 import urllib.parse as urlparse
-# Die Profi-Bibliothek und das NEUE Proxy-Modul
-from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.proxies import GenericProxyConfig
+import yt_dlp
+import json
 
 # --- KONFIGURATION ---
 api_key = st.secrets["OPENAI_API_KEY"]
@@ -28,65 +26,86 @@ def extract_video_id(url):
         return url.split("shorts/")[1][:11]
     else:
         return None
-                
 
-# --- DIE PROFI-LÖSUNG: UNTERTITEL ÜBER PROXY-SERVER HOLEN (MIT RETRY-SCHLEIFE) ---
+# --- PLAN C: UNTERTITEL ÜBER YT-DLP (DER SMART-TV TRICK) ---
 def get_transcript(video_url):
-    """Holt Untertitel und probiert automatisch mehrere Proxys aus, bis einer funktioniert"""
+    """Extrahiert den rohen Untertitel-Link direkt aus den Video-Metadaten"""
     try:
         video_id = extract_video_id(video_url)
         if not video_id:
             st.error("❌ Link-Format nicht erkannt.")
             return None
 
-        # WICHTIG: Nutze hier p.webshare.io, damit die IP bei jedem Versuch wechselt!
-        proxy_url = "http://dgashpyp:izspbf3gjypg@23.95.150.145:6114"
-        
-        proxy_config = GenericProxyConfig(
-            http_url=proxy_url,
-            https_url=proxy_url
-        )
+        # Konfiguration für yt-dlp (Wir laden kein Video, lesen nur Infos!)
+        ydl_opts = {
+            'quiet': True,
+            'skip_download': True,
+            'writesubtitles': True,
+            'writeautomaticsub': True,
+            'subtitleslangs': ['de', 'en'],
+        }
 
-        # Wir geben dem Programm 5 Versuche mit 5 verschiedenen IPs
-        max_retries = 5
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Wir holen uns die Metadaten des Videos
+            info = ydl.extract_info(video_url, download=False)
+
+        # Wir prüfen, ob es manuell geschriebene oder automatisch generierte Untertitel gibt
+        subs = info.get('subtitles', {})
+        if not subs:
+            subs = info.get('automatic_captions', {})
+
+        if not subs:
+            st.error("❌ Das Video hat absolut keine Untertitel (weder manuell noch automatisch).")
+            return None
+
+        # Wir suchen nach dem Direkt-Link für Deutsch ('de') oder Englisch ('en')
+        target_url = None
+        for lang in ['de', 'en']:
+            if lang in subs:
+                # Wir suchen bevorzugt das 'json3' Format, weil es am saubersten ist
+                for sub_format in subs[lang]:
+                    if sub_format.get('ext') == 'json3':
+                        target_url = sub_format.get('url')
+                        break
+                # Fallback: Wenn kein json3 da ist, nehmen wir das erste verfügbare Format
+                if not target_url and len(subs[lang]) > 0:
+                    target_url = subs[lang][0].get('url')
+                
+                if target_url:
+                    break
+
+        if not target_url:
+            st.error("❌ Keine deutschen oder englischen Untertitel gefunden.")
+            return None
+
+        # Wir laden die tatsächliche Untertitel-Datei über den extrahierten Direkt-Link herunter
+        res = requests.get(target_url)
         
-        for versuch in range(max_retries):
-            try:
-                # 1. Wir initialisieren die API
-                api = YouTubeTranscriptApi(proxy_config=proxy_config)
-                
-                # 2. Wir versuchen die Untertitel-Liste abzurufen
-                transcript_list = api.list(video_id)
-                
-                # 3. Sprache finden
-                transcript = transcript_list.find_transcript(['de', 'en'])
-                
-                # 4. Text laden
-                transcript_data = transcript.fetch()
-                
-                # 5. Text extrahieren
-                clean_text = " ".join([fragment.text for fragment in transcript_data])
-                clean_text = " ".join(clean_text.split())
-                
-                # Wenn wir hier ankommen, hat es geklappt! Schleife abbrechen und Text zurückgeben.
-                return clean_text
-                
-            except Exception as e:
-                # Wenn YouTube blockt, machen wir weiter, außer es war der letzte Versuch
-                if versuch < max_retries - 1:
-                    time.sleep(1) # 1 Sekunde Pause vor dem nächsten Versuch
-                    continue # Starte den nächsten Versuch in der Schleife
-                else:
-                    # Wenn alle 5 Versuche geblockt wurden
-                    st.error("❌ YouTube hat leider alle 5 Proxy-Versuche geblockt. Bitte später nochmal probieren.")
-                    return None
+        # Wenn es das saubere JSON3 Format ist, extrahieren wir nur die Wörter
+        if 'json3' in target_url:
+            data = res.json()
+            text_fragments = []
+            for event in data.get('events', []):
+                if 'segs' in event:
+                    for seg in event['segs']:
+                        text = seg.get('utf8', '')
+                        if text.strip():
+                            text_fragments.append(text)
+            clean_text = " ".join(text_fragments)
+            
+        else:
+            # Fallback für andere Formate (z.B. VTT) - Rohe Textbereinigung
+            raw_text = res.text
+            clean_text = re.sub(r'<[^>]+>', ' ', raw_text)
+            clean_text = re.sub(r'\d{2}:\d{2}:\d{2}.*', '', clean_text)
+            clean_text = " ".join(clean_text.split())
+
+        return clean_text
 
     except Exception as e:
-        st.error(f"❌ Genereller Fehler: {str(e)}")
-        return None        
+        st.error(f"❌ Fehler bei der Metadaten-Extraktion: {str(e)}")
+        return None
 
-
-        
 # --- KI FUNKTION ---
 def generate_smart_list(text, tag):
     system_prompt = f"""
@@ -109,48 +128,4 @@ def generate_smart_list(text, tag):
                 {"role": "user", "content": text}
             ]
         )
-        return response.choices[0].message.content
-    except Exception as e:
-        st.error(f"KI-Fehler: {str(e)}")
-        return None
-
-# --- INTERFACE ---
-st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
-
-st.title("🍲 ChefList Pro (Turbo Version ⚡)")
-st.write("Füge einen YouTube-Link ein. Ich lese das Rezept in 2 Sekunden und erstelle die Einkaufsliste!")
-
-video_url = st.text_input("YouTube Link:", placeholder="https://youtube.com/...")
-
-if st.button("Liste generieren 💸"):
-    if not video_url:
-        st.warning("Bitte erst einen Link eingeben!")
-    else:
-        with st.status("Analysiere Rezept...", expanded=True) as status:
-            
-            st.write("1. Lese Untertitel über Proxy-Server... 🕵️‍♂️")
-            text = get_transcript(video_url)
-            
-            if text:
-                st.write("2. KI schreibt Einkaufsliste... 🧠")
-                result = generate_smart_list(text, amazon_tag)
-                
-                status.update(label="Fertig!", state="complete", expanded=False)
-                
-                st.success("Hier ist deine smarte Liste:")
-                st.markdown("---")
-                st.markdown(result)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return response.choices
