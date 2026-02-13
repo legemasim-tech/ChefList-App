@@ -1,6 +1,7 @@
 import streamlit as st
 import openai
-from youtube_transcript_api import YouTubeTranscriptApi
+import requests
+import re
 import urllib.parse as urlparse
 
 # --- KONFIGURATION ---
@@ -13,9 +14,8 @@ if not api_key:
 
 client = openai.OpenAI(api_key=api_key)
 
-# --- NEUE FUNKTION: UNTERTITEL KLAUEN (ROBUST) ---
+# --- FUNKTION: VIDEO ID EXTRAHIEREN ---
 def extract_video_id(url):
-    """Holt die Video-ID aus allen möglichen YouTube-Links (auch Shorts oder youtu.be)"""
     if "v=" in url:
         return url.split("v=")[1][:11]
     elif "youtu.be/" in url:
@@ -25,29 +25,57 @@ def extract_video_id(url):
     else:
         return None
 
+# --- DER PIRATEN-HACK: UNTERTITEL ÜBER PROXY HOLEN ---
 def get_transcript(video_url):
-    """Zieht heimlich den Text aus YouTube (funktioniert in jeder Paket-Version!)"""
+    """Zieht den Text nicht von YouTube, sondern über geheime Piped-Proxys"""
     try:
         video_id = extract_video_id(video_url)
         if not video_id:
-            st.error("❌ Link-Format nicht erkannt. Bitte einen normalen YouTube-Link nutzen.")
+            st.error("❌ Link-Format nicht erkannt.")
             return None
 
-        # Wir geben eine breite Liste an Sprachen mit. Er nimmt den ersten Treffer!
-        # Auch automatisch generierte Untertitel dieser Sprachen werden akzeptiert.
-        transcript_list = YouTubeTranscriptApi.get_transcript(
-            video_id, 
-            languages=['de', 'en', 'en-US', 'en-GB', 'es', 'fr', 'it', 'tr', 'ru', 'pt']
-        )
+        # Wir fragen 3 verschiedene Server an. Wenn einer blockiert ist, springen wir zum nächsten.
+        instances = [
+            "https://pipedapi.kavin.rocks",
+            "https://pipedapi.leptons.xyz",
+            "https://pipedapi.lunar.icu"
+        ]
         
-        text = " ".join([t['text'] for t in transcript_list])
-        return text
+        data = None
+        for instance in instances:
+            try:
+                # Wir fragen den geheimen Server nach dem Video
+                res = requests.get(f"{instance}/streams/{video_id}", timeout=5)
+                if res.status_code == 200:
+                    data = res.json()
+                    break # Erfolg! Schleife abbrechen
+            except:
+                continue # Wenn Server tot, probiere den nächsten
+                
+        if not data or "subtitles" not in data or not data["subtitles"]:
+            st.error("❌ Keine Untertitel im Proxy-Netzwerk gefunden.")
+            return None
             
+        # Wir suchen deutsche Untertitel. Wenn nicht da, englisch. Sonst den allerersten.
+        subtitles = data["subtitles"]
+        target_sub = next((s for s in subtitles if s.get("code") in ["de", "en"]), subtitles[0])
+        
+        # Untertitel-Text herunterladen
+        raw_text = requests.get(target_sub["url"]).text
+        
+        # Text radikal bereinigen (egal ob XML oder VTT Format)
+        clean_text = re.sub(r'<[^>]+>', ' ', raw_text) # Alle HTML/XML Tags löschen
+        clean_text = re.sub(r'\d{2}:\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}\.\d{3}', ' ', clean_text) # Zeitstempel löschen
+        clean_text = clean_text.replace('WEBVTT', '').replace('Kind: captions', '')
+        clean_text = " ".join(clean_text.split()) # Leerzeichen glätten
+        
+        return clean_text
+
     except Exception as e:
-        st.error(f"❌ YouTube hat hier keine Untertitel (oder der Creator hat sie gesperrt): {str(e)}")
+        st.error(f"❌ Fehler beim Abrufen der Untertitel: {str(e)}")
         return None
 
-# --- KI FUNKTION (Bleibt gleich) ---
+# --- KI FUNKTION ---
 def generate_smart_list(text, tag):
     system_prompt = f"""
     Du bist ein hilfreicher Koch-Assistent.
@@ -59,7 +87,7 @@ def generate_smart_list(text, tag):
     
     WICHTIG - DER LINK:
     Das Format für den Link in der Spalte "Kaufen" ist: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
-    Ersetze [ZUTAT] durch den Namen. Der Link-Text ist "🛒 Auf Amazon suchen".
+    Ersetze [ZUTAT] durch den exakten Namen. Der Link-Text ist "🛒 Auf Amazon suchen".
     """
     try:
         response = client.chat.completions.create(
@@ -88,7 +116,7 @@ if st.button("Liste generieren 💸"):
     else:
         with st.status("Analysiere Rezept...", expanded=True) as status:
             
-            st.write("1. Lese Untertitel aus YouTube... 🕵️‍♂️")
+            st.write("1. Lese Untertitel über Proxy-Server... 🕵️‍♂️")
             text = get_transcript(video_url)
             
             if text:
