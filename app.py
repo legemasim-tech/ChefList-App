@@ -38,7 +38,7 @@ def get_transcript(video_url):
             return None
 
         # Hier wieder DEINE Webshare-Daten eintragen!
-        proxy_url = "http://dgashpyp:izspbf3gjypg@31.59.20.176:6754"
+        proxy_url = "http://dgashpyp:izspbf3gjypg@23.95.150.145:6114"
         
         proxy_config = GenericProxyConfig(
             http_url=proxy_url,
@@ -122,6 +122,7 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
 
 
