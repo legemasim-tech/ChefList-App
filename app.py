@@ -27,36 +27,39 @@ def extract_video_id(url):
     else:
         return None
 
-# --- DIE PROFI-LÖSUNG: UNTERTITEL DIREKT VON YOUTUBE HOLEN (V1.0+ UPDATE) ---
+# --- DIE PROFI-LÖSUNG: UNTERTITEL ÜBER PROXY-SERVER HOLEN ---
 def get_transcript(video_url):
-    """Holt Untertitel extrem zuverlässig über die YouTube-API (Neue v1.0+ Syntax)"""
+    """Holt Untertitel über die YouTube-API, nutzt aber einen Proxy um den Streamlit-Ban zu umgehen"""
     try:
         video_id = extract_video_id(video_url)
         if not video_id:
             st.error("❌ Link-Format nicht erkannt.")
             return None
 
-        # NEU: Die API muss jetzt zuerst als Objekt geladen werden (Klammern beachten!)
+        # NEU: Dein persönlicher Tarnkappen-Proxy (Beispiel Webshare.io)
+        # Ersetze USERNAME und PASSWORD durch die echten Daten von deinem Webshare-Account!
+        proxy_url = "http://dgashpyp:izspbf3gjypg@p.webshare.io:80"
+        
+        proxies = {
+            "http": proxy_url,
+            "https": proxy_url
+        }
+
         api = YouTubeTranscriptApi()
         
-        # NEU: Der Befehl heißt jetzt 'fetch' (statt get_transcript)
-        fetched_transcript = api.fetch(video_id, languages=['de', 'en'])
+        # Wir übergeben den Proxy an den fetch-Befehl!
+        fetched_transcript = api.fetch(video_id, languages=['de', 'en'], proxies=proxies)
         
-        # NEU: Wir müssen die Rohdaten extrahieren
         transcript_list = fetched_transcript.to_raw_data()
-        
-        # Die Liste enthält Zeitstempel und Text. Wir extrahieren nur den Text.
         clean_text = " ".join([fragment['text'] for fragment in transcript_list])
-        
-        # Zeilenumbrüche und überschüssige Leerzeichen glätten
         clean_text = " ".join(clean_text.split())
         
         return clean_text
 
     except Exception as e:
-        # Falls es wirklich keine Untertitel gibt oder das Video gesperrt ist
         st.error(f"❌ Keine Untertitel gefunden. Info: {str(e)}")
         return None
+        
 # --- KI FUNKTION ---
 def generate_smart_list(text, tag):
     system_prompt = f"""
@@ -110,6 +113,7 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
 
 
