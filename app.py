@@ -5,9 +5,9 @@ import re
 import urllib.parse as urlparse
 import yt_dlp
 import json
+from fpdf import FPDF  # NEU: Die PDF-Bibliothek
 
 # --- KONFIGURATION ---
-# Versuche den API-Key sicher zu laden
 try:
     api_key = st.secrets["OPENAI_API_KEY"]
 except:
@@ -41,34 +41,30 @@ def extract_video_id(url):
     else:
         return None
 
-# --- PLAN C: UNTERTITEL ÜBER YT-DLP (DER SMART-TV TRICK) ---
+# --- UNTERTITEL ÜBER YT-DLP (SMART-TV TRICK) ---
 def get_transcript(video_url):
-    """Extrahiert den rohen Untertitel-Link direkt aus den Video-Metadaten"""
     try:
         video_id = extract_video_id(video_url)
         if not video_id:
             st.error("❌ Link-Format nicht erkannt.")
             return None
 
-        # Konfiguration für yt-dlp (Wir laden kein Video, lesen nur Infos!)
         ydl_opts = {
             'quiet': True,
             'skip_download': True,
-            'writesubtitles': True, # Wir wollen Untertitel
-            'writeautomaticsub': True, # Auch automatische
-            'subtitleslangs': ['de', 'en'], # Deutsch und Englisch
-            'cookiefile': None # Keine Cookies nutzen
+            'writesubtitles': True, 
+            'writeautomaticsub': True, 
+            'subtitleslangs': ['de', 'en'], 
+            'cookiefile': None 
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Wir holen uns die Metadaten des Videos
             try:
                 info = ydl.extract_info(video_url, download=False)
             except Exception as e:
                 st.error(f"❌ YouTube Blockade oder Video nicht verfügbar: {str(e)}")
                 return None
 
-        # Wir prüfen, ob es manuell geschriebene oder automatisch generierte Untertitel gibt
         subs = info.get('subtitles')
         if not subs:
             subs = info.get('automatic_captions')
@@ -77,28 +73,21 @@ def get_transcript(video_url):
             st.error("❌ Das Video hat absolut keine Untertitel (weder manuell noch automatisch).")
             return None
 
-        # Wir suchen nach dem Direkt-Link für Deutsch ('de') oder Englisch ('en')
         target_url = None
-        
-        # Liste der Sprachen, die wir akzeptieren (bevorzugt Deutsch)
         langs_to_check = ['de', 'de-orig', 'en', 'en-orig']
         
         for lang in langs_to_check:
             if lang in subs:
-                # Wir suchen bevorzugt das 'json3' Format
                 for sub_format in subs[lang]:
                     if sub_format.get('ext') == 'json3':
                         target_url = sub_format.get('url')
                         break
-                # Fallback: Wenn kein json3 da ist, erstes Format nehmen
                 if not target_url and len(subs[lang]) > 0:
                     target_url = subs[lang][0].get('url')
-                
                 if target_url:
                     break
 
         if not target_url:
-            # Letzter Versuch: Irgendeine Sprache nehmen, falls vorhanden
             first_lang = list(subs.keys())[0]
             if subs[first_lang]:
                 target_url = subs[first_lang][0].get('url')
@@ -107,10 +96,8 @@ def get_transcript(video_url):
             st.error("❌ Keine abrufbaren Untertitel gefunden.")
             return None
 
-        # Wir laden die tatsächliche Untertitel-Datei herunter
         res = requests.get(target_url)
         
-        # JSON3 Verarbeitung (Sauberste Methode)
         if 'json3' in target_url:
             try:
                 data = res.json()
@@ -119,18 +106,14 @@ def get_transcript(video_url):
                     if 'segs' in event:
                         for seg in event['segs']:
                             text = seg.get('utf8', '')
-                            # Filtere Zeitstempel und leere Zeilen
                             if text and text.strip() and not text.startswith('\n'):
                                 text_fragments.append(text.strip())
                 clean_text = " ".join(text_fragments)
             except:
-                clean_text = res.text # Fallback
+                clean_text = res.text 
         else:
-            # Fallback für andere Formate (z.B. VTT/XML)
             raw_text = res.text
-            # HTML Tags entfernen
             clean_text = re.sub(r'<[^>]+>', ' ', raw_text)
-            # Zeitstempel entfernen (grobe Reinigung)
             clean_text = re.sub(r'\d{2}:\d{2}:\d{2}.*', '', clean_text)
             clean_text = " ".join(clean_text.split())
 
@@ -161,13 +144,41 @@ def generate_smart_list(text, tag):
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": text[:15000]} # Limitierung auf 15k Zeichen
+                {"role": "user", "content": text[:15000]} 
             ]
         )
         return response.choices[0].message.content
     except Exception as e:
         st.error(f"KI-Fehler: {str(e)}")
         return None
+
+# --- NEU: PDF GENERATOR ---
+def create_pdf(text_content):
+    """Konvertiert die Markdown-Tabelle in ein sauberes PDF"""
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Titel hinzufügen
+    pdf.set_font("helvetica", style="B", size=16)
+    pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
+    pdf.ln(5) # Etwas Abstand
+    
+    # Text formatieren (Emojis und Markdown-Trennlinien entfernen, Umlaute sichern)
+    clean_text = text_content.replace("🛒", "").replace("💸", "").replace("🍲", "")
+    # Damit PDF-Fonts bei speziellen Sonderzeichen nicht abstürzen (Latin-1 Fix):
+    safe_text = clean_text.encode('latin-1', 'replace').decode('latin-1')
+    
+    # Inhalt hinzufügen
+    pdf.set_font("helvetica", size=11)
+    for line in safe_text.split('\n'):
+        # Ignoriere die unschönen Tabellen-Trennlinien (---)
+        if '---' in line:
+            continue
+        # Zeile ins PDF schreiben
+        pdf.multi_cell(0, 8, txt=line)
+        
+    # Gibt das fertige PDF als Bytes zurück
+    return pdf.output()
 
 # --- INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
@@ -197,6 +208,22 @@ if st.button("Liste generieren 💸"):
                     st.success("Hier ist deine smarte Liste:")
                     st.markdown("---")
                     st.markdown(result)
+                    
+                    st.markdown("---")
+                    # NEU: Der PDF Download-Button!
+                    st.write("💾 **Speichere deine Liste für später:**")
+                    
+                    # PDF im Hintergrund erzeugen
+                    pdf_bytes = create_pdf(result)
+                    
+                    # Download-Button anzeigen
+                    st.download_button(
+                        label="📄 Als PDF herunterladen",
+                        data=pdf_bytes,
+                        file_name="ChefList_Einkaufsliste.pdf",
+                        mime="application/pdf"
+                    )
+                    
                 else:
                     status.update(label="KI Fehler", state="error")
             else:
