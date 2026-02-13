@@ -14,7 +14,7 @@ except:
     api_key = None
 
 # Dein Amazon Partner-Tag
-amazon_tag = "markusapp-21" 
+amazon_tag = "cheflist21-21" 
 
 if not api_key:
     st.error("Bitte trage deinen OpenAI API Key in die Streamlit Secrets ein!")
@@ -155,3 +155,4 @@ if st.session_state.recipe_result:
 # --- 5. RECHTLICHER HINWEIS (AMAZON RICHTLINIE) ---
 st.markdown("---")
 st.caption("* Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Die Links in der Tabelle sind Affiliate-Links.")
+
