@@ -3,8 +3,9 @@ import openai
 import requests
 import re
 import urllib.parse as urlparse
-# NEU: Die Profi-Bibliothek für YouTube
+# Die Profi-Bibliothek und das NEUE Proxy-Modul
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import GenericProxyConfig
 
 # --- KONFIGURATION ---
 api_key = st.secrets["OPENAI_API_KEY"]
@@ -117,6 +118,7 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
 
 
