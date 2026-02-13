@@ -152,53 +152,72 @@ def generate_smart_list(text, tag):
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- PDF GENERATOR (RADIKAL EINFACH) ---
+# --- PDF GENERATOR (DER "TEXT-ONLY" FIX) ---
 def create_pdf(text_content):
-    """Schreibt den Text Zeile für Zeile ins PDF, ohne komplizierte Analysen."""
+    """Nimmt nur die ersten beiden Spalten der Tabelle und druckt sie als simplen Text."""
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=10) # Standard Schriftart
+    # Wir nutzen Helvetica, das ist Standard und macht am wenigsten Probleme
+    pdf.set_font("Helvetica", size=11)
     
     # Titel
-    pdf.set_font("Arial", style="B", size=14)
+    pdf.set_font("Helvetica", style="B", size=14)
     pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
     pdf.ln(5)
     
-    pdf.set_font("Arial", size=11)
+    pdf.set_font("Helvetica", size=11)
     
-    # Text in Zeilen aufteilen
+    # Wir zerlegen den Text in Zeilen
     lines = text_content.split('\n')
     
     for line in lines:
         line = line.strip()
-        
-        # Leere Zeilen überspringen
         if not line: continue
         
-        # 1. Tabellen-Trennlinien (---) überspringen
+        # Trennlinien (---) ignorieren
         if '---' in line: continue
         
-        # 2. Links entfernen (Der wichtigste Schritt!)
-        # Ersetzt [LinkText](URL) durch "LinkText"
-        clean_line = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', line)
+        clean_line = ""
         
-        # 3. Tabellen-Striche ersetzen
-        # Macht aus "| 100g | Mehl |" einfach "  100g - Mehl"
-        if '|' in clean_line:
-            clean_line = clean_line.replace('|', ' - ')
-            # Doppelte Leerzeichen entfernen
-            clean_line = " ".join(clean_line.split())
+        # Ist es eine Tabelle? (Erkennbar am senkrechten Strich |)
+        if '|' in line:
+            # Wir zerhacken die Zeile an den Strichen
+            parts = line.split('|')
+            # Leere Teile (ganz am Anfang/Ende) entfernen
+            parts = [p.strip() for p in parts if p.strip()]
             
-        # 4. Markdown Sterne entfernen
-        clean_line = clean_line.replace('**', '')
+            # Wir nehmen NUR die ersten zwei Teile (Menge und Zutat)
+            # Alles was danach kommt (Links, Emojis) ignorieren wir komplett!
+            if len(parts) >= 2:
+                menge = parts[0].replace('*', '') # Keine Sternchen
+                zutat = parts[1].replace('*', '')
+                
+                # Wir bauen eine einfache Textzeile
+                clean_line = f"[ ] {menge}: {zutat}"
+                
+                # Falls es die Überschrift ist, machen wir sie fett
+                if "Menge" in menge and "Zutat" in zutat:
+                    pdf.set_font("Helvetica", 'B', 11)
+                    clean_line = "MENGE  -  ZUTAT"
+                else:
+                    pdf.set_font("Helvetica", '', 11)
+        else:
+            # Kein Tabellen-Strich? Dann ist es normaler Einleitungstext.
+            # Aber wir löschen sicherheitshalber alle Links raus.
+            clean_line = re.sub(r'\[.*?\]\(.*?\)', '', line)
+            clean_line = clean_line.replace('*', '') # Keine Sternchen
 
-        # 5. Encoding (Sicherheitshalber 'replace' nutzen)
-        try:
-            safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
-            # Zeile ins PDF schreiben
-            pdf.multi_cell(0, 7, txt=safe_text, align='L')
-        except:
-            continue
+        # FEUERFREI: Wir schreiben die Zeile ins PDF
+        if clean_line:
+            try:
+                # Wir konvertieren den Text in "Latin-1".
+                # Alle Zeichen, die das PDF nicht kennt (z.B. Emojis, kyrillisch),
+                # werden durch 'replace' einfach durch ein Fragezeichen ersetzt.
+                # So stürzt nichts mehr ab!
+                safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
+                pdf.multi_cell(0, 7, txt=safe_text, align='L')
+            except:
+                pass # Wenn eine Zeile immer noch bockt, ignorieren wir sie einfach
 
     return bytes(pdf.output())
 
