@@ -66,7 +66,7 @@ def generate_smart_list(text, tag):
         return response.choices[0].message.content
     except: return None
 
-# --- PDF GENERATOR (DER "SIMPEL-FIX") ---
+# --- PDF GENERATOR ---
 def create_pdf(text_content):
     """Erzwingt den Text an den linken Rand."""
     pdf = FPDF()
@@ -77,7 +77,6 @@ def create_pdf(text_content):
     # 1. Kopfzeile
     pdf.set_fill_color(230, 230, 230) 
     pdf.set_font("Arial", style="B", size=16)
-    # Titel zentriert
     pdf.cell(190, 15, txt="MEINE EINKAUFSLISTE", ln=True, align='C', fill=True)
     pdf.ln(8)
     
@@ -87,7 +86,6 @@ def create_pdf(text_content):
         if not line or '---' in line:
             continue
         
-        # Cursor explizit nach links setzen (Sicherheitsanker)
         pdf.set_x(10)
         
         if '|' in line:
@@ -106,10 +104,8 @@ def create_pdf(text_content):
 
             try:
                 safe_text = menge_zutat.encode('latin-1', 'replace').decode('latin-1')
-                # Feste Breite 190 statt 0, um den Textblock zu begrenzen
                 pdf.cell(190, 10, txt=safe_text, ln=True, align='L')
                 
-                # Linie ziehen
                 current_y = pdf.get_y()
                 pdf.set_draw_color(220, 220, 220)
                 pdf.line(10, current_y, 200, current_y)
@@ -117,7 +113,6 @@ def create_pdf(text_content):
             except:
                 continue
         else:
-            # Normaler Text
             clean_text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line).replace('*', '')
             pdf.set_font("Arial", style="I", size=10)
             try:
@@ -130,6 +125,11 @@ def create_pdf(text_content):
 
 # --- INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
+
+# --- GEDÄCHTNIS INITIALISIEREN (Session State) ---
+if "recipe_result" not in st.session_state:
+    st.session_state.recipe_result = None
+
 st.title("🍲 ChefList Pro")
 st.write("Link einfügen und Einkaufsliste erhalten!")
 
@@ -141,23 +141,24 @@ if st.button("Liste generieren"):
             text = get_transcript(video_url)
             if text:
                 result = generate_smart_list(text, amazon_tag)
-                if result:
-                    st.success("Hier ist deine Liste:")
-                    st.markdown(result)
-                    
-                    # PDF Download
-                    try:
-                        pdf_data = create_pdf(result)
-                        st.download_button(
-                            label="📄 PDF herunterladen",
-                            data=pdf_data,
-                            file_name="Einkaufsliste.pdf",
-                            mime="application/pdf"
-                        )
-                    except Exception as e:
-                        st.error(f"PDF-Fehler: {str(e)}")
-                else:
-                    st.error("KI konnte keine Liste erstellen.")
+                # Ergebnis im Gedächtnis speichern
+                st.session_state.recipe_result = result
             else:
                 st.error("Keine Untertitel gefunden.")
 
+# --- ANZEIGE AUS DEM GEDÄCHTNIS ---
+if st.session_state.recipe_result:
+    st.success("Hier ist deine Liste:")
+    st.markdown(st.session_state.recipe_result)
+    
+    # PDF Download
+    try:
+        pdf_data = create_pdf(st.session_state.recipe_result)
+        st.download_button(
+            label="📄 PDF herunterladen",
+            data=pdf_data,
+            file_name="Einkaufsliste.pdf",
+            mime="application/pdf"
+        )
+    except Exception as e:
+        st.error(f"PDF-Fehler: {str(e)}")
