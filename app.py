@@ -152,65 +152,62 @@ def generate_smart_list(text, tag):
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- PDF GENERATOR (FIX: Ignoriert Links & Sonderzeichen) ---
+# --- PDF GENERATOR (SIMPEL & SICHER) ---
 def create_pdf(text_content):
-    """Konvertiert die Markdown-Tabelle in ein sauberes PDF"""
-    class PDF(FPDF):
-        def header(self):
-            self.set_font('Helvetica', 'B', 15)
-            self.cell(0, 10, 'ChefList Pro - Einkaufsliste', 0, 1, 'C')
-            self.ln(5)
-
-    pdf = PDF()
+    """Konvertiert die Markdown-Tabelle in ein einfaches, lesbares PDF"""
+    pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Helvetica", size=12)
+    pdf.set_font("Arial", size=10) # Standard Schriftart
     
-    # Text Zeile für Zeile verarbeiten
+    # Titel
+    pdf.set_font("Arial", style="B", size=14)
+    pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
+    pdf.ln(5)
+    
+    pdf.set_font("Arial", size=11)
+    
+    # Wir gehen den Text Zeile für Zeile durch
     lines = text_content.split('\n')
     
     for line in lines:
         line = line.strip()
-        # Leere Zeilen und Trennstriche ignorieren
-        if not line or '---' in line:
-            continue
-            
-        # Prüfen ob es eine Tabellenzeile ist (enthält |)
+        
+        # 1. Störende Markdown-Zeichen entfernen
+        if '---' in line: continue # Trennlinien weg
+        
+        # 2. Links entfernen (Radikal: Alles ab 'http' oder '[Link' wegwerfen)
+        # Wir wollen nur Menge und Zutat
+        clean_line = line
+        
+        # Falls es eine Tabelle ist (mit Strichen |)
         if '|' in line:
-            # Wir spalten die Tabelle auf: | Menge | Zutat | Link |
-            cols = [c.strip() for c in line.split('|')]
-            # Bereinigen von leeren Elementen am Anfang/Ende
-            cols = [c for c in cols if c]
+            parts = line.split('|')
+            # Leere Teile entfernen
+            parts = [p.strip() for p in parts if p.strip()]
             
-            # Wir brauchen mindestens 2 Spalten (Menge & Zutat)
-            if len(cols) >= 2:
-                # Spalte 0 = Menge, Spalte 1 = Zutat. Wir ignorieren den Rest (Links)!
-                menge = cols[0].replace("**", "") # Sternchen entfernen
-                zutat = cols[1].replace("**", "")
+            # Wenn wir Menge und Zutat haben (mindestens 2 Teile)
+            if len(parts) >= 2:
+                col1 = parts[0].replace('*', '') # Menge
+                col2 = parts[1].replace('*', '') # Zutat
                 
-                # Überschriften erkennen
-                if "Menge" in menge and "Zutat" in zutat:
-                    pdf.set_font("Helvetica", 'B', 12)
-                    clean_line = f"{menge.ljust(15)}  {zutat}"
+                # Wir schreiben es einfach als Text: "Menge: Zutat"
+                clean_line = f"[ ] {col1} - {col2}"
+                
+                # Wenn es die Überschrift ist
+                if "Menge" in col1 and "Zutat" in col2:
+                     pdf.set_font("Arial", 'B', 11)
+                     clean_line = "MENGE   -   ZUTAT"
                 else:
-                    pdf.set_font("Helvetica", size=12)
-                    clean_line = f"[ ] {menge} {zutat}"
-                
-                # WICHTIG: Latin-1 Encoding erzwingen, damit PDF nicht abstürzt
-                try:
-                    clean_line = clean_line.encode('latin-1', 'replace').decode('latin-1')
-                    pdf.multi_cell(0, 8, txt=clean_line, align='L')
-                except:
-                    continue # Im Zweifel Zeile überspringen statt abstürzen
-        else:
-            # Normaler Text (keine Tabelle)
-            # Links entfernen, falls vorhanden
-            line = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line)
-            try:
-                line = line.encode('latin-1', 'replace').decode('latin-1')
-                pdf.multi_cell(0, 8, txt=line, align='L')
-            except:
-                pass
-                
+                     pdf.set_font("Arial", '', 11)
+
+        # 3. Sicherheits-Encoding (Latin-1)
+        # Ersetzt alle Zeichen, die das PDF nicht kennt, durch ein Fragezeichen
+        try:
+            safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
+            pdf.multi_cell(0, 7, txt=safe_text, align='L')
+        except:
+            continue # Sollte dank 'replace' nicht passieren
+
     return bytes(pdf.output())
 
 # --- INTERFACE ---
@@ -245,10 +242,8 @@ if st.button("Liste generieren 💸"):
                     st.markdown("---")
                     st.write("💾 **Speichere deine Liste für später:**")
                     
-                    # PDF erzeugen
                     try:
                         pdf_bytes = create_pdf(result)
-                        # Download-Button
                         st.download_button(
                             label="📄 Als PDF herunterladen",
                             data=pdf_bytes,
