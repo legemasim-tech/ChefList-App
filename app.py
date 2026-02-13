@@ -68,41 +68,63 @@ def generate_smart_list(text, tag):
 
 # --- PDF GENERATOR (DER "SIMPEL-FIX") ---
 def create_pdf(text_content):
+    """Erzwingt den Text an den linken Rand."""
     pdf = FPDF()
+    pdf.set_left_margin(10)
+    pdf.set_right_margin(10)
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
     
-    # Header
+    # 1. Kopfzeile
+    pdf.set_fill_color(230, 230, 230) 
     pdf.set_font("Arial", style="B", size=16)
-    pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
-    pdf.ln(10)
+    # Titel zentriert
+    pdf.cell(190, 15, txt="MEINE EINKAUFSLISTE", ln=True, align='C', fill=True)
+    pdf.ln(8)
     
-    pdf.set_font("Arial", size=11)
-    
-    # Wir nehmen den Text fast 1:1, putzen aber nur die Links extrem simpel
     lines = text_content.split('\n')
-    
     for line in lines:
         line = line.strip()
-        if not line or '---' in line: continue
-        
-        # 1. Wir entfernen nur die URL in den Klammern: [Text](URL) -> Text
-        # Das ist viel sicherer als nach http zu suchen
-        clean_line = re.sub(r'\(http[^\)]+\)', '', line)
-        
-        # 2. Wir entfernen die eckigen Klammern, Sterne und Tabellenstriche
-        clean_line = clean_line.replace('[', '').replace(']', '').replace('*', '').replace('|', '  ')
-        
-        # 3. WICHTIG: Wir begrenzen die Zeilenlänge manuell, damit FPDF nicht rechnet
-        if len(clean_line) > 90:
-            clean_line = clean_line[:87] + "..."
-
-        try:
-            # Latin-1 ist Pflicht für FPDF
-            safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
-            pdf.cell(0, 8, txt=safe_text, ln=True) # cell statt multi_cell ist hier stabiler
-        except:
+        if not line or '---' in line:
             continue
+        
+        # Cursor explizit nach links setzen (Sicherheitsanker)
+        pdf.set_x(10)
+        
+        if '|' in line:
+            parts = [p.strip() for p in line.split('|') if p.strip()]
+            
+            if len(parts) >= 2 and ("Menge" in parts[0] or "Zutat" in parts[1]):
+                pdf.set_font("Arial", style="B", size=11)
+                menge_zutat = "MENGE - ZUTAT"
+            elif len(parts) >= 2:
+                pdf.set_font("Arial", size=12)
+                menge = parts[0].replace('*', '')
+                zutat = parts[1].replace('*', '')
+                menge_zutat = f"[  ] {menge} {zutat}"
+            else:
+                continue
+
+            try:
+                safe_text = menge_zutat.encode('latin-1', 'replace').decode('latin-1')
+                # Feste Breite 190 statt 0, um den Textblock zu begrenzen
+                pdf.cell(190, 10, txt=safe_text, ln=True, align='L')
+                
+                # Linie ziehen
+                current_y = pdf.get_y()
+                pdf.set_draw_color(220, 220, 220)
+                pdf.line(10, current_y, 200, current_y)
+                pdf.ln(1)
+            except:
+                continue
+        else:
+            # Normaler Text
+            clean_text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line).replace('*', '')
+            pdf.set_font("Arial", style="I", size=10)
+            try:
+                safe_text = clean_text.encode('latin-1', 'replace').decode('latin-1')
+                pdf.multi_cell(190, 7, txt=safe_text, align='L')
+            except:
+                continue
 
     return bytes(pdf.output())
 
@@ -138,3 +160,4 @@ if st.button("Liste generieren"):
                     st.error("KI konnte keine Liste erstellen.")
             else:
                 st.error("Keine Untertitel gefunden.")
+
