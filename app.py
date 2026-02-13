@@ -62,176 +62,106 @@ def get_transcript(video_url):
             try:
                 info = ydl.extract_info(video_url, download=False)
             except Exception as e:
-                st.error(f"❌ YouTube Blockade oder Video nicht verfügbar: {str(e)}")
+                st.error(f"❌ YouTube Blockade: {str(e)}")
                 return None
 
-        subs = info.get('subtitles')
-        if not subs:
-            subs = info.get('automatic_captions')
+        subs = info.get('subtitles') or info.get('automatic_captions')
 
         if not subs:
-            st.error("❌ Das Video hat absolut keine Untertitel.")
+            st.error("❌ Keine Untertitel gefunden.")
             return None
 
         target_url = None
-        langs_to_check = ['de', 'de-orig', 'en', 'en-orig']
-        
-        for lang in langs_to_check:
+        for lang in ['de', 'de-orig', 'en', 'en-orig']:
             if lang in subs:
                 for sub_format in subs[lang]:
                     if sub_format.get('ext') == 'json3':
                         target_url = sub_format.get('url')
                         break
-                if not target_url and len(subs[lang]) > 0:
-                    target_url = subs[lang][0].get('url')
-                if target_url:
-                    break
-
-        if not target_url:
-            first_lang = list(subs.keys())[0]
-            if subs[first_lang]:
-                target_url = subs[first_lang][0].get('url')
+                if target_url: break
 
         if not target_url:
             st.error("❌ Keine abrufbaren Untertitel gefunden.")
             return None
 
         res = requests.get(target_url)
-        
         if 'json3' in target_url:
-            try:
-                data = res.json()
-                text_fragments = []
-                for event in data.get('events', []):
-                    if 'segs' in event:
-                        for seg in event['segs']:
-                            text = seg.get('utf8', '')
-                            if text and text.strip() and not text.startswith('\n'):
-                                text_fragments.append(text.strip())
-                clean_text = " ".join(text_fragments)
-            except:
-                clean_text = res.text 
+            data = res.json()
+            text_fragments = [seg.get('utf8', '').strip() for event in data.get('events', []) if 'segs' in event for seg in event['segs'] if seg.get('utf8', '').strip()]
+            return " ".join(text_fragments)
         else:
-            raw_text = res.text
-            clean_text = re.sub(r'<[^>]+>', ' ', raw_text)
-            clean_text = re.sub(r'\d{2}:\d{2}:\d{2}.*', '', clean_text)
-            clean_text = " ".join(clean_text.split())
-
-        return clean_text
+            return " ".join(re.sub(r'<[^>]+>', ' ', res.text).split())
 
     except Exception as e:
-        st.error(f"❌ Fehler bei der Metadaten-Extraktion: {str(e)}")
+        st.error(f"❌ Fehler: {str(e)}")
         return None
 
 # --- KI FUNKTION ---
 def generate_smart_list(text, tag):
-    system_prompt = f"""
-    Du bist ein hilfreicher Koch-Assistent.
-    
-    DEINE AUFGABE:
-    1. Analysiere das Transkript und extrahiere alle Zutaten.
-    2. Suche explizit nach MENGENANGABEN.
-    3. Erstelle eine Markdown-Tabelle mit 3 Spalten: "Menge", "Zutat", "Kaufen".
-    
-    WICHTIG - DER LINK:
-    Das Format für den Link in der Spalte "Kaufen" ist: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
-    Ersetze [ZUTAT] durch den exakten Namen der Zutat (URL-Codiert). 
-    Der Link-Text ist "🛒 Auf Amazon suchen".
-    """
-    
+    system_prompt = f"Erstelle eine Einkaufsliste als Markdown-Tabelle: Menge | Zutat | Kaufen (Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag})"
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": text[:15000]} 
-            ]
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": text[:15000]}]
         )
         return response.choices[0].message.content
     except Exception as e:
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- PDF GENERATOR (HOLZHAMMER-METHODE) ---
+# --- PDF GENERATOR (SCHÖN & OHNE LINKS) ---
 def create_pdf(text_content):
-    """Reinigt den Text aggressiv und druckt ihn einfach ab."""
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=11)
+    pdf.set_font("Arial", size=12)
     
-    # Titel
-    pdf.set_font("Arial", style="B", size=14)
+    # Header
+    pdf.set_font("Arial", style="B", size=16)
     pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
-    pdf.ln(5)
+    pdf.ln(10)
     
-    pdf.set_font("Arial", size=11)
-    
-    # 1. Links entfernen: [Mehl](http...) -> Mehl
-    # Wir löschen alles was in runden Klammern (http...) steht, wenn davor eckige Klammern waren
-    text_content = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text_content)
-    
-    # 2. Markdown aufräumen
-    text_content = text_content.replace('**', '').replace('__', '')
-    text_content = text_content.replace('---', '')
-    
-    # 3. Tabellenstriche durch einfache Leerzeichen ersetzen
-    text_content = text_content.replace('|', '  ')
-
-    # 4. Aggressive Encodierung
-    # Wir zwingen den Text in Latin-1. Alles was nicht passt (Emojis etc.), 
-    # wird durch ein Fragezeichen (?) ersetzt.
-    # Das verhindert den Absturz und das leere Blatt!
-    safe_text = text_content.encode('latin-1', 'replace').decode('latin-1')
-    
-    # 5. Einfach den ganzen Block drucken
-    pdf.multi_cell(0, 8, txt=safe_text, align='L')
+    lines = text_content.split('\n')
+    for line in lines:
+        line = line.strip()
+        if not line or '---' in line: continue
+        
+        # Logik: Wenn es eine Tabellenzeile ist, nimm nur Menge und Zutat
+        if '|' in line:
+            parts = [p.strip() for p in line.split('|') if p.strip()]
+            if len(parts) >= 2:
+                # Wir ignorieren alles nach der zweiten Spalte (die Links)
+                menge = parts[0].replace('*', '')
+                zutat = parts[1].replace('*', '')
+                
+                if "Menge" in menge or "Zutat" in zutat:
+                    pdf.set_font("Arial", 'B', 12)
+                    clean_line = f"{menge.ljust(15)} | {zutat}"
+                else:
+                    pdf.set_font("Arial", '', 12)
+                    clean_line = f"[ ] {menge} {zutat}"
+                
+                safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
+                pdf.multi_cell(0, 8, txt=safe_text)
+        else:
+            # Normaler Text ohne Links
+            clean_line = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line).replace('*', '')
+            safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
+            pdf.multi_cell(0, 8, txt=safe_text)
 
     return bytes(pdf.output())
 
 # --- INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
+st.title("🍲 ChefList Pro")
+video_url = st.text_input("YouTube Link:")
 
-st.title("🍲 ChefList Pro (Turbo Version ⚡)")
-st.write("Füge einen YouTube-Link ein. Ich lese das Rezept ohne Proxys direkt aus!")
-
-video_url = st.text_input("YouTube Link:", placeholder="https://youtube.com/...")
-
-if st.button("Liste generieren 💸"):
-    if not video_url:
-        st.warning("Bitte erst einen Link eingeben!")
-    else:
-        with st.status("Analysiere Rezept...", expanded=True) as status:
-            
-            st.write("1. Lese Video-Daten (Smart-TV Modus)... 📺")
+if st.button("Liste generieren"):
+    if video_url:
+        with st.status("Verarbeite..."):
             text = get_transcript(video_url)
-            
             if text:
-                st.write(f"✅ Transkript gefunden ({len(text)} Zeichen)!")
-                st.write("2. KI schreibt Einkaufsliste... 🧠")
                 result = generate_smart_list(text, amazon_tag)
-                
-                if result:
-                    status.update(label="Fertig!", state="complete", expanded=False)
-                    
-                    st.success("Hier ist deine smarte Liste:")
-                    st.markdown("---")
-                    st.markdown(result)
-                    
-                    st.markdown("---")
-                    st.write("💾 **Speichere deine Liste für später:**")
-                    
-                    try:
-                        pdf_bytes = create_pdf(result)
-                        st.download_button(
-                            label="📄 Als PDF herunterladen",
-                            data=pdf_bytes,
-                            file_name="ChefList_Einkaufsliste.pdf",
-                            mime="application/pdf"
-                        )
-                    except Exception as e:
-                        st.error(f"PDF Fehler: {str(e)}")
-                    
-                else:
-                    status.update(label="KI Fehler", state="error")
-            else:
-                status.update(label="Keine Untertitel gefunden", state="error")
+                st.success("Erledigt!")
+                st.markdown(result)
+                pdf_bytes = create_pdf(result)
+                st.download_button("📄 PDF herunterladen", data=pdf_bytes, file_name="Einkaufsliste.pdf", mime="application/pdf")
