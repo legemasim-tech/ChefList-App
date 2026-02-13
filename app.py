@@ -56,9 +56,15 @@ def get_transcript(video_url):
     except: return None
 
 # --- KI FUNKTION ---
+
 def generate_smart_list(text, tag):
-    system_prompt = f"Du bist ein Koch-Assistent. Erstelle eine Tabelle: Menge | Zutat | Kaufen (Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag})"
-    try:
+    # Wir fügen ein Sternchen * und den Hinweis "Werbung" hinzu
+    system_prompt = f"""
+    Du bist ein Koch-Assistent. Erstelle eine Tabelle: 
+    Menge | Zutat | Kaufen (Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag})
+    WICHTIG: Der Link-Text in der Spalte "Kaufen" muss immer lauten: '🛒 Auf Amazon prüfen*'
+    """
+   try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": text[:15000]}]
@@ -162,4 +168,5 @@ if st.session_state.recipe_result:
         )
     except Exception as e:
         st.error(f"PDF-Fehler: {str(e)}")
+
 
