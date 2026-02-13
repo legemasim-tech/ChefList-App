@@ -26,24 +26,25 @@ def extract_video_id(url):
         return None
 
 def get_transcript(video_url):
-    """Zieht heimlich den Text aus YouTube - egal welche Sprache!"""
+    """Zieht heimlich den Text aus YouTube (funktioniert in jeder Paket-Version!)"""
     try:
         video_id = extract_video_id(video_url)
         if not video_id:
             st.error("❌ Link-Format nicht erkannt. Bitte einen normalen YouTube-Link nutzen.")
             return None
 
-        # Wir rufen die Liste ALLER verfügbaren Untertitel ab
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        # Wir geben eine breite Liste an Sprachen mit. Er nimmt den ersten Treffer!
+        # Auch automatisch generierte Untertitel dieser Sprachen werden akzeptiert.
+        transcript_list = YouTubeTranscriptApi.get_transcript(
+            video_id, 
+            languages=['de', 'en', 'en-US', 'en-GB', 'es', 'fr', 'it', 'tr', 'ru', 'pt']
+        )
         
-        # Wir nehmen gnadenlos den ALLERERSTEN Untertitel, den wir finden
-        for transcript in transcript_list:
-            text_daten = transcript.fetch()
-            text = " ".join([t['text'] for t in text_daten])
-            return text
+        text = " ".join([t['text'] for t in transcript_list])
+        return text
             
     except Exception as e:
-        st.error(f"❌ YouTube hat die Untertitel komplett gesperrt: {str(e)}")
+        st.error(f"❌ YouTube hat hier keine Untertitel (oder der Creator hat sie gesperrt): {str(e)}")
         return None
 
 # --- KI FUNKTION (Bleibt gleich) ---
@@ -99,4 +100,5 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
