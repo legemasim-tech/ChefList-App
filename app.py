@@ -152,9 +152,9 @@ def generate_smart_list(text, tag):
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- PDF GENERATOR (SIMPEL & SICHER) ---
+# --- PDF GENERATOR (RADIKAL EINFACH) ---
 def create_pdf(text_content):
-    """Konvertiert die Markdown-Tabelle in ein einfaches, lesbares PDF"""
+    """Schreibt den Text Zeile für Zeile ins PDF, ohne komplizierte Analysen."""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=10) # Standard Schriftart
@@ -166,47 +166,39 @@ def create_pdf(text_content):
     
     pdf.set_font("Arial", size=11)
     
-    # Wir gehen den Text Zeile für Zeile durch
+    # Text in Zeilen aufteilen
     lines = text_content.split('\n')
     
     for line in lines:
         line = line.strip()
         
-        # 1. Störende Markdown-Zeichen entfernen
-        if '---' in line: continue # Trennlinien weg
+        # Leere Zeilen überspringen
+        if not line: continue
         
-        # 2. Links entfernen (Radikal: Alles ab 'http' oder '[Link' wegwerfen)
-        # Wir wollen nur Menge und Zutat
-        clean_line = line
+        # 1. Tabellen-Trennlinien (---) überspringen
+        if '---' in line: continue
         
-        # Falls es eine Tabelle ist (mit Strichen |)
-        if '|' in line:
-            parts = line.split('|')
-            # Leere Teile entfernen
-            parts = [p.strip() for p in parts if p.strip()]
+        # 2. Links entfernen (Der wichtigste Schritt!)
+        # Ersetzt [LinkText](URL) durch "LinkText"
+        clean_line = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', line)
+        
+        # 3. Tabellen-Striche ersetzen
+        # Macht aus "| 100g | Mehl |" einfach "  100g - Mehl"
+        if '|' in clean_line:
+            clean_line = clean_line.replace('|', ' - ')
+            # Doppelte Leerzeichen entfernen
+            clean_line = " ".join(clean_line.split())
             
-            # Wenn wir Menge und Zutat haben (mindestens 2 Teile)
-            if len(parts) >= 2:
-                col1 = parts[0].replace('*', '') # Menge
-                col2 = parts[1].replace('*', '') # Zutat
-                
-                # Wir schreiben es einfach als Text: "Menge: Zutat"
-                clean_line = f"[ ] {col1} - {col2}"
-                
-                # Wenn es die Überschrift ist
-                if "Menge" in col1 and "Zutat" in col2:
-                     pdf.set_font("Arial", 'B', 11)
-                     clean_line = "MENGE   -   ZUTAT"
-                else:
-                     pdf.set_font("Arial", '', 11)
+        # 4. Markdown Sterne entfernen
+        clean_line = clean_line.replace('**', '')
 
-        # 3. Sicherheits-Encoding (Latin-1)
-        # Ersetzt alle Zeichen, die das PDF nicht kennt, durch ein Fragezeichen
+        # 5. Encoding (Sicherheitshalber 'replace' nutzen)
         try:
             safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
+            # Zeile ins PDF schreiben
             pdf.multi_cell(0, 7, txt=safe_text, align='L')
         except:
-            continue # Sollte dank 'replace' nicht passieren
+            continue
 
     return bytes(pdf.output())
 
