@@ -68,54 +68,63 @@ def generate_smart_list(text, tag):
 
 # --- PDF GENERATOR (DER "SIMPEL-FIX") ---
 def create_pdf(text_content):
-    """Erstellt ein schön formatiertes PDF mit Checkliste."""
+    """Erstellt ein schön formatiertes PDF, das garantiert linksbündig bleibt."""
     pdf = FPDF()
     pdf.add_page()
     
-    # 1. Kopfzeile (Design)
-    pdf.set_fill_color(240, 240, 240) # Hellgrauer Hintergrund für Header
+    # 1. Kopfzeile
+    pdf.set_fill_color(230, 230, 230) 
     pdf.set_font("Arial", style="B", size=16)
     pdf.cell(0, 15, txt="MEINE EINKAUFSLISTE", ln=True, align='C', fill=True)
-    pdf.ln(10)
+    pdf.ln(8)
     
     # 2. Inhalt verarbeiten
     lines = text_content.split('\n')
     for line in lines:
         line = line.strip()
-        # Unnötiges Zeug filtern
-        if not line or '---' in line or 'Menge | Zutat' in line:
+        
+        # Unnötiges filtern (Trennstriche und leere Zeilen)
+        if not line or '---' in line:
             continue
         
-        # Falls es eine Tabellenzeile ist
+        # Tabellenlogik: Menge | Zutat | Link
         if '|' in line:
             parts = [p.strip() for p in line.split('|') if p.strip()]
-            if len(parts) >= 2:
+            
+            # Wir prüfen, ob es die Kopfzeile der Tabelle ist
+            if len(parts) >= 2 and ("Menge" in parts[0] or "Zutat" in parts[1]):
+                pdf.set_font("Arial", style="B", size=11)
+                menge_zutat = f"MENGE - ZUTAT"
+            elif len(parts) >= 2:
+                pdf.set_font("Arial", size=12)
+                # Wir nehmen nur Menge (parts[0]) und Zutat (parts[1])
                 menge = parts[0].replace('*', '')
                 zutat = parts[1].replace('*', '')
+                menge_zutat = f"[  ] {menge} {zutat}"
+            else:
+                continue
+
+            try:
+                # Wir nutzen hier eine feste Breite von 0 (bis zum rechten Rand) 
+                # und align='L' für Linksbuendig
+                safe_text = menge_zutat.encode('latin-1', 'replace').decode('latin-1')
+                pdf.cell(0, 10, txt=safe_text, ln=True, align='L')
                 
-                # Jede Zutat als Checkliste formatieren
-                pdf.set_font("Arial", size=12)
-                # Das kleine Quadrat als Checkbox simulieren
-                clean_line = f"[  ] {menge} {zutat}"
-                
-                # Encoding & Drucken
-                try:
-                    safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
-                    pdf.cell(0, 10, txt=safe_text, ln=True)
-                    # Eine feine Linie unter jede Zutat ziehen
-                    pdf.set_draw_color(200, 200, 200)
-                    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-                    pdf.ln(2)
-                except:
-                    continue
+                # Dezente Trennlinie
+                current_y = pdf.get_y()
+                pdf.set_draw_color(220, 220, 220)
+                pdf.line(10, current_y, 200, current_y)
+                pdf.ln(1)
+            except:
+                continue
         else:
-            # Falls es normaler Text ist (z.B. Überschrift der KI)
+            # Für normalen Text (Einleitung/Abschluss)
             # Links entfernen
-            clean_line = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line).replace('*', '')
+            clean_text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line).replace('*', '')
             pdf.set_font("Arial", style="I", size=10)
             try:
-                safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
-                pdf.multi_cell(0, 8, txt=safe_text)
+                safe_text = clean_text.encode('latin-1', 'replace').decode('latin-1')
+                pdf.multi_cell(0, 7, txt=safe_text, align='L')
             except:
                 continue
 
@@ -153,4 +162,5 @@ if st.button("Liste generieren"):
                     st.error("KI konnte keine Liste erstellen.")
             else:
                 st.error("Keine Untertitel gefunden.")
+
 
