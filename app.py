@@ -6,7 +6,6 @@ import urllib.parse as urlparse
 import yt_dlp
 import json
 from fpdf import FPDF
-import unicodedata # <--- NEU: Hilft gegen seltsame Zeichen
 
 # --- KONFIGURATION ---
 try:
@@ -71,7 +70,7 @@ def get_transcript(video_url):
             subs = info.get('automatic_captions')
 
         if not subs:
-            st.error("❌ Das Video hat absolut keine Untertitel (weder manuell noch automatisch).")
+            st.error("❌ Das Video hat absolut keine Untertitel.")
             return None
 
         target_url = None
@@ -153,63 +152,65 @@ def generate_smart_list(text, tag):
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- PDF GENERATOR (ROBUST & SAUBER) ---
+# --- PDF GENERATOR (FIX: Ignoriert Links & Sonderzeichen) ---
 def create_pdf(text_content):
     """Konvertiert die Markdown-Tabelle in ein sauberes PDF"""
-    pdf = FPDF()
+    class PDF(FPDF):
+        def header(self):
+            self.set_font('Helvetica', 'B', 15)
+            self.cell(0, 10, 'ChefList Pro - Einkaufsliste', 0, 1, 'C')
+            self.ln(5)
+
+    pdf = PDF()
     pdf.add_page()
+    pdf.set_font("Helvetica", size=12)
     
-    # Titel hinzufügen
-    pdf.set_font("helvetica", style="B", size=16)
-    pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
-    pdf.ln(5)
-    
-    # 1. Text bereinigen (Links entfernen)
-    # Entfernt [Text](URL) und behält nur Text
-    text_content = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text_content)
-    
-    # 2. Markdown-Fettgedrucktes entfernen (**Wort** -> Wort)
-    text_content = text_content.replace("**", "")
-    
-    # 3. Unicode Normalisierung (Verwandelt "é" in "e" und entfernt unlesbare Zeichen)
-    # Das ist der WICHTIGSTE Schritt, damit der Text nicht verschwindet!
-    text_content = unicodedata.normalize('NFKD', text_content).encode('ascii', 'ignore').decode('ascii')
-    
-    pdf.set_font("courier", size=10) # Courier ist gut für Tabellen/Listen
-    
+    # Text Zeile für Zeile verarbeiten
     lines = text_content.split('\n')
     
     for line in lines:
         line = line.strip()
-        
-        # Leere Zeilen überspringen
-        if not line:
+        # Leere Zeilen und Trennstriche ignorieren
+        if not line or '---' in line:
             continue
             
-        # Tabellen-Trennlinien (---|---|---) überspringen
-        if '---' in line and '|' in line:
-            continue
-            
-        # Wenn es eine Tabellenzeile ist (enthält |), schön formatieren
+        # Prüfen ob es eine Tabellenzeile ist (enthält |)
         if '|' in line:
-            # Teile die Zeile an den Strichen
-            parts = [p.strip() for p in line.split('|') if p.strip()]
+            # Wir spalten die Tabelle auf: | Menge | Zutat | Link |
+            cols = [c.strip() for c in line.split('|')]
+            # Bereinigen von leeren Elementen am Anfang/Ende
+            cols = [c for c in cols if c]
             
-            # Wenn wir 3 Teile haben (Menge, Zutat, Link-Text), formatieren wir es als Liste
-            if len(parts) >= 2:
-                # Wir bauen einen schönen String: "[ ] Menge - Zutat"
-                # Wir ignorieren die Spalte "Kaufen", da Links im Papier-PDF sinnlos sind
-                formatted_line = f"[ ] {parts[0]} - {parts[1]}"
-                pdf.multi_cell(0, 6, txt=formatted_line, align='L')
-            else:
-                # Falls Struktur unklar, drucke die Zeile einfach ohne Striche
-                clean_line = line.replace('|', ' ').strip()
-                pdf.multi_cell(0, 6, txt=clean_line, align='L')
+            # Wir brauchen mindestens 2 Spalten (Menge & Zutat)
+            if len(cols) >= 2:
+                # Spalte 0 = Menge, Spalte 1 = Zutat. Wir ignorieren den Rest (Links)!
+                menge = cols[0].replace("**", "") # Sternchen entfernen
+                zutat = cols[1].replace("**", "")
                 
+                # Überschriften erkennen
+                if "Menge" in menge and "Zutat" in zutat:
+                    pdf.set_font("Helvetica", 'B', 12)
+                    clean_line = f"{menge.ljust(15)}  {zutat}"
+                else:
+                    pdf.set_font("Helvetica", size=12)
+                    clean_line = f"[ ] {menge} {zutat}"
+                
+                # WICHTIG: Latin-1 Encoding erzwingen, damit PDF nicht abstürzt
+                try:
+                    clean_line = clean_line.encode('latin-1', 'replace').decode('latin-1')
+                    pdf.multi_cell(0, 8, txt=clean_line, align='L')
+                except:
+                    continue # Im Zweifel Zeile überspringen statt abstürzen
         else:
-            # Ganz normaler Text (z.B. die Einleitung)
-            pdf.multi_cell(0, 6, txt=line, align='L')
-            
+            # Normaler Text (keine Tabelle)
+            # Links entfernen, falls vorhanden
+            line = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line)
+            try:
+                line = line.encode('latin-1', 'replace').decode('latin-1')
+                pdf.multi_cell(0, 8, txt=line, align='L')
+            except:
+                pass
+                
     return bytes(pdf.output())
 
 # --- INTERFACE ---
@@ -245,19 +246,19 @@ if st.button("Liste generieren 💸"):
                     st.write("💾 **Speichere deine Liste für später:**")
                     
                     # PDF erzeugen
-                    pdf_bytes = create_pdf(result)
-                    
-                    # Download-Button
-                    st.download_button(
-                        label="📄 Als PDF herunterladen",
-                        data=pdf_bytes,
-                        file_name="ChefList_Einkaufsliste.pdf",
-                        mime="application/pdf"
-                    )
+                    try:
+                        pdf_bytes = create_pdf(result)
+                        # Download-Button
+                        st.download_button(
+                            label="📄 Als PDF herunterladen",
+                            data=pdf_bytes,
+                            file_name="ChefList_Einkaufsliste.pdf",
+                            mime="application/pdf"
+                        )
+                    except Exception as e:
+                        st.error(f"PDF Fehler: {str(e)}")
                     
                 else:
                     status.update(label="KI Fehler", state="error")
             else:
                 status.update(label="Keine Untertitel gefunden", state="error")
-
-
