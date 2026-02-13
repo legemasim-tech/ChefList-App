@@ -153,7 +153,7 @@ def generate_smart_list(text, tag):
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- PDF GENERATOR (FIXED) ---
+# --- PDF GENERATOR (ROBUST & SAUBER) ---
 def create_pdf(text_content):
     """Konvertiert die Markdown-Tabelle in ein sauberes PDF"""
     pdf = FPDF()
@@ -164,31 +164,52 @@ def create_pdf(text_content):
     pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
     pdf.ln(5)
     
-    # Text bereinigen (Links entfernen, die das PDF sprengen)
+    # 1. Text bereinigen (Links entfernen)
     # Entfernt [Text](URL) und behält nur Text
     text_content = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text_content)
     
-    # Sonderzeichen entfernen
-    clean_text = text_content.replace("🛒", "").replace("💸", "").replace("🍲", "")
-    clean_text = clean_text.replace("**", "").replace("|", "  ") 
+    # 2. Markdown-Fettgedrucktes entfernen (**Wort** -> Wort)
+    text_content = text_content.replace("**", "")
     
-    # Encoding fixen (Latin-1 für PDF)
-    safe_text = clean_text.encode('latin-1', 'replace').decode('latin-1')
+    # 3. Unicode Normalisierung (Verwandelt "é" in "e" und entfernt unlesbare Zeichen)
+    # Das ist der WICHTIGSTE Schritt, damit der Text nicht verschwindet!
+    text_content = unicodedata.normalize('NFKD', text_content).encode('ascii', 'ignore').decode('ascii')
     
-    # Inhalt hinzufügen
-    pdf.set_font("helvetica", size=10)
+    pdf.set_font("courier", size=10) # Courier ist gut für Tabellen/Listen
     
-    for line in safe_text.split('\n'):
+    lines = text_content.split('\n')
+    
+    for line in lines:
         line = line.strip()
-        if not line or '---' in line:
+        
+        # Leere Zeilen überspringen
+        if not line:
             continue
             
-        try:
-            pdf.multi_cell(0, 6, txt=line, align='L')
-        except:
+        # Tabellen-Trennlinien (---|---|---) überspringen
+        if '---' in line and '|' in line:
             continue
-        
-    # FIX: Umwandlung in 'bytes' für Streamlit
+            
+        # Wenn es eine Tabellenzeile ist (enthält |), schön formatieren
+        if '|' in line:
+            # Teile die Zeile an den Strichen
+            parts = [p.strip() for p in line.split('|') if p.strip()]
+            
+            # Wenn wir 3 Teile haben (Menge, Zutat, Link-Text), formatieren wir es als Liste
+            if len(parts) >= 2:
+                # Wir bauen einen schönen String: "[ ] Menge - Zutat"
+                # Wir ignorieren die Spalte "Kaufen", da Links im Papier-PDF sinnlos sind
+                formatted_line = f"[ ] {parts[0]} - {parts[1]}"
+                pdf.multi_cell(0, 6, txt=formatted_line, align='L')
+            else:
+                # Falls Struktur unklar, drucke die Zeile einfach ohne Striche
+                clean_line = line.replace('|', ' ').strip()
+                pdf.multi_cell(0, 6, txt=clean_line, align='L')
+                
+        else:
+            # Ganz normaler Text (z.B. die Einleitung)
+            pdf.multi_cell(0, 6, txt=line, align='L')
+            
     return bytes(pdf.output())
 
 # --- INTERFACE ---
@@ -238,4 +259,5 @@ if st.button("Liste generieren 💸"):
                     status.update(label="KI Fehler", state="error")
             else:
                 status.update(label="Keine Untertitel gefunden", state="error")
+
 
