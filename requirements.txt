@@ -2,3 +2,4 @@ streamlit
 openai
 requests
 yt-dlp
+fpdf2
