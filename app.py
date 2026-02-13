@@ -13,28 +13,37 @@ if not api_key:
 
 client = openai.OpenAI(api_key=api_key)
 
-# --- NEUE FUNKTION: UNTERTITEL KLAUEN ---
+# --- NEUE FUNKTION: UNTERTITEL KLAUEN (ROBUST) ---
 def extract_video_id(url):
-    """Holt die Video-ID aus dem Link (z.B. dQw4w9WgXcQ)"""
-    url_data = urlparse.urlparse(url)
-    query = urlparse.parse_qs(url_data.query)
-    if "v" in query:
-        return query["v"][0]
+    """Holt die Video-ID aus allen möglichen YouTube-Links (auch Shorts oder youtu.be)"""
+    if "v=" in url:
+        return url.split("v=")[1][:11]
+    elif "youtu.be/" in url:
+        return url.split("youtu.be/")[1][:11]
+    elif "shorts/" in url:
+        return url.split("shorts/")[1][:11]
     else:
-        return url_data.path.split("/")[-1]
+        return None
 
 def get_transcript(video_url):
-    """Zieht heimlich den Text aus YouTube"""
+    """Zieht heimlich den Text aus YouTube - egal welche Sprache!"""
     try:
         video_id = extract_video_id(video_url)
-        # Holt deutsche ('de') oder englische ('en') Untertitel
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['de', 'en'])
+        if not video_id:
+            st.error("❌ Link-Format nicht erkannt. Bitte einen normalen YouTube-Link nutzen.")
+            return None
+
+        # Wir rufen die Liste ALLER verfügbaren Untertitel ab
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         
-        # Baut alle Text-Schnipsel zu einem langen Text zusammen
-        text = " ".join([t['text'] for t in transcript_list])
-        return text
+        # Wir nehmen gnadenlos den ALLERERSTEN Untertitel, den wir finden
+        for transcript in transcript_list:
+            text_daten = transcript.fetch()
+            text = " ".join([t['text'] for t in text_daten])
+            return text
+            
     except Exception as e:
-        st.error("❌ YouTube hat hier keine Untertitel (oder blockiert). Probier ein anderes Video!")
+        st.error(f"❌ YouTube hat die Untertitel komplett gesperrt: {str(e)}")
         return None
 
 # --- KI FUNKTION (Bleibt gleich) ---
@@ -90,3 +99,4 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
