@@ -109,7 +109,7 @@ def generate_smart_list(text, tag):
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- PDF GENERATOR (SCHÖN & OHNE LINKS) ---
+# --- PDF GENERATOR (UNZERSTÖRBAR) ---
 def create_pdf(text_content):
     pdf = FPDF()
     pdf.add_page()
@@ -123,33 +123,31 @@ def create_pdf(text_content):
     lines = text_content.split('\n')
     for line in lines:
         line = line.strip()
-        if not line or '---' in line: continue
+        if not line or '---' in line:
+            continue
         
-        # Logik: Wenn es eine Tabellenzeile ist, nimm nur Menge und Zutat
-        if '|' in line:
-            parts = [p.strip() for p in line.split('|') if p.strip()]
-            if len(parts) >= 2:
-                # Wir ignorieren alles nach der zweiten Spalte (die Links)
-                menge = parts[0].replace('*', '')
-                zutat = parts[1].replace('*', '')
-                
-                if "Menge" in menge or "Zutat" in zutat:
-                    pdf.set_font("Arial", 'B', 12)
-                    clean_line = f"{menge.ljust(15)} | {zutat}"
-                else:
-                    pdf.set_font("Arial", '', 12)
-                    clean_line = f"[ ] {menge} {zutat}"
-                
-                safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
-                pdf.multi_cell(0, 8, txt=safe_text)
-        else:
-            # Normaler Text ohne Links
-            clean_line = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line).replace('*', '')
-            safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
-            pdf.multi_cell(0, 8, txt=safe_text)
+        # 1. Wir löschen ALLES, was nach einem Link aussieht (http...)
+        line = re.sub(r'http\S+', '', line)
+        # 2. Wir löschen Markdown-Link-Strukturen [Text](...)
+        line = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line)
+        # 3. Wir putzen Tabellenstriche und Sterne
+        line = line.replace('|', '  ').replace('*', '').replace(']', '').replace('[', '')
+        
+        # 4. EXTREM-CHECK: Wenn eine Zeile immer noch zu lang ist (ohne Leerzeichen)
+        # kürzen wir sie hart ab, damit fpdf nicht abstürzt
+        if len(line) > 80 and ' ' not in line:
+            line = line[:80]
+
+        # 5. Encoding & Drucken
+        try:
+            safe_text = line.encode('latin-1', 'replace').decode('latin-1')
+            # multi_cell mit fester Breite statt 0 (Seitenrand)
+            pdf.multi_cell(190, 8, txt=safe_text, align='L')
+        except:
+            continue
 
     return bytes(pdf.output())
-
+    
 # --- INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
 st.title("🍲 ChefList Pro")
@@ -165,3 +163,4 @@ if st.button("Liste generieren"):
                 st.markdown(result)
                 pdf_bytes = create_pdf(result)
                 st.download_button("📄 PDF herunterladen", data=pdf_bytes, file_name="Einkaufsliste.pdf", mime="application/pdf")
+
