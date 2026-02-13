@@ -1,85 +1,56 @@
 import streamlit as st
-import yt_dlp
 import openai
-import os
-import time
+from youtube_transcript_api import YouTubeTranscriptApi
+import urllib.parse as urlparse
 
 # --- KONFIGURATION ---
-
-# Wir holen den Key aus dem sicheren Tresor des Servers
 api_key = st.secrets["OPENAI_API_KEY"]
-
-# Das ist deine fiktive Amazon-Partner-ID. 
-# Später würdest du hier deine echte ID eintragen (z.B. 'markusapp-21')
 amazon_tag = "markusapp-21" 
 
-# Sicherheitshalber prüfen
-if not api_key or "HIER" in api_key:
-    st.error("Bitte trage deinen OpenAI API Key im Code ein!")
+if not api_key:
+    st.error("Bitte trage deinen OpenAI API Key ein!")
     st.stop()
 
 client = openai.OpenAI(api_key=api_key)
 
-# --- FUNKTIONEN ---
+# --- NEUE FUNKTION: UNTERTITEL KLAUEN ---
+def extract_video_id(url):
+    """Holt die Video-ID aus dem Link (z.B. dQw4w9WgXcQ)"""
+    url_data = urlparse.urlparse(url)
+    query = urlparse.parse_qs(url_data.query)
+    if "v" in query:
+        return query["v"][0]
+    else:
+        return url_data.path.split("/")[-1]
 
-def download_audio(video_url):
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'outtmpl': 'temp_audio.%(ext)s',
-        'quiet': True,
-        'no_warnings': True,
-        # DER NEUE TRICK: Wir zwingen yt-dlp, die Android-Schnittstelle zu nutzen!
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android', 'web']
-            }
-        }
-    }
+def get_transcript(video_url):
+    """Zieht heimlich den Text aus YouTube"""
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([video_url])
-        return "temp_audio.mp3"
+        video_id = extract_video_id(video_url)
+        # Holt deutsche ('de') oder englische ('en') Untertitel
+        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['de', 'en'])
+        
+        # Baut alle Text-Schnipsel zu einem langen Text zusammen
+        text = " ".join([t['text'] for t in transcript_list])
+        return text
     except Exception as e:
-        st.error(f"Download-Fehler (YouTube blockiert): {str(e)}")
+        st.error("❌ YouTube hat hier keine Untertitel (oder blockiert). Probier ein anderes Video!")
         return None
 
-def transcribe_audio(file_path):
-    try:
-        with open(file_path, "rb") as audio_file:
-            transcript = client.audio.transcriptions.create(
-                model="whisper-1", 
-                file=audio_file
-            )
-        return transcript.text
-    except Exception as e:
-        st.error(f"Transkriptions-Fehler: {str(e)}")
-        return None
-
+# --- KI FUNKTION (Bleibt gleich) ---
 def generate_smart_list(text, tag):
-    # Hier passiert die Magie: Wir erklären der KI genau, wie der Link aussehen muss.
     system_prompt = f"""
     Du bist ein hilfreicher Koch-Assistent.
     
     DEINE AUFGABE:
     1. Analysiere das Transkript und extrahiere alle Zutaten.
-    2. Suche explizit nach MENGENANGABEN (Gramm, EL, TL, Stück). Wenn keine genannt wird, schätze basierend auf dem Kontext oder schreibe "nach Geschmack".
+    2. Suche explizit nach MENGENANGABEN.
     3. Erstelle eine Markdown-Tabelle mit 3 Spalten: "Menge", "Zutat", "Kaufen".
     
     WICHTIG - DER LINK:
-    In der Spalte "Kaufen" erstellst du einen Link für die Zutat.
-    Das Format für den Link ist: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
-    Ersetze [ZUTAT] durch den Namen der Zutat.
-    Der Link-Text soll "🛒 Auf Amazon suchen" heißen.
-    
-    Beispiel für eine Zeile in der Tabelle:
-    | 500g | Spaghetti | [🛒 Auf Amazon suchen](https://www.amazon.de/s?k=Spaghetti&tag={tag}) |
+    Das Format für den Link in der Spalte "Kaufen" ist: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
+    Ersetze [ZUTAT] durch den Namen. Der Link-Text ist "🛒 Auf Amazon suchen".
     """
-    
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -93,12 +64,11 @@ def generate_smart_list(text, tag):
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- DAS INTERFACE ---
-
+# --- INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
 
-st.title("🍲 ChefList Pro (Mit Einkaufs-Links)")
-st.write("Füge einen YouTube-Link ein. Ich erstelle dir eine Einkaufsliste mit Mengen und Bestell-Links.")
+st.title("🍲 ChefList Pro (Turbo Version ⚡)")
+st.write("Füge einen YouTube-Link ein. Ich lese das Rezept in 2 Sekunden und erstelle die Einkaufsliste!")
 
 video_url = st.text_input("YouTube Link:", placeholder="https://youtube.com/...")
 
@@ -108,29 +78,15 @@ if st.button("Liste generieren 💸"):
     else:
         with st.status("Analysiere Rezept...", expanded=True) as status:
             
-            st.write("1. Video laden... ⏳")
-            audio_path = download_audio(video_url)
+            st.write("1. Lese Untertitel aus YouTube... 🕵️‍♂️")
+            text = get_transcript(video_url)
             
-            if audio_path:
-                st.write("2. Verstehe Sprache... 👂")
-                text = transcribe_audio(audio_path)
+            if text:
+                st.write("2. KI schreibt Einkaufsliste... 🧠")
+                result = generate_smart_list(text, amazon_tag)
                 
-                if text:
-                    st.write("3. Erstelle Tabelle mit Links... 📊")
-                    # Wir übergeben hier deine Amazon-ID an die Funktion
-                    result = generate_smart_list(text, amazon_tag)
-                    
-                    status.update(label="Fertig!", state="complete", expanded=False)
-                    
-                    st.success("Hier ist deine smarte Liste:")
-                    st.markdown("---")
-                    # Das hier zeigt die Tabelle und macht die Links klickbar
-                    st.markdown(result)
-                    
-                    # Aufräumen
-                    time.sleep(1)
-                    try:
-                        os.remove(audio_path)
-                    except:
-
-                        pass
+                status.update(label="Fertig!", state="complete", expanded=False)
+                
+                st.success("Hier ist deine smarte Liste:")
+                st.markdown("---")
+                st.markdown(result)
