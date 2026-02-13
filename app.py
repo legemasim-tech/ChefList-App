@@ -152,7 +152,7 @@ def generate_smart_list(text, tag):
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- NEU: PDF GENERATOR ---
+# --- NEU: PDF GENERATOR (Verbessert & Absturzsicher) ---
 def create_pdf(text_content):
     """Konvertiert die Markdown-Tabelle in ein sauberes PDF"""
     pdf = FPDF()
@@ -160,22 +160,37 @@ def create_pdf(text_content):
     
     # Titel hinzufügen
     pdf.set_font("helvetica", style="B", size=16)
+    # Nutze 'ln=True' für Kompatibilität
     pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
     pdf.ln(5) # Etwas Abstand
     
-    # Text formatieren (Emojis und Markdown-Trennlinien entfernen, Umlaute sichern)
+    # Text bereinigen:
+    # 1. Entferne Markdown Links [Text](URL) -> behalte nur Text
+    # Das verhindert, dass superlange URLs das PDF sprengen
+    text_content = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text_content)
+    
+    # 2. Entferne Emojis, Sterne (Fettgedrucktes) und Tabellen-Striche
     clean_text = text_content.replace("🛒", "").replace("💸", "").replace("🍲", "")
-    # Damit PDF-Fonts bei speziellen Sonderzeichen nicht abstürzen (Latin-1 Fix):
+    clean_text = clean_text.replace("**", "").replace("|", "  ") # Pipes durch Leerzeichen ersetzen
+    
+    # 3. Encoding fixen (Latin-1 für PDF)
     safe_text = clean_text.encode('latin-1', 'replace').decode('latin-1')
     
     # Inhalt hinzufügen
-    pdf.set_font("helvetica", size=11)
+    pdf.set_font("helvetica", size=10) # Schrift etwas kleiner damit mehr passt
+    
     for line in safe_text.split('\n'):
-        # Ignoriere die unschönen Tabellen-Trennlinien (---)
-        if '---' in line:
+        line = line.strip()
+        # Leere Zeilen oder Trennlinien (---) überspringen
+        if not line or '---' in line:
             continue
-        # Zeile ins PDF schreiben
-        pdf.multi_cell(0, 8, txt=line)
+            
+        # Schreibe die Zeile
+        try:
+            pdf.multi_cell(0, 6, txt=line, align='L')
+        except Exception:
+            # Falls eine Zeile immer noch Probleme macht (z.B. extrem langes Wort), überspringen wir sie
+            continue
         
     # Gibt das fertige PDF als Bytes zurück
     return pdf.output()
@@ -228,3 +243,4 @@ if st.button("Liste generieren 💸"):
                     status.update(label="KI Fehler", state="error")
             else:
                 status.update(label="Keine Untertitel gefunden", state="error")
+
