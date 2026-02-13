@@ -128,8 +128,8 @@ with st.sidebar:
     st.write("Wandle deine Lieblings-Kochvideos in Sekunden in eine druckbare Einkaufsliste um.")
     st.markdown("---")
     st.subheader("Impressum")
-    st.caption("Betreiber: [Dein Name/Firma]")
-    st.caption("Kontakt: [Deine E-Mail]")
+    st.caption("Betreiber: [Markus Simmel]")
+    st.caption("Kontakt: [legemasim@gmail.com]")
     st.markdown("---")
     st.subheader("Datenschutz")
     st.caption("Diese App speichert keine persönlichen Daten. Eingegebene URLs werden nur zur Verarbeitung an OpenAI gesendet.")
@@ -168,3 +168,4 @@ if st.session_state.recipe_result:
 # --- 5. RECHTLICHER HINWEIS (UNTER DER LISTE) ---
 st.markdown("---")
 st.caption("* Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Die Links in der Tabelle sind Affiliate-Links.")
+
