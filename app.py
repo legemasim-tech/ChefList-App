@@ -13,7 +13,7 @@ try:
 except:
     api_key = None
 
-amazon_tag = "markusapp-21" 
+amazon_tag = "cheflist21-21" 
 
 if not api_key:
     st.error("Bitte trage deinen OpenAI API Key in die Streamlit Secrets ein!")
@@ -162,3 +162,4 @@ if st.session_state.recipe_result:
         )
     except Exception as e:
         st.error(f"PDF-Fehler: {str(e)}")
+
