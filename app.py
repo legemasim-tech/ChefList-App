@@ -72,9 +72,12 @@ def create_pdf(text_content, recipe_title):
     pdf.set_right_margin(10)
     pdf.add_page()
     
+    # TITEL-KÜRZUNG FÜR PDF HEADER (max 40 Zeichen)
+    display_title = recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "..."
+    
     pdf.set_fill_color(230, 230, 230) 
     pdf.set_font("Arial", style="B", size=14)
-    pdf_header = f"Einkaufsliste: {recipe_title}"
+    pdf_header = f"Einkaufsliste: {display_title}"
     try:
         safe_header = pdf_header.encode('latin-1', 'replace').decode('latin-1')
     except:
@@ -123,7 +126,7 @@ if "recipe_result" not in st.session_state:
 if "recipe_title" not in st.session_state:
     st.session_state.recipe_title = ""
 
-# --- SCHÖNE SIDEBAR MIT AMAZON HINWEIS ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.title("🍳 ChefList Pro")
     st.info("Dein smarter Küchenhelfer.")
@@ -139,7 +142,6 @@ with st.sidebar:
     st.caption("**Kontakt:** legemasim@gmail.com")
     
     st.markdown("---")
-    # HIER IST DER AMAZON HINWEIS IN DER SIDEBAR
     st.caption("✨ **Affiliate Hinweis:**")
     st.caption("Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Die Links in der Tabelle (*) sind Affiliate-Links.")
     
@@ -166,7 +168,9 @@ if st.button("Jetzt Liste erstellen ✨", use_container_width=True):
 
 if st.session_state.recipe_result:
     st.divider()
-    st.subheader(f"📋 Einkaufsliste für: {st.session_state.recipe_title}")
+    # ANZEIGE IM BROWSER (etwas länger erlaubt)
+    display_title_ui = st.session_state.recipe_title if len(st.session_state.recipe_title) <= 60 else st.session_state.recipe_title[:57] + "..."
+    st.subheader(f"📋 Einkaufsliste für: {display_title_ui}")
     st.markdown(st.session_state.recipe_result)
     
     st.divider()
@@ -176,14 +180,17 @@ if st.session_state.recipe_result:
     with col2:
         try:
             pdf_data = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
-            clean_title = re.sub(r'[^\w\s-]', '', st.session_state.recipe_title).strip().replace(' ', '_')
+            
+            # DATEINAME-KÜRZUNG (max 40 Zeichen)
+            short_title = st.session_state.recipe_title[:40].strip()
+            clean_filename = re.sub(r'[^\w\s-]', '', short_title).strip().replace(' ', '_')
+            
             st.download_button(
                 label="📄 PDF Download",
                 data=pdf_data,
-                file_name=f"Einkaufsliste_{clean_title}.pdf",
+                file_name=f"Einkaufsliste_{clean_filename}.pdf",
                 mime="application/pdf",
                 use_container_width=True
             )
         except Exception as e:
             st.error("Fehler beim PDF-Erzeugen.")
-
