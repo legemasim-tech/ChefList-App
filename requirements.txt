@@ -1,3 +1,4 @@
 streamlit
 openai
-youtube-transcript-api
+youtube-transcript-api>=0.6.2
+
