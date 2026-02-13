@@ -80,24 +80,37 @@ def create_pdf(text_content):
     
     # 2. Inhalt verarbeiten
     lines = text_content.split('\n')
+def create_pdf(text_content):
+    """Erzwingt den Text an den linken Rand."""
+    pdf = FPDF()
+    pdf.set_left_margin(10)
+    pdf.set_right_margin(10)
+    pdf.add_page()
+    
+    # 1. Kopfzeile
+    pdf.set_fill_color(230, 230, 230) 
+    pdf.set_font("Arial", style="B", size=16)
+    # Titel zentriert
+    pdf.cell(190, 15, txt="MEINE EINKAUFSLISTE", ln=True, align='C', fill=True)
+    pdf.ln(8)
+    
+    lines = text_content.split('\n')
     for line in lines:
         line = line.strip()
-        
-        # Unnötiges filtern (Trennstriche und leere Zeilen)
         if not line or '---' in line:
             continue
         
-        # Tabellenlogik: Menge | Zutat | Link
+        # Cursor explizit nach links setzen (Sicherheitsanker)
+        pdf.set_x(10)
+        
         if '|' in line:
             parts = [p.strip() for p in line.split('|') if p.strip()]
             
-            # Wir prüfen, ob es die Kopfzeile der Tabelle ist
             if len(parts) >= 2 and ("Menge" in parts[0] or "Zutat" in parts[1]):
                 pdf.set_font("Arial", style="B", size=11)
-                menge_zutat = f"MENGE - ZUTAT"
+                menge_zutat = "MENGE - ZUTAT"
             elif len(parts) >= 2:
                 pdf.set_font("Arial", size=12)
-                # Wir nehmen nur Menge (parts[0]) und Zutat (parts[1])
                 menge = parts[0].replace('*', '')
                 zutat = parts[1].replace('*', '')
                 menge_zutat = f"[  ] {menge} {zutat}"
@@ -105,12 +118,11 @@ def create_pdf(text_content):
                 continue
 
             try:
-                # Wir nutzen hier eine feste Breite von 0 (bis zum rechten Rand) 
-                # und align='L' für Linksbuendig
                 safe_text = menge_zutat.encode('latin-1', 'replace').decode('latin-1')
-                pdf.cell(0, 10, txt=safe_text, ln=True, align='L')
+                # Feste Breite 190 statt 0, um den Textblock zu begrenzen
+                pdf.cell(190, 10, txt=safe_text, ln=True, align='L')
                 
-                # Dezente Trennlinie
+                # Linie ziehen
                 current_y = pdf.get_y()
                 pdf.set_draw_color(220, 220, 220)
                 pdf.line(10, current_y, 200, current_y)
@@ -118,13 +130,12 @@ def create_pdf(text_content):
             except:
                 continue
         else:
-            # Für normalen Text (Einleitung/Abschluss)
-            # Links entfernen
+            # Normaler Text
             clean_text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line).replace('*', '')
             pdf.set_font("Arial", style="I", size=10)
             try:
                 safe_text = clean_text.encode('latin-1', 'replace').decode('latin-1')
-                pdf.multi_cell(0, 7, txt=safe_text, align='L')
+                pdf.multi_cell(190, 7, txt=safe_text, align='L')
             except:
                 continue
 
@@ -162,5 +173,6 @@ if st.button("Liste generieren"):
                     st.error("KI konnte keine Liste erstellen.")
             else:
                 st.error("Keine Untertitel gefunden.")
+
 
 
