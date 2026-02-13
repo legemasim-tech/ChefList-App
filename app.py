@@ -25,7 +25,7 @@ def extract_video_id(url):
     else:
         return None
 
-# --- DER PIRATEN-HACK: UNTERTITEL ÜBER PROXY HOLEN ---
+# --- DER VERBESSERTE PIRATEN-HACK: UNTERTITEL ÜBER PROXY HOLEN ---
 def get_transcript(video_url):
     """Zieht den Text nicht von YouTube, sondern über geheime Piped-Proxys"""
     try:
@@ -34,32 +34,53 @@ def get_transcript(video_url):
             st.error("❌ Link-Format nicht erkannt.")
             return None
 
-        # Wir fragen 3 verschiedene Server an. Wenn einer blockiert ist, springen wir zum nächsten.
+        # NEU: Mehr und aktuellere Server für eine viel höhere Erfolgsquote!
         instances = [
+            "https://pipedapi.adminforge.de",
+            "https://pipedapi.tokhmi.xyz",
+            "https://pipedapi.drgns.space",
             "https://pipedapi.kavin.rocks",
-            "https://pipedapi.leptons.xyz",
-            "https://pipedapi.lunar.icu"
+            "https://pipedapi.smnz.de",
+            "https://pipedapi.privacy.com.de"
         ]
         
         data = None
         for instance in instances:
             try:
-                # Wir fragen den geheimen Server nach dem Video
-                res = requests.get(f"{instance}/streams/{video_id}", timeout=5)
+                # Timeout leicht erhöht auf 7 Sekunden, falls der Server langsam ist
+                res = requests.get(f"{instance}/streams/{video_id}", timeout=7) 
                 if res.status_code == 200:
-                    data = res.json()
-                    break # Erfolg! Schleife abbrechen
+                    temp_data = res.json()
+                    # DER WICHTIGSTE FIX: Wir brechen die Schleife NUR ab, 
+                    # wenn der Server auch wirklich Untertitel geliefert hat!
+                    if "subtitles" in temp_data and temp_data["subtitles"]:
+                        data = temp_data
+                        break # Erfolg! Schleife abbrechen
             except:
-                continue # Wenn Server tot, probiere den nächsten
+                continue # Wenn Server tot, probiere sofort den nächsten
                 
         if not data or "subtitles" not in data or not data["subtitles"]:
-            st.error("❌ Keine Untertitel im Proxy-Netzwerk gefunden.")
+            st.error("❌ Keine Untertitel im Proxy-Netzwerk gefunden. (Alle Server blockiert oder Video hat wirklich keine Untertitel)")
             return None
             
-        # Wir suchen deutsche Untertitel. Wenn nicht da, englisch. Sonst den allerersten.
         subtitles = data["subtitles"]
-        target_sub = next((s for s in subtitles if s.get("code") in ["de", "en"]), subtitles[0])
         
+        # Bessere Sprach-Auswahl: Erst Deutsch, dann Englisch, sonst das Erste was da ist.
+        target_sub = None
+        for sub in subtitles:
+            if sub.get("code") == "de":
+                target_sub = sub
+                break
+        
+        if not target_sub:
+            for sub in subtitles:
+                if sub.get("code") == "en":
+                    target_sub = sub
+                    break
+                    
+        if not target_sub:
+            target_sub = subtitles[0] # Fallback
+            
         # Untertitel-Text herunterladen
         raw_text = requests.get(target_sub["url"]).text
         
@@ -128,5 +149,6 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
 
