@@ -5,7 +5,7 @@ import re
 import urllib.parse as urlparse
 import yt_dlp
 import json
-from fpdf import FPDF  # NEU: Die PDF-Bibliothek
+from fpdf import FPDF
 
 # --- KONFIGURATION ---
 try:
@@ -152,7 +152,7 @@ def generate_smart_list(text, tag):
         st.error(f"KI-Fehler: {str(e)}")
         return None
 
-# --- NEU: PDF GENERATOR (Verbessert & Absturzsicher) ---
+# --- PDF GENERATOR (FIXED) ---
 def create_pdf(text_content):
     """Konvertiert die Markdown-Tabelle in ein sauberes PDF"""
     pdf = FPDF()
@@ -160,40 +160,35 @@ def create_pdf(text_content):
     
     # Titel hinzufügen
     pdf.set_font("helvetica", style="B", size=16)
-    # Nutze 'ln=True' für Kompatibilität
     pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
-    pdf.ln(5) # Etwas Abstand
+    pdf.ln(5)
     
-    # Text bereinigen:
-    # 1. Entferne Markdown Links [Text](URL) -> behalte nur Text
-    # Das verhindert, dass superlange URLs das PDF sprengen
+    # Text bereinigen (Links entfernen, die das PDF sprengen)
+    # Entfernt [Text](URL) und behält nur Text
     text_content = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text_content)
     
-    # 2. Entferne Emojis, Sterne (Fettgedrucktes) und Tabellen-Striche
+    # Sonderzeichen entfernen
     clean_text = text_content.replace("🛒", "").replace("💸", "").replace("🍲", "")
-    clean_text = clean_text.replace("**", "").replace("|", "  ") # Pipes durch Leerzeichen ersetzen
+    clean_text = clean_text.replace("**", "").replace("|", "  ") 
     
-    # 3. Encoding fixen (Latin-1 für PDF)
+    # Encoding fixen (Latin-1 für PDF)
     safe_text = clean_text.encode('latin-1', 'replace').decode('latin-1')
     
     # Inhalt hinzufügen
-    pdf.set_font("helvetica", size=10) # Schrift etwas kleiner damit mehr passt
+    pdf.set_font("helvetica", size=10)
     
     for line in safe_text.split('\n'):
         line = line.strip()
-        # Leere Zeilen oder Trennlinien (---) überspringen
         if not line or '---' in line:
             continue
             
-        # Schreibe die Zeile
         try:
             pdf.multi_cell(0, 6, txt=line, align='L')
-        except Exception:
-            # Falls eine Zeile immer noch Probleme macht (z.B. extrem langes Wort), überspringen wir sie
+        except:
             continue
         
-    # Gibt das fertige PDF als Bytes zurück
-    return pdf.output()
+    # FIX: Umwandlung in 'bytes' für Streamlit
+    return bytes(pdf.output())
 
 # --- INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
@@ -217,30 +212,4 @@ if st.button("Liste generieren 💸"):
                 st.write("2. KI schreibt Einkaufsliste... 🧠")
                 result = generate_smart_list(text, amazon_tag)
                 
-                if result:
-                    status.update(label="Fertig!", state="complete", expanded=False)
-                    
-                    st.success("Hier ist deine smarte Liste:")
-                    st.markdown("---")
-                    st.markdown(result)
-                    
-                    st.markdown("---")
-                    # NEU: Der PDF Download-Button!
-                    st.write("💾 **Speichere deine Liste für später:**")
-                    
-                    # PDF im Hintergrund erzeugen
-                    pdf_bytes = create_pdf(result)
-                    
-                    # Download-Button anzeigen
-                    st.download_button(
-                        label="📄 Als PDF herunterladen",
-                        data=pdf_bytes,
-                        file_name="ChefList_Einkaufsliste.pdf",
-                        mime="application/pdf"
-                    )
-                    
-                else:
-                    status.update(label="KI Fehler", state="error")
-            else:
-                status.update(label="Keine Untertitel gefunden", state="error")
-
+                if result
