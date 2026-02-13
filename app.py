@@ -3,6 +3,8 @@ import openai
 import requests
 import re
 import urllib.parse as urlparse
+# NEU: Die Profi-Bibliothek für YouTube
+from youtube_transcript_api import YouTubeTranscriptApi
 
 # --- KONFIGURATION ---
 api_key = st.secrets["OPENAI_API_KEY"]
@@ -25,75 +27,29 @@ def extract_video_id(url):
     else:
         return None
 
-# --- DER VERBESSERTE PIRATEN-HACK: UNTERTITEL ÜBER PROXY HOLEN ---
+# --- DIE PROFI-LÖSUNG: UNTERTITEL DIREKT VON YOUTUBE HOLEN ---
 def get_transcript(video_url):
-    """Zieht den Text nicht von YouTube, sondern über geheime Piped-Proxys"""
+    """Holt Untertitel extrem zuverlässig über die YouTube-API"""
     try:
         video_id = extract_video_id(video_url)
         if not video_id:
             st.error("❌ Link-Format nicht erkannt.")
             return None
 
-        # NEU: Mehr und aktuellere Server für eine viel höhere Erfolgsquote!
-        instances = [
-            "https://pipedapi.adminforge.de",
-            "https://pipedapi.tokhmi.xyz",
-            "https://pipedapi.drgns.space",
-            "https://pipedapi.kavin.rocks",
-            "https://pipedapi.smnz.de",
-            "https://pipedapi.privacy.com.de"
-        ]
+        # Wir bitten die API, zuerst nach deutschen ('de') und dann nach englischen ('en') Untertiteln zu suchen
+        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['de', 'en'])
         
-        data = None
-        for instance in instances:
-            try:
-                # Timeout leicht erhöht auf 7 Sekunden, falls der Server langsam ist
-                res = requests.get(f"{instance}/streams/{video_id}", timeout=7) 
-                if res.status_code == 200:
-                    temp_data = res.json()
-                    # DER WICHTIGSTE FIX: Wir brechen die Schleife NUR ab, 
-                    # wenn der Server auch wirklich Untertitel geliefert hat!
-                    if "subtitles" in temp_data and temp_data["subtitles"]:
-                        data = temp_data
-                        break # Erfolg! Schleife abbrechen
-            except:
-                continue # Wenn Server tot, probiere sofort den nächsten
-                
-        if not data or "subtitles" not in data or not data["subtitles"]:
-            st.error("❌ Keine Untertitel im Proxy-Netzwerk gefunden. (Alle Server blockiert oder Video hat wirklich keine Untertitel)")
-            return None
-            
-        subtitles = data["subtitles"]
+        # Die API liefert eine Liste mit Zeitstempeln und Text. Wir extrahieren nur den Text.
+        clean_text = " ".join([fragment['text'] for fragment in transcript_list])
         
-        # Bessere Sprach-Auswahl: Erst Deutsch, dann Englisch, sonst das Erste was da ist.
-        target_sub = None
-        for sub in subtitles:
-            if sub.get("code") == "de":
-                target_sub = sub
-                break
-        
-        if not target_sub:
-            for sub in subtitles:
-                if sub.get("code") == "en":
-                    target_sub = sub
-                    break
-                    
-        if not target_sub:
-            target_sub = subtitles[0] # Fallback
-            
-        # Untertitel-Text herunterladen
-        raw_text = requests.get(target_sub["url"]).text
-        
-        # Text radikal bereinigen (egal ob XML oder VTT Format)
-        clean_text = re.sub(r'<[^>]+>', ' ', raw_text) # Alle HTML/XML Tags löschen
-        clean_text = re.sub(r'\d{2}:\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}\.\d{3}', ' ', clean_text) # Zeitstempel löschen
-        clean_text = clean_text.replace('WEBVTT', '').replace('Kind: captions', '')
-        clean_text = " ".join(clean_text.split()) # Leerzeichen glätten
+        # Zeilenumbrüche und überschüssige Leerzeichen entfernen
+        clean_text = " ".join(clean_text.split())
         
         return clean_text
 
     except Exception as e:
-        st.error(f"❌ Fehler beim Abrufen der Untertitel: {str(e)}")
+        # Falls es wirklich keine Untertitel gibt oder das Video gesperrt ist
+        st.error(f"❌ Keine Untertitel gefunden. Info: {str(e)}")
         return None
 
 # --- KI FUNKTION ---
@@ -149,6 +105,7 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
 
 
