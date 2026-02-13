@@ -2,9 +2,7 @@ import streamlit as st
 import openai
 import requests
 import re
-import urllib.parse as urlparse
 import yt_dlp
-import json
 from fpdf import FPDF
 
 # --- 1. KONFIGURATION & API ---
@@ -13,7 +11,6 @@ try:
 except:
     api_key = None
 
-# AKTUALISIERTE PARTNER-ID
 amazon_tag = "cheflist21-21" 
 
 if not api_key:
@@ -23,19 +20,18 @@ if not api_key:
 client = openai.OpenAI(api_key=api_key)
 
 # --- 2. HILFSFUNKTIONEN ---
-def extract_video_id(url):
-    if "v=" in url: return url.split("v=")[1][:11]
-    elif "youtu.be/" in url: return url.split("youtu.be/")[1][:11]
-    elif "shorts/" in url: return url.split("shorts/")[1][:11]
-    return None
-
-def get_transcript(video_url):
+def get_video_data(video_url):
+    """Extrahiert Titel und Transkript."""
     try:
         ydl_opts = {'quiet': True, 'skip_download': True, 'writesubtitles': True, 'writeautomaticsub': True, 'subtitleslangs': ['de', 'en']}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
+        
+        video_title = info.get('title', 'Rezept')
         subs = info.get('subtitles') or info.get('automatic_captions')
-        if not subs: return None
+        
+        if not subs: return video_title, None
+        
         target_url = None
         for lang in ['de', 'de-orig', 'en', 'en-orig']:
             if lang in subs:
@@ -44,13 +40,17 @@ def get_transcript(video_url):
                         target_url = f.get('url')
                         break
                 if target_url: break
-        if not target_url: return None
-        res = requests.get(target_url)
-        if 'json3' in target_url:
-            data = res.json()
-            return " ".join([seg.get('utf8', '').strip() for event in data.get('events', []) if 'segs' in event for seg in event['segs'] if seg.get('utf8', '')])
-        return " ".join(re.sub(r'<[^>]+>', ' ', res.text).split())
-    except: return None
+        
+        transcript = None
+        if target_url:
+            res = requests.get(target_url)
+            if 'json3' in target_url:
+                data = res.json()
+                transcript = " ".join([seg.get('utf8', '').strip() for event in data.get('events', []) if 'segs' in event for seg in event['segs'] if seg.get('utf8', '')])
+        
+        return video_title, transcript
+    except:
+        return "Rezept", None
 
 def generate_smart_list(text, tag):
     system_prompt = f"""
@@ -67,24 +67,26 @@ def generate_smart_list(text, tag):
     except: return None
 
 # --- 3. PDF GENERATOR ---
-def create_pdf(text_content):
+def create_pdf(text_content, recipe_title):
     pdf = FPDF()
     pdf.set_left_margin(10)
     pdf.set_right_margin(10)
     pdf.add_page()
     
+    # Header
     pdf.set_fill_color(230, 230, 230) 
-    pdf.set_font("Arial", style="B", size=16)
-    pdf.cell(190, 15, txt="MEINE EINKAUFSLISTE", ln=True, align='C', fill=True)
+    pdf.set_font("Arial", style="B", size=14)
+    # Titel im PDF
+    pdf_header = f"Einkaufsliste: {recipe_title}"
+    safe_header = pdf_header.encode('latin-1', 'replace').decode('latin-1')
+    pdf.cell(190, 15, txt=safe_header, ln=True, align='C', fill=True)
     pdf.ln(8)
     
     lines = text_content.split('\n')
     for line in lines:
         line = line.strip()
         if not line or '---' in line: continue
-        
         pdf.set_x(10)
-        
         if '|' in line:
             parts = [p.strip() for p in line.split('|') if p.strip()]
             if len(parts) >= 2 and ("Menge" in parts[0] or "Zutat" in parts[1]):
@@ -96,13 +98,11 @@ def create_pdf(text_content):
                 z = parts[1].replace('*', '')
                 menge_zutat = f"[  ] {m} {z}"
             else: continue
-
             try:
                 safe_text = menge_zutat.encode('latin-1', 'replace').decode('latin-1')
                 pdf.cell(190, 10, txt=safe_text, ln=True, align='L')
-                current_y = pdf.get_y()
                 pdf.set_draw_color(220, 220, 220)
-                pdf.line(10, current_y, 200, current_y)
+                pdf.line(10, pdf.get_y(), 200, pdf.get_y())
                 pdf.ln(1)
             except: continue
         else:
@@ -112,38 +112,32 @@ def create_pdf(text_content):
                 safe_text = clean_text.encode('latin-1', 'replace').decode('latin-1')
                 pdf.multi_cell(190, 7, txt=safe_text, align='L')
             except: continue
-
     return bytes(pdf.output())
 
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
 
-# Session State Gedächtnis
 if "recipe_result" not in st.session_state:
     st.session_state.recipe_result = None
+if "recipe_title" not in st.session_state:
+    st.session_state.recipe_title = ""
 
-# --- SIDEBAR (Impressum & Rechtliches) ---
 with st.sidebar:
     st.header("Über ChefList Pro")
-    st.write("Wandle deine Lieblings-Kochvideos in Sekunden in eine druckbare Einkaufsliste um.")
+    st.caption("Wandle Kochvideos in Einkaufslisten um.")
     st.markdown("---")
     st.subheader("Impressum")
-    st.caption("Betreiber: [Markus Simmel]")
-    st.caption("Kontakt: [legemasim@gmail.com]")
-    st.markdown("---")
-    st.subheader("Datenschutz")
-    st.caption("Diese App speichert keine persönlichen Daten. Eingegebene URLs werden nur zur Verarbeitung an OpenAI gesendet.")
+    st.caption("Betreiber: [Dein Name]")
+    st.caption("Kontakt: [Deine Mail]")
 
-# Hauptbereich
 st.title("🍲 ChefList Pro")
-st.write("Link einfügen und Einkaufsliste erhalten!")
-
 video_url = st.text_input("YouTube Link:")
 
 if st.button("Liste generieren"):
     if video_url:
-        with st.spinner("Rezept wird gelesen..."):
-            text = get_transcript(video_url)
+        with st.spinner("Video wird analysiert..."):
+            title, text = get_video_data(video_url)
+            st.session_state.recipe_title = title
             if text:
                 result = generate_smart_list(text, amazon_tag)
                 st.session_state.recipe_result = result
@@ -151,21 +145,24 @@ if st.button("Liste generieren"):
                 st.error("Keine Untertitel gefunden.")
 
 if st.session_state.recipe_result:
-    st.success("Hier ist deine Liste:")
+    st.subheader(f"Gefundenes Rezept: {st.session_state.recipe_title}")
     st.markdown(st.session_state.recipe_result)
     
     try:
-        pdf_data = create_pdf(st.session_state.recipe_result)
+        pdf_data = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
+        
+        # Dateiname aus Titel generieren (Sonderzeichen entfernen)
+        clean_title = re.sub(r'[^\w\s-]', '', st.session_state.recipe_title).strip().replace(' ', '_')
+        final_filename = f"Einkaufsliste_{clean_title}.pdf"
+        
         st.download_button(
             label="📄 PDF herunterladen",
             data=pdf_data,
-            file_name="Einkaufsliste.pdf",
+            file_name=final_filename,
             mime="application/pdf"
         )
     except Exception as e:
         st.error(f"PDF-Fehler: {str(e)}")
 
-# --- 5. RECHTLICHER HINWEIS (UNTER DER LISTE) ---
 st.markdown("---")
-st.caption("* Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Die Links in der Tabelle sind Affiliate-Links.")
-
+st.caption("* Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
