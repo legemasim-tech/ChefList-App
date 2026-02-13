@@ -40,7 +40,7 @@ def get_transcript(video_url):
 
         # NEU: Der Proxy wird jetzt über das GenericProxyConfig-Modul geladen
         # WICHTIG: Ersetze USERNAME und PASSWORD durch deine echten Webshare-Daten!
-        proxy_url = "http://dgashpyp:izspbf3gjypg@p.webshare.io:6754"
+        proxy_url = "http://dgashpyp:izspbf3gjypg@31.59.20.176:6754"
         
         proxy_config = GenericProxyConfig(
             http_url=proxy_url,
@@ -122,6 +122,7 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
 
 
