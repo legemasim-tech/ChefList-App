@@ -7,7 +7,7 @@ import yt_dlp
 import json
 from fpdf import FPDF
 
-# --- 1. KONFIGURATION & API ---
+# --- KONFIGURATION ---
 try:
     api_key = st.secrets["OPENAI_API_KEY"]
 except:
@@ -21,13 +21,17 @@ if not api_key:
 
 client = openai.OpenAI(api_key=api_key)
 
-# --- 2. HILFSFUNKTIONEN ---
+# --- FUNKTION: VIDEO ID EXTRAHIEREN ---
 def extract_video_id(url):
-    if "v=" in url: return url.split("v=")[1][:11]
-    elif "youtu.be/" in url: return url.split("youtu.be/")[1][:11]
-    elif "shorts/" in url: return url.split("shorts/")[1][:11]
+    if "v=" in url:
+        return url.split("v=")[1][:11]
+    elif "youtu.be/" in url:
+        return url.split("youtu.be/")[1][:11]
+    elif "shorts/" in url:
+        return url.split("shorts/")[1][:11]
     return None
 
+# --- UNTERTITEL ÜBER YT-DLP ---
 def get_transcript(video_url):
     try:
         ydl_opts = {'quiet': True, 'skip_download': True, 'writesubtitles': True, 'writeautomaticsub': True, 'subtitleslangs': ['de', 'en']}
@@ -51,8 +55,9 @@ def get_transcript(video_url):
         return " ".join(re.sub(r'<[^>]+>', ' ', res.text).split())
     except: return None
 
+# --- KI FUNKTION ---
 def generate_smart_list(text, tag):
-    system_prompt = f"Du bist ein hilfreicher Koch-Assistent. Erstelle eine saubere Markdown-Tabelle: Menge | Zutat | Kaufen (Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag})"
+    system_prompt = f"Du bist ein Koch-Assistent. Erstelle eine Tabelle: Menge | Zutat | Kaufen (Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag})"
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -61,100 +66,75 @@ def generate_smart_list(text, tag):
         return response.choices[0].message.content
     except: return None
 
-# --- 3. PDF GENERATOR (SCHÖN & STABIL) ---
+# --- PDF GENERATOR (DER "SIMPEL-FIX") ---
 def create_pdf(text_content):
     pdf = FPDF()
-    pdf.set_margins(left=15, top=15, right=15)
     pdf.add_page()
+    pdf.set_font("Arial", size=12)
     
-    # Header Design
-    pdf.set_fill_color(245, 245, 245) 
+    # Header
     pdf.set_font("Arial", style="B", size=16)
-    pdf.cell(0, 15, txt="MEINE EINKAUFSLISTE", ln=True, align='C', fill=True)
+    pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
     pdf.ln(10)
     
+    pdf.set_font("Arial", size=11)
+    
+    # Wir nehmen den Text fast 1:1, putzen aber nur die Links extrem simpel
     lines = text_content.split('\n')
+    
     for line in lines:
         line = line.strip()
         if not line or '---' in line: continue
         
-        # Link-Bereinigung: Alles in Klammern (http...) löschen
+        # 1. Wir entfernen nur die URL in den Klammern: [Text](URL) -> Text
+        # Das ist viel sicherer als nach http zu suchen
         clean_line = re.sub(r'\(http[^\)]+\)', '', line)
-        clean_line = clean_line.replace('*', '').replace('[', '').replace(']', '')
+        
+        # 2. Wir entfernen die eckigen Klammern, Sterne und Tabellenstriche
+        clean_line = clean_line.replace('[', '').replace(']', '').replace('*', '').replace('|', '  ')
+        
+        # 3. WICHTIG: Wir begrenzen die Zeilenlänge manuell, damit FPDF nicht rechnet
+        if len(clean_line) > 90:
+            clean_line = clean_line[:87] + "..."
 
-        # Tabellen-Zeilen erkennen
-        if '|' in line:
-            parts = [p.strip() for p in clean_line.split('|') if p.strip()]
-            if len(parts) >= 2:
-                menge = parts[0]
-                zutat = parts[1]
-                
-                if "Menge" in menge and "Zutat" in zutat:
-                    pdf.set_font("Arial", style="B", size=11)
-                    display_text = "MENGE  -  ZUTAT"
-                else:
-                    pdf.set_font("Arial", size=12)
-                    display_text = f"[  ] {menge} {zutat}"
-                
-                try:
-                    safe_text = display_text.encode('latin-1', 'replace').decode('latin-1')
-                    pdf.multi_cell(0, 10, txt=safe_text, align='L')
-                    # Dezente Trennlinie
-                    pdf.set_draw_color(220, 220, 220)
-                    pdf.line(15, pdf.get_y(), 195, pdf.get_y())
-                    pdf.ln(1)
-                except: continue
-        else:
-            # Normaler Text (Einleitung)
-            pdf.set_font("Arial", style="I", size=10)
-            try:
-                safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
-                pdf.multi_cell(0, 7, txt=safe_text, align='L')
-            except: continue
+        try:
+            # Latin-1 ist Pflicht für FPDF
+            safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
+            pdf.cell(0, 8, txt=safe_text, ln=True) # cell statt multi_cell ist hier stabiler
+        except:
+            continue
 
     return bytes(pdf.output())
 
-# --- 4. STREAMLIT INTERFACE ---
+# --- INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
-
-# Gedächtnis-Initialisierung
-if "recipe_result" not in st.session_state:
-    st.session_state.recipe_result = None
-
 st.title("🍲 ChefList Pro")
-st.write("Deine Einkaufsliste direkt aus dem YouTube-Video.")
+st.write("Link einfügen und Einkaufsliste erhalten!")
 
-video_url = st.text_input("YouTube Link:", placeholder="https://youtube.com/...")
+video_url = st.text_input("YouTube Link:")
 
-# Generieren
-if st.button("Liste generieren 💸"):
+if st.button("Liste generieren"):
     if video_url:
-        with st.status("Rezept wird analysiert...", expanded=True) as status:
+        with st.spinner("Rezept wird gelesen..."):
             text = get_transcript(video_url)
             if text:
                 result = generate_smart_list(text, amazon_tag)
-                st.session_state.recipe_result = result
-                status.update(label="Fertig!", state="complete", expanded=False)
+                if result:
+                    st.success("Hier ist deine Liste:")
+                    st.markdown(result)
+                    
+                    # PDF Download
+                    try:
+                        pdf_data = create_pdf(result)
+                        st.download_button(
+                            label="📄 PDF herunterladen",
+                            data=pdf_data,
+                            file_name="Einkaufsliste.pdf",
+                            mime="application/pdf"
+                        )
+                    except Exception as e:
+                        st.error(f"PDF-Fehler: {str(e)}")
+                else:
+                    st.error("KI konnte keine Liste erstellen.")
             else:
                 st.error("Keine Untertitel gefunden.")
-
-# Anzeige & Download
-if st.session_state.recipe_result:
-    st.success("Hier ist deine Liste:")
-    st.markdown("---")
-    # In der App-Ansicht lassen wir die volle Tabelle mit Links stehen
-    st.markdown(st.session_state.recipe_result)
-    
-    st.markdown("---")
-    st.write("💾 **PDF für den Supermarkt:**")
-    
-    try:
-        pdf_data = create_pdf(st.session_state.recipe_result)
-        st.download_button(
-            label="📄 PDF herunterladen",
-            data=pdf_data,
-            file_name="Einkaufsliste.pdf",
-            mime="application/pdf"
-        )
-    except Exception as e:
-        st.error(f"PDF-Fehler: {str(e)}")
