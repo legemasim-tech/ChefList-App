@@ -123,18 +123,26 @@ if "recipe_result" not in st.session_state:
 if "recipe_title" not in st.session_state:
     st.session_state.recipe_title = ""
 
-# --- SCHÖNE SIDEBAR ---
+# --- SCHÖNE SIDEBAR MIT AMAZON HINWEIS ---
 with st.sidebar:
     st.title("🍳 ChefList Pro")
     st.info("Dein smarter Küchenhelfer.")
     st.markdown("---")
+    
     with st.expander("ℹ️ Über diese App"):
         st.write("Wandle Kochvideos in Sekunden in organisierte Einkaufslisten um.")
+    
     st.markdown("---")
     st.subheader("⚖️ Rechtliches")
     st.caption("**Impressum:**")
-    st.caption("Markus Simmel")
-    st.caption("**Kontakt:** legemasim@gmail.com")
+    st.caption("[Dein Name]\n\n[Strasse]\n\n[PLZ Ort]")
+    st.caption("**Kontakt:** [Deine E-Mail]")
+    
+    st.markdown("---")
+    # HIER IST DER AMAZON HINWEIS IN DER SIDEBAR
+    st.caption("✨ **Affiliate Hinweis:**")
+    st.caption("Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Die Links in der Tabelle (*) sind Affiliate-Links.")
+    
     st.markdown("---")
     st.caption("Datenschutz: Wir speichern keine Video-URLs oder persönlichen Daten.")
 
@@ -178,6 +186,3 @@ if st.session_state.recipe_result:
             )
         except Exception as e:
             st.error("Fehler beim PDF-Erzeugen.")
-
-st.markdown("---")
-st.caption(" Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
