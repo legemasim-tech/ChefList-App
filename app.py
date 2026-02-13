@@ -68,41 +68,56 @@ def generate_smart_list(text, tag):
 
 # --- PDF GENERATOR (DER "SIMPEL-FIX") ---
 def create_pdf(text_content):
+    """Erstellt ein schön formatiertes PDF mit Checkliste."""
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
     
-    # Header
+    # 1. Kopfzeile (Design)
+    pdf.set_fill_color(240, 240, 240) # Hellgrauer Hintergrund für Header
     pdf.set_font("Arial", style="B", size=16)
-    pdf.cell(0, 10, txt="ChefList Pro - Deine Einkaufsliste", ln=True, align='C')
+    pdf.cell(0, 15, txt="MEINE EINKAUFSLISTE", ln=True, align='C', fill=True)
     pdf.ln(10)
     
-    pdf.set_font("Arial", size=11)
-    
-    # Wir nehmen den Text fast 1:1, putzen aber nur die Links extrem simpel
+    # 2. Inhalt verarbeiten
     lines = text_content.split('\n')
-    
     for line in lines:
         line = line.strip()
-        if not line or '---' in line: continue
-        
-        # 1. Wir entfernen nur die URL in den Klammern: [Text](URL) -> Text
-        # Das ist viel sicherer als nach http zu suchen
-        clean_line = re.sub(r'\(http[^\)]+\)', '', line)
-        
-        # 2. Wir entfernen die eckigen Klammern, Sterne und Tabellenstriche
-        clean_line = clean_line.replace('[', '').replace(']', '').replace('*', '').replace('|', '  ')
-        
-        # 3. WICHTIG: Wir begrenzen die Zeilenlänge manuell, damit FPDF nicht rechnet
-        if len(clean_line) > 90:
-            clean_line = clean_line[:87] + "..."
-
-        try:
-            # Latin-1 ist Pflicht für FPDF
-            safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
-            pdf.cell(0, 8, txt=safe_text, ln=True) # cell statt multi_cell ist hier stabiler
-        except:
+        # Unnötiges Zeug filtern
+        if not line or '---' in line or 'Menge | Zutat' in line:
             continue
+        
+        # Falls es eine Tabellenzeile ist
+        if '|' in line:
+            parts = [p.strip() for p in line.split('|') if p.strip()]
+            if len(parts) >= 2:
+                menge = parts[0].replace('*', '')
+                zutat = parts[1].replace('*', '')
+                
+                # Jede Zutat als Checkliste formatieren
+                pdf.set_font("Arial", size=12)
+                # Das kleine Quadrat als Checkbox simulieren
+                clean_line = f"[  ] {menge} {zutat}"
+                
+                # Encoding & Drucken
+                try:
+                    safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
+                    pdf.cell(0, 10, txt=safe_text, ln=True)
+                    # Eine feine Linie unter jede Zutat ziehen
+                    pdf.set_draw_color(200, 200, 200)
+                    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+                    pdf.ln(2)
+                except:
+                    continue
+        else:
+            # Falls es normaler Text ist (z.B. Überschrift der KI)
+            # Links entfernen
+            clean_line = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line).replace('*', '')
+            pdf.set_font("Arial", style="I", size=10)
+            try:
+                safe_text = clean_line.encode('latin-1', 'replace').decode('latin-1')
+                pdf.multi_cell(0, 8, txt=safe_text)
+            except:
+                continue
 
     return bytes(pdf.output())
 
@@ -138,3 +153,4 @@ if st.button("Liste generieren"):
                     st.error("KI konnte keine Liste erstellen.")
             else:
                 st.error("Keine Untertitel gefunden.")
+
