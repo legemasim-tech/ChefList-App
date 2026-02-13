@@ -6,6 +6,7 @@ import urllib.parse as urlparse
 import yt_dlp
 import json
 from fpdf import FPDF
+import unicodedata # <--- NEU: Hilft gegen seltsame Zeichen
 
 # --- KONFIGURATION ---
 try:
@@ -237,3 +238,4 @@ if st.button("Liste generieren 💸"):
                     status.update(label="KI Fehler", state="error")
             else:
                 status.update(label="Keine Untertitel gefunden", state="error")
+
