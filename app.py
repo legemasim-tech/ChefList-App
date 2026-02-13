@@ -135,8 +135,8 @@ with st.sidebar:
     st.markdown("---")
     st.subheader("⚖️ Rechtliches")
     st.caption("**Impressum:**")
-    st.caption("[Dein Name]\n\n[Strasse]\n\n[PLZ Ort]")
-    st.caption("**Kontakt:** [Deine E-Mail]")
+    st.caption("Markus Simmel")
+    st.caption("**Kontakt:** legemasim@gmail.com")
     
     st.markdown("---")
     # HIER IST DER AMAZON HINWEIS IN DER SIDEBAR
@@ -186,3 +186,4 @@ if st.session_state.recipe_result:
             )
         except Exception as e:
             st.error("Fehler beim PDF-Erzeugen.")
+
