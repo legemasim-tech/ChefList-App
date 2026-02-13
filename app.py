@@ -27,22 +27,28 @@ def extract_video_id(url):
     else:
         return None
 
-# --- DIE PROFI-LÖSUNG: UNTERTITEL DIREKT VON YOUTUBE HOLEN ---
+# --- DIE PROFI-LÖSUNG: UNTERTITEL DIREKT VON YOUTUBE HOLEN (V1.0+ UPDATE) ---
 def get_transcript(video_url):
-    """Holt Untertitel extrem zuverlässig über die YouTube-API"""
+    """Holt Untertitel extrem zuverlässig über die YouTube-API (Neue v1.0+ Syntax)"""
     try:
         video_id = extract_video_id(video_url)
         if not video_id:
             st.error("❌ Link-Format nicht erkannt.")
             return None
 
-        # Wir bitten die API, zuerst nach deutschen ('de') und dann nach englischen ('en') Untertiteln zu suchen
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['de', 'en'])
+        # NEU: Die API muss jetzt zuerst als Objekt geladen werden (Klammern beachten!)
+        api = YouTubeTranscriptApi()
         
-        # Die API liefert eine Liste mit Zeitstempeln und Text. Wir extrahieren nur den Text.
+        # NEU: Der Befehl heißt jetzt 'fetch' (statt get_transcript)
+        fetched_transcript = api.fetch(video_id, languages=['de', 'en'])
+        
+        # NEU: Wir müssen die Rohdaten extrahieren
+        transcript_list = fetched_transcript.to_raw_data()
+        
+        # Die Liste enthält Zeitstempel und Text. Wir extrahieren nur den Text.
         clean_text = " ".join([fragment['text'] for fragment in transcript_list])
         
-        # Zeilenumbrüche und überschüssige Leerzeichen entfernen
+        # Zeilenumbrüche und überschüssige Leerzeichen glätten
         clean_text = " ".join(clean_text.split())
         
         return clean_text
@@ -51,7 +57,6 @@ def get_transcript(video_url):
         # Falls es wirklich keine Untertitel gibt oder das Video gesperrt ist
         st.error(f"❌ Keine Untertitel gefunden. Info: {str(e)}")
         return None
-
 # --- KI FUNKTION ---
 def generate_smart_list(text, tag):
     system_prompt = f"""
@@ -105,6 +110,7 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
 
 
