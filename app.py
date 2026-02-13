@@ -1,3 +1,4 @@
+import time
 import streamlit as st
 import openai
 import requests
@@ -28,16 +29,17 @@ def extract_video_id(url):
     else:
         return None
                 
-# --- DIE PROFI-LÖSUNG: UNTERTITEL ÜBER PROXY-SERVER HOLEN ---
+
+# --- DIE PROFI-LÖSUNG: UNTERTITEL ÜBER PROXY-SERVER HOLEN (MIT RETRY-SCHLEIFE) ---
 def get_transcript(video_url):
-    """Holt Untertitel über die YouTube-API (Neue Syntax V1.0+ mit Proxy)"""
+    """Holt Untertitel und probiert automatisch mehrere Proxys aus, bis einer funktioniert"""
     try:
         video_id = extract_video_id(video_url)
         if not video_id:
             st.error("❌ Link-Format nicht erkannt.")
             return None
 
-        # Hier wieder DEINE Webshare-Daten eintragen!
+        # WICHTIG: Nutze hier p.webshare.io, damit die IP bei jedem Versuch wechselt!
         proxy_url = "http://dgashpyp:izspbf3gjypg@23.95.150.145:6114"
         
         proxy_config = GenericProxyConfig(
@@ -45,29 +47,45 @@ def get_transcript(video_url):
             https_url=proxy_url
         )
 
-        # 1. Wir initialisieren die API direkt "getarnt" mit dem Proxy
-        api = YouTubeTranscriptApi(proxy_config=proxy_config)
+        # Wir geben dem Programm 5 Versuche mit 5 verschiedenen IPs
+        max_retries = 5
         
-        # 2. Wir rufen die Liste der Untertitel ab
-        transcript_list = api.list(video_id)
-        
-        # 3. Wir suchen gezielt nach Deutsch oder Englisch
-        transcript = transcript_list.find_transcript(['de', 'en'])
-        
-        # 4. Wir laden den Text herunter (Das ist jetzt ein Objekt!)
-        transcript_data = transcript.fetch()
-        
-        # 5. DER FIX: Wir nutzen fragment.text (mit Punkt) statt eckiger Klammern!
-        clean_text = " ".join([fragment.text for fragment in transcript_data])
-        
-        # 6. Text bereinigen
-        clean_text = " ".join(clean_text.split())
-        
-        return clean_text
+        for versuch in range(max_retries):
+            try:
+                # 1. Wir initialisieren die API
+                api = YouTubeTranscriptApi(proxy_config=proxy_config)
+                
+                # 2. Wir versuchen die Untertitel-Liste abzurufen
+                transcript_list = api.list(video_id)
+                
+                # 3. Sprache finden
+                transcript = transcript_list.find_transcript(['de', 'en'])
+                
+                # 4. Text laden
+                transcript_data = transcript.fetch()
+                
+                # 5. Text extrahieren
+                clean_text = " ".join([fragment.text for fragment in transcript_data])
+                clean_text = " ".join(clean_text.split())
+                
+                # Wenn wir hier ankommen, hat es geklappt! Schleife abbrechen und Text zurückgeben.
+                return clean_text
+                
+            except Exception as e:
+                # Wenn YouTube blockt, machen wir weiter, außer es war der letzte Versuch
+                if versuch < max_retries - 1:
+                    time.sleep(1) # 1 Sekunde Pause vor dem nächsten Versuch
+                    continue # Starte den nächsten Versuch in der Schleife
+                else:
+                    # Wenn alle 5 Versuche geblockt wurden
+                    st.error("❌ YouTube hat leider alle 5 Proxy-Versuche geblockt. Bitte später nochmal probieren.")
+                    return None
 
     except Exception as e:
-        st.error(f"❌ Keine Untertitel gefunden. Info: {str(e)}")
-        return None
+        st.error(f"❌ Genereller Fehler: {str(e)}")
+        return None        
+
+
         
 # --- KI FUNKTION ---
 def generate_smart_list(text, tag):
@@ -122,6 +140,7 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
 
 
