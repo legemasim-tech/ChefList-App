@@ -28,34 +28,38 @@ def extract_video_id(url):
     else:
         return None
         
-     # --- DIE PROFI-LÖSUNG: UNTERTITEL ÜBER PROXY-SERVER HOLEN ---
+
+# --- DIE PROFI-LÖSUNG: UNTERTITEL ÜBER PROXY-SERVER HOLEN ---
 def get_transcript(video_url):
-    """Holt Untertitel über die YouTube-API, nutzt einen Proxy um den Streamlit-Ban zu umgehen"""
+    """Holt Untertitel über die YouTube-API (Neue Syntax V1.0+ mit Proxy)"""
     try:
         video_id = extract_video_id(video_url)
         if not video_id:
             st.error("❌ Link-Format nicht erkannt.")
             return None
 
-        # NEU: Dein persönlicher Tarnkappen-Proxy
+        # NEU: Der Proxy wird jetzt über das GenericProxyConfig-Modul geladen
         # WICHTIG: Ersetze USERNAME und PASSWORD durch deine echten Webshare-Daten!
         proxy_url = "http://dgashpyp:izspbf3gjypg@p.webshare.io:80"
         
-        proxies = {
-            "http": proxy_url,
-            "https": proxy_url
-        }
+        proxy_config = GenericProxyConfig(
+            http_url=proxy_url,
+            https_url=proxy_url
+        )
 
-        # 1. Wir fragen YouTube mit dem Proxy nach den verfügbaren Untertiteln
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxies)
+        # 1. Wir initialisieren die API direkt "getarnt" mit dem Proxy
+        api = YouTubeTranscriptApi(proxy_config=proxy_config)
         
-        # 2. Wir suchen gezielt nach Deutsch oder Englisch
+        # 2. Wir rufen die Liste der Untertitel ab (Der Befehl heißt jetzt nur noch "list")
+        transcript_list = api.list(video_id)
+        
+        # 3. Wir suchen gezielt nach Deutsch oder Englisch
         transcript = transcript_list.find_transcript(['de', 'en'])
         
-        # 3. Wir laden den Text herunter (der Proxy von Schritt 1 wird automatisch beibehalten!)
+        # 4. Wir laden den Text herunter
         transcript_data = transcript.fetch()
         
-        # 4. Text extrahieren und bereinigen
+        # 5. Text extrahieren und bereinigen
         clean_text = " ".join([fragment['text'] for fragment in transcript_data])
         clean_text = " ".join(clean_text.split())
         
@@ -118,6 +122,7 @@ if st.button("Liste generieren 💸"):
                 st.success("Hier ist deine smarte Liste:")
                 st.markdown("---")
                 st.markdown(result)
+
 
 
 
