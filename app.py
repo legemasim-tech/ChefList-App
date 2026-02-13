@@ -21,7 +21,6 @@ client = openai.OpenAI(api_key=api_key)
 
 # --- 2. HILFSFUNKTIONEN ---
 def get_video_data(video_url):
-    """Extrahiert Titel und Transkript."""
     try:
         ydl_opts = {'quiet': True, 'skip_download': True, 'writesubtitles': True, 'writeautomaticsub': True, 'subtitleslangs': ['de', 'en']}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -73,12 +72,14 @@ def create_pdf(text_content, recipe_title):
     pdf.set_right_margin(10)
     pdf.add_page()
     
-    # Header
     pdf.set_fill_color(230, 230, 230) 
     pdf.set_font("Arial", style="B", size=14)
-    # Titel im PDF
     pdf_header = f"Einkaufsliste: {recipe_title}"
-    safe_header = pdf_header.encode('latin-1', 'replace').decode('latin-1')
+    try:
+        safe_header = pdf_header.encode('latin-1', 'replace').decode('latin-1')
+    except:
+        safe_header = "Einkaufsliste"
+        
     pdf.cell(190, 15, txt=safe_header, ln=True, align='C', fill=True)
     pdf.ln(8)
     
@@ -115,54 +116,68 @@ def create_pdf(text_content, recipe_title):
     return bytes(pdf.output())
 
 # --- 4. STREAMLIT INTERFACE ---
-st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
+st.set_page_config(page_title="ChefList Pro", page_icon="🍲", layout="centered")
 
 if "recipe_result" not in st.session_state:
     st.session_state.recipe_result = None
 if "recipe_title" not in st.session_state:
     st.session_state.recipe_title = ""
 
+# --- SCHÖNE SIDEBAR ---
 with st.sidebar:
-    st.header("Über ChefList Pro")
-    st.caption("Wandle Kochvideos in Einkaufslisten um.")
+    st.title("🍳 ChefList Pro")
+    st.info("Dein smarter Küchenhelfer.")
     st.markdown("---")
-    st.subheader("Impressum")
-    st.caption("Betreiber: [Dein Name]")
-    st.caption("Kontakt: [Deine Mail]")
+    with st.expander("ℹ️ Über diese App"):
+        st.write("Wandle Kochvideos in Sekunden in organisierte Einkaufslisten um.")
+    st.markdown("---")
+    st.subheader("⚖️ Rechtliches")
+    st.caption("**Impressum:**")
+    st.caption("Markus Simmel")
+    st.caption("**Kontakt:** legemasim@gmail.com")
+    st.markdown("---")
+    st.caption("Datenschutz: Wir speichern keine Video-URLs oder persönlichen Daten.")
 
-st.title("🍲 ChefList Pro")
-video_url = st.text_input("YouTube Link:")
+# --- HAUPTBEREICH ---
+st.title("🍲 Deine smarte Einkaufsliste")
+st.write("Einfach YouTube-Link einfügen und loslegen!")
 
-if st.button("Liste generieren"):
+video_url = st.text_input("YouTube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
+
+if st.button("Jetzt Liste erstellen ✨", use_container_width=True):
     if video_url:
-        with st.spinner("Video wird analysiert..."):
+        with st.status("Verarbeite Video...", expanded=True) as status:
             title, text = get_video_data(video_url)
             st.session_state.recipe_title = title
             if text:
                 result = generate_smart_list(text, amazon_tag)
                 st.session_state.recipe_result = result
+                status.update(label="Analyse abgeschlossen!", state="complete", expanded=False)
             else:
-                st.error("Keine Untertitel gefunden.")
+                st.error("Keine Untertitel gefunden. Versuche ein anderes Video.")
 
 if st.session_state.recipe_result:
-    st.subheader(f"Gefundenes Rezept: {st.session_state.recipe_title}")
+    st.divider()
+    st.subheader(f"📋 Einkaufsliste für: {st.session_state.recipe_title}")
     st.markdown(st.session_state.recipe_result)
     
-    try:
-        pdf_data = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
-        
-        # Dateiname aus Titel generieren (Sonderzeichen entfernen)
-        clean_title = re.sub(r'[^\w\s-]', '', st.session_state.recipe_title).strip().replace(' ', '_')
-        final_filename = f"Einkaufsliste_{clean_title}.pdf"
-        
-        st.download_button(
-            label="📄 PDF herunterladen",
-            data=pdf_data,
-            file_name=final_filename,
-            mime="application/pdf"
-        )
-    except Exception as e:
-        st.error(f"PDF-Fehler: {str(e)}")
+    st.divider()
+    col1, col2 = st.columns([2,1])
+    with col1:
+        st.write("Fertig zum Einkaufen? Lade dir die Liste als PDF herunter:")
+    with col2:
+        try:
+            pdf_data = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
+            clean_title = re.sub(r'[^\w\s-]', '', st.session_state.recipe_title).strip().replace(' ', '_')
+            st.download_button(
+                label="📄 PDF Download",
+                data=pdf_data,
+                file_name=f"Einkaufsliste_{clean_title}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+        except Exception as e:
+            st.error("Fehler beim PDF-Erzeugen.")
 
 st.markdown("---")
-st.caption("* Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
+st.caption(" Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
