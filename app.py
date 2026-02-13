@@ -212,4 +212,28 @@ if st.button("Liste generieren 💸"):
                 st.write("2. KI schreibt Einkaufsliste... 🧠")
                 result = generate_smart_list(text, amazon_tag)
                 
-                if result
+                if result:
+                    status.update(label="Fertig!", state="complete", expanded=False)
+                    
+                    st.success("Hier ist deine smarte Liste:")
+                    st.markdown("---")
+                    st.markdown(result)
+                    
+                    st.markdown("---")
+                    st.write("💾 **Speichere deine Liste für später:**")
+                    
+                    # PDF erzeugen
+                    pdf_bytes = create_pdf(result)
+                    
+                    # Download-Button
+                    st.download_button(
+                        label="📄 Als PDF herunterladen",
+                        data=pdf_bytes,
+                        file_name="ChefList_Einkaufsliste.pdf",
+                        mime="application/pdf"
+                    )
+                    
+                else:
+                    status.update(label="KI Fehler", state="error")
+            else:
+                status.update(label="Keine Untertitel gefunden", state="error")
