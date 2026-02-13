@@ -13,7 +13,7 @@ try:
 except:
     api_key = None
 
-# Dein Amazon Partner-Tag
+# AKTUALISIERTE PARTNER-ID
 amazon_tag = "cheflist21-21" 
 
 if not api_key:
@@ -53,7 +53,6 @@ def get_transcript(video_url):
     except: return None
 
 def generate_smart_list(text, tag):
-    # Wir sagen der KI, dass sie ein Sternchen * für den rechtlichen Hinweis anhängen soll
     system_prompt = f"""
     Du bist ein Koch-Assistent. Erstelle eine Tabelle: Menge | Zutat | Kaufen.
     Der Link in der Spalte 'Kaufen' muss so aussehen: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
@@ -119,11 +118,25 @@ def create_pdf(text_content):
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
 
+# Session State Gedächtnis
 if "recipe_result" not in st.session_state:
     st.session_state.recipe_result = None
 
+# --- SIDEBAR (Impressum & Rechtliches) ---
+with st.sidebar:
+    st.header("Über ChefList Pro")
+    st.write("Wandle deine Lieblings-Kochvideos in Sekunden in eine druckbare Einkaufsliste um.")
+    st.markdown("---")
+    st.subheader("Impressum")
+    st.caption("Betreiber: [Dein Name/Firma]")
+    st.caption("Kontakt: [Deine E-Mail]")
+    st.markdown("---")
+    st.subheader("Datenschutz")
+    st.caption("Diese App speichert keine persönlichen Daten. Eingegebene URLs werden nur zur Verarbeitung an OpenAI gesendet.")
+
+# Hauptbereich
 st.title("🍲 ChefList Pro")
-st.write("Wandle Kochvideos in Einkaufslisten um und verdiene Provisionen.")
+st.write("Link einfügen und Einkaufsliste erhalten!")
 
 video_url = st.text_input("YouTube Link:")
 
@@ -152,7 +165,6 @@ if st.session_state.recipe_result:
     except Exception as e:
         st.error(f"PDF-Fehler: {str(e)}")
 
-# --- 5. RECHTLICHER HINWEIS (AMAZON RICHTLINIE) ---
+# --- 5. RECHTLICHER HINWEIS (UNTER DER LISTE) ---
 st.markdown("---")
 st.caption("* Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Die Links in der Tabelle sind Affiliate-Links.")
-
