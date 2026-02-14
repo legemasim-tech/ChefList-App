@@ -4,6 +4,7 @@ import requests
 import re
 import yt_dlp
 from fpdf import FPDF
+import os
 
 # --- 1. KONFIGURATION & API ---
 try:
@@ -54,14 +55,13 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
     
     if unit_system == "US-Einheiten (cups/oz)":
-        unit_instruction = "US-Einheiten (cups, oz, lbs, tsp, tbsp). Schreibe IMMER die Einheit hinter die Menge!"
+        unit_instruction = "US-Einheiten (cups, oz, lbs, tsp, tbsp). Schreibe IMMER die Einheit (z.B. 'cups' oder 'oz') hinter die Menge!"
     else:
         unit_instruction = "METRISCH (g, ml, kg, l)."
 
     system_prompt = f"""
-    Du bist ein Profi-Koch und Mathe-Experte.
-    AUFGABE: Erstelle das Rezept exakt für {portions} Person(en). Rechne alle Mengen mathematisch korrekt um.
-    WICHTIG: Nutze das System {unit_instruction}. In der Mengen-Tabelle muss bei jeder Zahl die Einheit dabei stehen.
+    Du bist ein Profi-Koch und Mathe-Experte. Erstelle das Rezept exakt für {portions} Person(en). 
+    WICHTIG: Nutze das System {unit_instruction}.
     
     STRUKTUR:
     1. Eckdaten (Dauer, Schwierigkeit, Personenanzahl: {portions})
@@ -78,7 +78,7 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
         return response.choices[0].message.content
     except: return None
 
-# --- 3. PDF GENERATOR (ULTRA-STABIL) ---
+# --- 3. PDF GENERATOR (LOGO ENTFERNT FÜR STABILITÄT) ---
 def clean_txt(text):
     if not text: return ""
     rep = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
@@ -105,21 +105,16 @@ def create_pdf(text_content, recipe_title):
         for line in text_content.split('\n'):
             line = line.strip()
             if not line or line.startswith('---'): continue
-            
             l_clean = clean_txt(line)
             
             if 'zubereitung' in l_clean.lower():
                 is_step = True
-                pdf.ln(5)
-                pdf.set_font("Arial", 'B', 11)
-                pdf.cell(0, 8, "ZUBEREITUNG:", ln=True)
-                pdf.set_font("Arial", '', 10)
+                pdf.ln(5); pdf.set_font("Arial", 'B', 11)
+                pdf.cell(0, 8, "ZUBEREITUNG:", ln=True); pdf.set_font("Arial", '', 10)
                 continue
 
             if any(l_clean.startswith(h) for h in ['Dauer:', 'Schwierigkeit:', 'Backtemperatur:', 'Personen:']):
-                pdf.set_font("Arial", 'B', 10)
-                pdf.cell(0, 6, l_clean, ln=True)
-                pdf.set_font("Arial", '', 10)
+                pdf.set_font("Arial", 'B', 10); pdf.cell(0, 6, l_clean, ln=True); pdf.set_font("Arial", '', 10)
                 continue
 
             if '|' in l_clean and not is_step:
@@ -134,20 +129,35 @@ def create_pdf(text_content, recipe_title):
         pdf.ln(10)
         pdf.set_font("Arial", 'I', 8)
         pdf.cell(0, 10, "Guten Appetit wuenscht das Team von ChefList Pro!", align='C', ln=True)
-        
         return pdf.output(dest='S').encode('latin-1')
-    except Exception as e:
-        return None
+    except: return None
 
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
+
+# CSS für das Logo in der Sidebar (Weißer Hintergrund & Rahmen)
+st.markdown("""
+    <style>
+        [data-testid="stSidebar"] img {
+            background-color: white;
+            padding: 10px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 if "counter" not in st.session_state: st.session_state.counter = 0
 if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
-    st.title("🍳 ChefList Pro")
+    if os.path.exists("logo.png"):
+        st.image("logo.png", use_container_width=True)
+    else:
+        st.title("🍳 ChefList Pro")
+    
     st.info(f"Erstellte Rezepte: {st.session_state.counter}")
     st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Rezept unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
     st.markdown("---")
@@ -160,7 +170,7 @@ with st.sidebar:
         st.caption("Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
         st.divider()
         st.subheader("🛡️ Datenschutz")
-        st.caption("Wir speichern keine persönlichen Daten. Die Verarbeitung erfolgt verschlüsselt über API-Schnittstellen.")
+        st.caption("Keine Datenspeicherung. Verarbeitung erfolgt verschlüsselt.")
 
 st.title("🍲 ChefList Pro")
 
@@ -179,7 +189,7 @@ if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
                 st.session_state.recipe_result = res
                 st.session_state.counter += 1
                 status.update(label="Bereit!", state="complete", expanded=False)
-            else: st.error("Fehler bei der Generierung.")
+            else: st.error("Fehler bei der Erstellung.")
 
 if st.session_state.recipe_result:
     st.divider()
@@ -191,4 +201,4 @@ if st.session_state.recipe_result:
     if pdf_bytes:
         st.download_button("📄 PDF Rezept herunterladen", pdf_bytes, file_name="ChefList_Rezept.pdf", mime="application/pdf", use_container_width=True)
     else:
-        st.error("PDF konnte nicht erstellt werden. Bitte Text kopieren.")
+        st.error("PDF-Export im Moment nur ohne Logo möglich.")
