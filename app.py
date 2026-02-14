@@ -57,16 +57,18 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     
     system_prompt = f"""
     Du bist ein Profi-Koch und Mathe-Experte.
-    AUFGABE: Erstelle das Rezept exakt für {portions} Person(en). Rechne alle Mengen mathematisch korrekt um.
+    
+    HAUPTAUFGABE: Berechne alle Mengen aus dem Video exakt auf {portions} Person(en) um. 
+    Wenn das Video für 4 Personen ist und der User 2 wählt, halbiere alles. Wenn der User 8 wählt, verdopple alles.
     
     STRUKTUR:
     1. Eckdaten (Dauer, Schwierigkeit, Personenanzahl: {portions})
     2. Mengen-Tabelle (Spalten: Menge | Zutat | Kaufen)
-       -> WICHTIG: Erstelle für JEDE Zutat in der Spalte 'Kaufen' diesen Link: https://www.amazon.de/s?k=[ZUTATENNAME]&tag={tag}
-       -> Link-Text: '🛒 Auf Amazon prüfen*'
-    3. Zubereitung (Schritt-für-Schritt)
+       -> JEDE Zutat braucht in der Spalte 'Kaufen' diesen Link: https://www.amazon.de/s?k=[ZUTATENNAME]&tag={tag}
+       -> Link-Text: '🛒 Auf Amazon kaufen*'
+    3. Zubereitung (Schritt-für-Schritt, Mengen auch hier an {portions} Personen anpassen!)
     
-    WICHTIG: Erfinde keine ASIN/dp/ Links. Nutze für das System {unit_instruction}.
+    WICHTIG: Nutze für das System {unit_instruction}.
     """
     try:
         response = client.chat.completions.create(
@@ -78,12 +80,7 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
 
 # --- 3. PDF GENERATOR ---
 def clean_for_pdf(text):
-    """Ersetzt deutsche Sonderzeichen und entfernt URLs/Emojis für PDF-Kompatibilität."""
-    replacements = {
-        'ä': 'ae', 'ö': 'oe', 'ü': 'ue',
-        'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue',
-        'ß': 'ss', '€': 'Euro'
-    }
+    replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
     for char, replacement in replacements.items():
         text = text.replace(char, replacement)
     text = re.sub(r'[^\x00-\x7F]+', '', text)
@@ -125,18 +122,18 @@ def create_pdf(text_content, recipe_title):
         pdf.set_x(10)
         if '|' in line and not is_instruction:
             parts = [p.strip() for p in line.split('|') if p.strip()]
-            # KORREKTUR: "Auf Amazon kaufen/pruefen" im PDF ausblenden
-            if len(parts) >= 2 and ("Menge" in parts[0] or "Zutat" in parts[1]):
-                pdf.set_font("Arial", style="B", size=10)
-                content = "MENGE - ZUTAT"
-            elif len(parts) >= 2:
-                pdf.set_font("Arial", size=11)
-                content = f"[  ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
-            else: continue
-            
-            pdf.cell(190, 8, txt=content, ln=True)
-            pdf.set_draw_color(220, 220, 220)
-            pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+            # FILTER: Nur Menge und Zutat ins PDF, Amazon-Teil ignorieren
+            if len(parts) >= 2:
+                if "Menge" in parts[0] or "Zutat" in parts[1]:
+                    pdf.set_font("Arial", style="B", size=10)
+                    content = "MENGE - ZUTAT"
+                else:
+                    pdf.set_font("Arial", size=11)
+                    content = f"[  ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
+                
+                pdf.cell(190, 8, txt=content, ln=True)
+                pdf.set_draw_color(220, 220, 220)
+                pdf.line(10, pdf.get_y(), 200, pdf.get_y())
         else:
             pdf.set_font("Arial", size=10)
             pdf.multi_cell(190, 7, txt=line.replace('*', ''), align='L')
@@ -150,7 +147,6 @@ def create_pdf(text_content, recipe_title):
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲", layout="centered")
 
-# LOGO DESIGN CSS (Weißer Hintergrund & Rahmen)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] img {
@@ -174,7 +170,6 @@ with st.sidebar:
         st.title("🍳 ChefList Pro")
         
     st.info(f"Erstellte Rezepte: {st.session_state.counter}")
-    # KORREKTUR: Text auf "ChefList Pro unterstützen" geändert
     st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ ChefList Pro unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
     st.markdown("---")
     with st.expander("ℹ️ Über & Rechtliches"):
@@ -213,7 +208,7 @@ if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
 if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.recipe_title}")
-    # In der App Anzeige wird "Auf Amazon kaufen" genutzt
+    # In der App-Anzeige nutzen wir "Auf Amazon kaufen"
     st.markdown(st.session_state.recipe_result.replace("Auf Amazon prüfen", "Auf Amazon kaufen"))
     
     st.divider()
