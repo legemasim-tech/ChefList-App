@@ -23,7 +23,30 @@ if not api_key:
 
 client = openai.OpenAI(api_key=api_key)
 
-# --- 2. HILFSFUNKTIONEN ---
+# --- NEU: FUNKTION FÜR DEN GLOBALEN ZÄHLER ---
+def update_global_counter():
+    file_path = "total_recipes.txt"
+    if not os.path.exists(file_path):
+        with open(file_path, "w") as f:
+            f.write("0")
+    
+    with open(file_path, "r") as f:
+        count = int(f.read())
+    
+    count += 1
+    
+    with open(file_path, "w") as f:
+        f.write(str(count))
+    return count
+
+def get_total_count():
+    file_path = "total_recipes.txt"
+    if os.path.exists(file_path):
+        with open(file_path, "r") as f:
+            return f.read()
+    return "0"
+
+# --- 2. HILFSFUNKTIONEN (Bleiben gleich) ---
 def get_full_video_data(video_url):
     try:
         ydl_opts = {'quiet': True, 'skip_download': True, 'writesubtitles': True, 'writeautomaticsub': True, 'subtitleslangs': ['de', 'en']}
@@ -57,9 +80,7 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     
     system_prompt = f"""
     Du bist ein Profi-Koch und Mathe-Experte.
-    
     HAUPTAUFGABE: Berechne alle Mengen aus dem Video exakt auf {portions} Person(en) um. 
-    Wenn das Video für 4 Personen ist und der User 2 wählt, halbiere alles. Wenn der User 8 wählt, verdopple alles.
     
     STRUKTUR:
     1. Eckdaten (Dauer, Schwierigkeit, Personenanzahl: {portions})
@@ -122,13 +143,12 @@ def create_pdf(text_content, recipe_title):
         pdf.set_x(10)
         if '|' in line and not is_instruction:
             parts = [p.strip() for p in line.split('|') if p.strip()]
-            # FILTER: Nur Menge und Zutat ins PDF, Amazon-Teil ignorieren
             if len(parts) >= 2:
                 if "Menge" in parts[0] or "Zutat" in parts[1]:
                     pdf.set_font("Arial", style="B", size=10)
                     content = "MENGE - ZUTAT"
                 else:
-                    pdf.set_font("Arial", size=11)
+                    pdf.set_font("Arial", style="B", size=11)
                     content = f"[  ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
                 
                 pdf.cell(190, 8, txt=content, ln=True)
@@ -169,7 +189,11 @@ with st.sidebar:
     else:
         st.title("🍳 ChefList Pro")
         
-    st.info(f"Erstellte Rezepte: {st.session_state.counter}")
+    st.info(f"Deine erstellten Rezepte: {st.session_state.counter}")
+    
+    # NEU: Anzeige der globalen Statistik
+    st.write(f"🌍 Insgesamt analysierte Videos: **{get_total_count()}**")
+    
     st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ ChefList Pro unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
     st.markdown("---")
     with st.expander("ℹ️ Über & Rechtliches"):
@@ -190,7 +214,7 @@ if st.session_state.counter >= 3:
 video_url = st.text_input("YouTube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
 col_opt1, col_opt2 = st.columns(2)
 portions = col_opt1.slider("Portionen:", 1, 10, 4)
-unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
+unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten"], horizontal=True)
 
 if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
     if video_url:
@@ -201,6 +225,8 @@ if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
                 result = generate_smart_recipe(transcript, description, amazon_tag, portions, unit_system)
                 st.session_state.recipe_result = result
                 st.session_state.counter += 1
+                # NEU: Globalen Zähler erhöhen
+                update_global_counter()
                 status.update(label="Bereit!", state="complete", expanded=False)
             else:
                 st.error("Keine Daten gefunden.")
@@ -208,7 +234,6 @@ if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
 if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.recipe_title}")
-    # In der App-Anzeige nutzen wir "Auf Amazon kaufen"
     st.markdown(st.session_state.recipe_result.replace("Auf Amazon prüfen", "Auf Amazon kaufen"))
     
     st.divider()
@@ -218,4 +243,3 @@ if st.session_state.recipe_result:
         st.download_button("📄 PDF Rezept herunterladen", pdf_data, file_name=f"ChefList_{clean_filename}.pdf", mime="application/pdf", use_container_width=True)
     except:
         st.error("Fehler beim PDF-Export.")
-
