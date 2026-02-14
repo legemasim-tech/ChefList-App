@@ -63,7 +63,7 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     1. Eckdaten (Dauer, Schwierigkeit, Personenanzahl: {portions})
     2. Mengen-Tabelle (Spalten: Menge | Zutat | Kaufen)
        -> WICHTIG: Erstelle für JEDE Zutat in der Spalte 'Kaufen' diesen Link: https://www.amazon.de/s?k=[ZUTATENNAME]&tag={tag}
-       -> Link-Text: '🛒 Auf Amazon kaufen*'
+       -> Link-Text: '🛒 Auf Amazon prüfen*'
     3. Zubereitung (Schritt-für-Schritt)
     
     WICHTIG: Erfinde keine ASIN/dp/ Links. Nutze für das System {unit_instruction}.
@@ -125,6 +125,7 @@ def create_pdf(text_content, recipe_title):
         pdf.set_x(10)
         if '|' in line and not is_instruction:
             parts = [p.strip() for p in line.split('|') if p.strip()]
+            # KORREKTUR: "Auf Amazon kaufen/pruefen" im PDF ausblenden
             if len(parts) >= 2 and ("Menge" in parts[0] or "Zutat" in parts[1]):
                 pdf.set_font("Arial", style="B", size=10)
                 content = "MENGE - ZUTAT"
@@ -173,7 +174,8 @@ with st.sidebar:
         st.title("🍳 ChefList Pro")
         
     st.info(f"Erstellte Rezepte: {st.session_state.counter}")
-    st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Rezept unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
+    # KORREKTUR: Text auf "ChefList Pro unterstützen" geändert
+    st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ ChefList Pro unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
     st.markdown("---")
     with st.expander("ℹ️ Über & Rechtliches"):
         st.caption("**Betreiber:** Markus Simmel\n\n**Kontakt:** legemasim@gmail.com")
@@ -211,7 +213,7 @@ if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
 if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.recipe_title}")
-    # Der Text in der App zeigt jetzt "Auf Amazon kaufen"
+    # In der App Anzeige wird "Auf Amazon kaufen" genutzt
     st.markdown(st.session_state.recipe_result.replace("Auf Amazon prüfen", "Auf Amazon kaufen"))
     
     st.divider()
