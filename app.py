@@ -78,7 +78,7 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
         return response.choices[0].message.content
     except: return None
 
-# --- 3. PDF GENERATOR (LOGO ENTFERNT FÜR STABILITÄT) ---
+# --- 3. PDF GENERATOR ---
 def clean_txt(text):
     if not text: return ""
     rep = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
@@ -94,6 +94,7 @@ def create_pdf(text_content, recipe_title):
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         
+        # Logo bleibt hier draußen, um Abstürze zu vermeiden
         pdf.set_font("Arial", 'B', 14)
         pdf.set_fill_color(240, 240, 240)
         pdf.cell(0, 12, clean_txt(f"Rezept: {recipe_title[:45]}"), ln=True, align='C', fill=True)
@@ -130,19 +131,20 @@ def create_pdf(text_content, recipe_title):
         pdf.set_font("Arial", 'I', 8)
         pdf.cell(0, 10, "Guten Appetit wuenscht das Team von ChefList Pro!", align='C', ln=True)
         return pdf.output(dest='S').encode('latin-1')
-    except: return None
+    except: 
+        return None
 
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
 
-# CSS für das Logo in der Sidebar (Weißer Hintergrund & Rahmen)
+# Logo in Sidebar mit CSS-Trick für Optik
 st.markdown("""
     <style>
         [data-testid="stSidebar"] img {
             background-color: white;
             padding: 10px;
             border-radius: 12px;
-            border: 2px solid #e0e0e0;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
     </style>
@@ -158,38 +160,36 @@ with st.sidebar:
     else:
         st.title("🍳 ChefList Pro")
     
-    st.info(f"Erstellte Rezepte: {st.session_state.counter}")
-    st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Rezept unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
+    st.info(f"Analysen: {st.session_state.counter}")
+    st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Projekt unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
     st.markdown("---")
     with st.expander("ℹ️ Über & Rechtliches"):
-        st.subheader("Impressum")
         st.caption("**Betreiber:** Markus Simmel")
         st.caption("**Kontakt:** legemasim@gmail.com")
         st.divider()
-        st.subheader("✨ Affiliate Hinweis")
-        st.caption("Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
+        st.caption("✨ Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
         st.divider()
         st.subheader("🛡️ Datenschutz")
         st.caption("Keine Datenspeicherung. Verarbeitung erfolgt verschlüsselt.")
 
 st.title("🍲 ChefList Pro")
 
-video_url = st.text_input("YouTube Video URL:", placeholder="Hier Link einfügen...")
+video_url = st.text_input("YouTube Link:", placeholder="Link einfügen...")
 c1, c2 = st.columns(2)
 portions = c1.slider("Portionen:", 1, 10, 4)
-unit_system = c2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
+unit_system = c2.radio("System:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
 
 if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
     if video_url:
-        with st.status("Berechne Rezept...", expanded=True) as status:
+        with st.status("Analysiere Video...", expanded=True) as status:
             t, trans, d = get_full_video_data(video_url)
             st.session_state.recipe_title = t
             res = generate_smart_recipe(trans, d, amazon_tag, portions, unit_system)
             if res:
                 st.session_state.recipe_result = res
                 st.session_state.counter += 1
-                status.update(label="Bereit!", state="complete", expanded=False)
-            else: st.error("Fehler bei der Erstellung.")
+                status.update(label="Rezept bereit!", state="complete", expanded=False)
+            else: st.error("Fehler bei der KI-Analyse.")
 
 if st.session_state.recipe_result:
     st.divider()
@@ -199,6 +199,4 @@ if st.session_state.recipe_result:
     st.divider()
     pdf_bytes = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
     if pdf_bytes:
-        st.download_button("📄 PDF Rezept herunterladen", pdf_bytes, file_name="ChefList_Rezept.pdf", mime="application/pdf", use_container_width=True)
-    else:
-        st.error("PDF-Export im Moment nur ohne Logo möglich.")
+        st.download_button("📄 PDF herunterladen", pdf_bytes, file_name="ChefList_Rezept.pdf", mime="application/pdf", use_container_width=True)
