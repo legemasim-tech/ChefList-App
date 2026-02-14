@@ -4,6 +4,7 @@ import requests
 import re
 import yt_dlp
 from fpdf import FPDF
+import os
 
 # --- 1. KONFIGURATION & API ---
 try:
@@ -52,11 +53,14 @@ def get_full_video_data(video_url):
 
 def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
-    unit_instruction = "METRISCH (g/ml)" if unit_system == "Metrisch (g/ml)" else "US-Einheiten (cups/oz)"
+    unit_instruction = "METRISCH (g/ml)" if unit_system == "Metrisch (g/ml)" else "US-Einheiten (cups, oz, lbs, tsp, tbsp)"
     
     system_prompt = f"""
     Du bist ein Profi-Koch und Mathe-Experte.
     AUFGABE: Erstelle das Rezept exakt für {portions} Person(en). Rechne alle Mengen mathematisch korrekt um.
+    
+    EINHEITEN-REGEL: Nutze das System {unit_instruction}. 
+    WICHTIG: Schreibe bei US-Einheiten IMMER die Einheit (z.B. 'cup', 'oz', 'tbsp') direkt hinter die Zahl.
     
     STRUKTUR:
     1. Eckdaten (Dauer, Schwierigkeit, Personenanzahl: {portions})
@@ -64,8 +68,6 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
        -> In der Spalte 'Kaufen' NUR diesen Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
        -> Link-Text: '🛒 Auf Amazon prüfen*'
     3. Zubereitung (Schritt-für-Schritt)
-    
-    WICHTIG: Erfinde keine ASIN/dp/ Links. Nutze für das System {unit_instruction}.
     """
     try:
         response = client.chat.completions.create(
@@ -77,17 +79,12 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
 
 # --- 3. PDF GENERATOR ---
 def clean_for_pdf(text):
-    """Ersetzt deutsche Sonderzeichen und entfernt URLs/Emojis für PDF-Kompatibilität."""
-    replacements = {
-        'ä': 'ae', 'ö': 'oe', 'ü': 'ue',
-        'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue',
-        'ß': 'ss', '€': 'Euro'
-    }
+    replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
     for char, replacement in replacements.items():
         text = text.replace(char, replacement)
-    # Entfernt alle verbleibenden Emojis/Sonderzeichen
+    # Nur ASCII Zeichen erlauben, um ? zu vermeiden
     text = re.sub(r'[^\x00-\x7F]+', '', text)
-    # Entfernt Amazon-Links komplett (Format [Text](URL))
+    # Markdown Links entfernen
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
@@ -97,19 +94,22 @@ def create_pdf(text_content, recipe_title):
     pdf.set_right_margin(10)
     pdf.add_page()
     
-    pdf.set_fill_color(230, 230, 230) 
-    pdf.set_font("Arial", style="B", size=14)
+    if os.path.exists("logo.png"):
+        pdf.image("logo.png", x=10, y=8, w=30)
+        pdf.set_x(45)
     
-    display_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
-    pdf.cell(190, 15, txt=f"Rezept: {display_title}", ln=True, align='C', fill=True)
-    pdf.ln(5)
+    pdf.set_fill_color(230, 230, 230) 
+    pdf.set_font("Arial", style="B", size=12)
+    
+    display_title = clean_for_pdf(recipe_title if len(recipe_title) <= 35 else recipe_title[:32] + "...")
+    pdf.cell(0, 15, txt=f"Rezept: {display_title}", ln=True, align='C', fill=True)
+    pdf.ln(10)
     
     lines = text_content.split('\n')
     is_instruction = False
     for line in lines:
         line = line.strip()
         if not line or '---' in line: continue
-        
         line = clean_for_pdf(line)
         
         if 'Zubereitung' in line:
@@ -125,7 +125,6 @@ def create_pdf(text_content, recipe_title):
             pdf.cell(0, 8, txt=line, ln=True)
             continue
             
-        pdf.set_x(10)
         if '|' in line and not is_instruction:
             parts = [p.strip() for p in line.split('|') if p.strip()]
             if len(parts) >= 2 and ("Menge" in parts[0] or "Zutat" in parts[1]):
@@ -133,16 +132,15 @@ def create_pdf(text_content, recipe_title):
                 content = "MENGE - ZUTAT"
             elif len(parts) >= 2:
                 pdf.set_font("Arial", size=11)
-                # Nur Menge und Zutat übernehmen, den Link-Teil (Part 3) ignorieren
                 content = f"[  ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
             else: continue
             
-            pdf.cell(190, 8, txt=content, ln=True)
+            pdf.cell(0, 8, txt=content, ln=True)
             pdf.set_draw_color(220, 220, 220)
             pdf.line(10, pdf.get_y(), 200, pdf.get_y())
         else:
             pdf.set_font("Arial", size=10)
-            pdf.multi_cell(190, 7, txt=line.replace('*', ''), align='L')
+            pdf.multi_cell(0, 7, txt=line.replace('*', ''), align='L')
             if is_instruction: pdf.ln(2)
             
     pdf.ln(10)
@@ -153,12 +151,10 @@ def create_pdf(text_content, recipe_title):
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲", layout="centered")
 
-# HELLERE SIDEBAR CSS
 st.markdown("""
     <style>
-        [data-testid="stSidebar"] {
-            background-color: #f8f9fa;
-        }
+        [data-testid="stSidebar"] { background-color: #f1f3f4; }
+        [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span { color: #333333 !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -167,9 +163,9 @@ if "recipe_result" not in st.session_state: st.session_state.recipe_result = Non
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
-    try:
+    if os.path.exists("logo.png"):
         st.image("logo.png", use_container_width=True)
-    except:
+    else:
         st.title("🍳 ChefList Pro")
         
     st.info(f"Erstellte Rezepte: {st.session_state.counter}")
