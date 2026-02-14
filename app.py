@@ -124,20 +124,19 @@ if "recipe_result" not in st.session_state:
 if "recipe_title" not in st.session_state:
     st.session_state.recipe_title = ""
 
-# --- SIDEBAR (NEU SORTIERT) ---
+# --- SIDEBAR (AKTUALISIERT) ---
 with st.sidebar:
     st.title("🍳 ChefList Pro")
     st.info("Dein smarter Küchenhelfer.")
     
-    # Der Expander sitzt jetzt direkt unter der Info-Box
     with st.expander("ℹ️ Über & Rechtliches"):
         st.subheader("Was ist ChefList Pro?")
         st.write("Wandle Kochvideos in Sekunden in organisierte Einkaufslisten um.")
         
         st.divider()
         st.subheader("⚖️ Impressum")
-        st.caption("**Betreiber:**\n\n[Dein Name]\n\n[Strasse]\n\n[PLZ Ort]")
-        st.caption("**Kontakt:** [Deine E-Mail]")
+        st.caption("**Betreiber:** Markus Simmel")
+        st.caption("**Kontakt:** legemasim@gmail.com")
         
         st.divider()
         st.subheader("✨ Affiliate Hinweis")
