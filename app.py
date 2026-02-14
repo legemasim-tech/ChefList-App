@@ -4,7 +4,6 @@ import requests
 import re
 import yt_dlp
 from fpdf import FPDF
-import os
 
 # --- 1. KONFIGURATION & API ---
 try:
@@ -55,7 +54,7 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
     
     if unit_system == "US-Einheiten (cups/oz)":
-        unit_instruction = "US-Einheiten (cups, oz, lbs, tsp, tbsp). Schreibe IMMER 'cups' oder 'oz' hinter die Menge!"
+        unit_instruction = "US-Einheiten (cups, oz, lbs, tsp, tbsp). Schreibe IMMER die Einheit hinter die Menge!"
     else:
         unit_instruction = "METRISCH (g, ml, kg, l)."
 
@@ -63,6 +62,7 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     Du bist ein Profi-Koch und Mathe-Experte.
     AUFGABE: Erstelle das Rezept exakt für {portions} Person(en). Rechne alle Mengen mathematisch korrekt um.
     WICHTIG: Nutze das System {unit_instruction}. In der Mengen-Tabelle muss bei jeder Zahl die Einheit dabei stehen.
+    
     STRUKTUR:
     1. Eckdaten (Dauer, Schwierigkeit, Personenanzahl: {portions})
     2. Mengen-Tabelle (Menge | Zutat | Kaufen)
@@ -78,14 +78,14 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
         return response.choices[0].message.content
     except: return None
 
-# --- 3. PDF GENERATOR (RE-DESIGNED FOR STABILITY) ---
+# --- 3. PDF GENERATOR (ULTRA-STABIL) ---
 def clean_txt(text):
     if not text: return ""
     rep = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
     for k, v in rep.items():
         text = text.replace(k, v)
-    text = re.sub(r'[^\x00-\x7F]+', '', text) # Radikal ASCII
-    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text) # Markdown Links säubern
+    text = re.sub(r'[^\x00-\x7F]+', '', text)
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text.strip()
 
 def create_pdf(text_content, recipe_title):
@@ -94,21 +94,13 @@ def create_pdf(text_content, recipe_title):
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         
-        # Logo Platzierung
-        logo_file = "logo.png"
-        if os.path.exists(logo_file):
-            try:
-                pdf.image(logo_file, x=10, y=8, w=25)
-            except: pass
-        
         pdf.set_font("Arial", 'B', 14)
-        pdf.ln(20) # Platz für Logo lassen
-        pdf.set_fill_color(245, 245, 245)
-        pdf.cell(0, 10, clean_txt(f"Rezept: {recipe_title[:40]}"), ln=True, align='C', fill=True)
+        pdf.set_fill_color(240, 240, 240)
+        pdf.cell(0, 12, clean_txt(f"Rezept: {recipe_title[:45]}"), ln=True, align='C', fill=True)
         pdf.ln(5)
         
-        is_step = False
         pdf.set_font("Arial", '', 10)
+        is_step = False
         
         for line in text_content.split('\n'):
             line = line.strip()
@@ -116,7 +108,6 @@ def create_pdf(text_content, recipe_title):
             
             l_clean = clean_txt(line)
             
-            # Überschriften erkennen
             if 'zubereitung' in l_clean.lower():
                 is_step = True
                 pdf.ln(5)
@@ -125,20 +116,17 @@ def create_pdf(text_content, recipe_title):
                 pdf.set_font("Arial", '', 10)
                 continue
 
-            # Eckdaten fett
             if any(l_clean.startswith(h) for h in ['Dauer:', 'Schwierigkeit:', 'Backtemperatur:', 'Personen:']):
                 pdf.set_font("Arial", 'B', 10)
                 pdf.cell(0, 6, l_clean, ln=True)
                 pdf.set_font("Arial", '', 10)
                 continue
 
-            # Tabelle (als einfache Liste rendern für 100% Stabilität)
             if '|' in l_clean and not is_step:
                 p = [i.strip() for i in l_clean.split('|') if i.strip()]
                 if len(p) >= 2 and "zutat" not in p[1].lower():
                     pdf.cell(0, 6, f"- {p[0]} {p[1]}", ln=True)
             else:
-                # Normaler Fließtext
                 l_clean = l_clean.replace('**', '').replace('*', '')
                 pdf.multi_cell(0, 6, l_clean)
                 if is_step: pdf.ln(1)
@@ -149,56 +137,58 @@ def create_pdf(text_content, recipe_title):
         
         return pdf.output(dest='S').encode('latin-1')
     except Exception as e:
-        st.error(f"PDF-Fehler: {e}")
         return None
 
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
-
-# Logo in Sidebar mit CSS fixiert
-st.markdown("""<style>
-    [data-testid="stSidebar"] img { background-color: white; padding: 10px; border-radius: 10px; margin-bottom: 20px; }
-    </style>""", unsafe_allow_html=True)
 
 if "counter" not in st.session_state: st.session_state.counter = 0
 if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
-    if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
-    else: st.title("🍳 ChefList Pro")
+    st.title("🍳 ChefList Pro")
     st.info(f"Erstellte Rezepte: {st.session_state.counter}")
     st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Rezept unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
     st.markdown("---")
-    with st.expander("ℹ️ Info"):
-        st.caption("Betreiber: Markus Simmel\nKontakt: legemasim@gmail.com")
-        st.caption("Affiliate: Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
+    with st.expander("ℹ️ Über & Rechtliches"):
+        st.subheader("Impressum")
+        st.caption("**Betreiber:** Markus Simmel")
+        st.caption("**Kontakt:** legemasim@gmail.com")
+        st.divider()
+        st.subheader("✨ Affiliate Hinweis")
+        st.caption("Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
+        st.divider()
+        st.subheader("🛡️ Datenschutz")
+        st.caption("Wir speichern keine persönlichen Daten. Die Verarbeitung erfolgt verschlüsselt über API-Schnittstellen.")
 
 st.title("🍲 ChefList Pro")
 
-video_url = st.text_input("YouTube URL:", placeholder="Link einfügen...")
+video_url = st.text_input("YouTube Video URL:", placeholder="Hier Link einfügen...")
 c1, c2 = st.columns(2)
 portions = c1.slider("Portionen:", 1, 10, 4)
-unit_system = c2.radio("Einheiten:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
+unit_system = c2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
 
 if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
     if video_url:
-        with st.status("Analysiere Video...", expanded=True) as s:
+        with st.status("Berechne Rezept...", expanded=True) as status:
             t, trans, d = get_full_video_data(video_url)
             st.session_state.recipe_title = t
             res = generate_smart_recipe(trans, d, amazon_tag, portions, unit_system)
             if res:
                 st.session_state.recipe_result = res
                 st.session_state.counter += 1
-                s.update(label="Fertig!", state="complete")
-            else: st.error("Fehler.")
+                status.update(label="Bereit!", state="complete", expanded=False)
+            else: st.error("Fehler bei der Generierung.")
 
 if st.session_state.recipe_result:
     st.divider()
-    st.subheader(st.session_state.recipe_title)
+    st.subheader(f"📖 {st.session_state.recipe_title}")
     st.markdown(st.session_state.recipe_result)
     
     st.divider()
     pdf_bytes = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
     if pdf_bytes:
-        st.download_button("📄 PDF herunterladen", pdf_bytes, file_name="Rezept.pdf", mime="application/pdf", use_container_width=True)
+        st.download_button("📄 PDF Rezept herunterladen", pdf_bytes, file_name="ChefList_Rezept.pdf", mime="application/pdf", use_container_width=True)
+    else:
+        st.error("PDF konnte nicht erstellt werden. Bitte Text kopieren.")
