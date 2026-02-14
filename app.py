@@ -12,6 +12,11 @@ except:
     api_key = None
 
 amazon_tag = "cheflist21-21" 
+paypal_email = "legemasim@gmail.com"
+
+# PayPal Link für 0,90€ (als Vorbereitung)
+# Ersetzt "0.90" und die Währung je nach Wunsch
+pay_link_90c = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name=ChefList_Pro_Analyse&amount=0.90&currency_code=EUR"
 
 if not api_key:
     st.error("Bitte trage deinen OpenAI API Key in die Streamlit Secrets ein!")
@@ -25,11 +30,9 @@ def get_full_video_data(video_url):
         ydl_opts = {'quiet': True, 'skip_download': True, 'writesubtitles': True, 'writeautomaticsub': True, 'subtitleslangs': ['de', 'en']}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
-        
         video_title = info.get('title', 'Rezept')
         description = info.get('description', '') 
         subs = info.get('subtitles') or info.get('automatic_captions')
-        
         transcript = ""
         if subs:
             target_url = None
@@ -40,35 +43,22 @@ def get_full_video_data(video_url):
                             target_url = f.get('url')
                             break
                     if target_url: break
-            
             if target_url:
                 res = requests.get(target_url)
                 if 'json3' in target_url:
                     data = res.json()
                     transcript = " ".join([seg.get('utf8', '').strip() for event in data.get('events', []) if 'segs' in event for seg in event['segs'] if seg.get('utf8', '')])
-
         return video_title, transcript, description
     except:
         return "Rezept", None, None
 
 def generate_smart_recipe(transcript, description, tag, portions, unit_system):
-    """KI berechnet Mengen und Einheiten neu."""
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
-    
-    unit_instruction = "Verwende das METRISCHE System (Gramm, Kilogramm, Milliliter, Liter)." if unit_system == "Metrisch (g/ml)" else "Verwende das US-System (Cups, Ounces, Pounds, Teaspoons, Tablespoons)."
-    
+    unit_instruction = "METRISCH (g/ml)" if unit_system == "Metrisch (g/ml)" else "US-Einheiten (cups/oz)"
     system_prompt = f"""
     Du bist ein Profi-Koch. Analysiere das Transkript UND die Videobeschreibung.
-    
-    WICHTIG: 
-    1. Erstelle das Rezept exakt für {portions} Person(en).
-    2. {unit_instruction} Rechne alle Einheiten mathematisch korrekt um.
-    
-    Inhalt:
-    1. Kurzinfos: 'Personen: {portions}', 'Einheiten: {unit_system}', 'Dauer', 'Schwierigkeit' und 'Backtemperatur'.
-    2. Tabelle: Menge | Zutat | Kaufen.
-       Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag} (Text: '🛒 Auf Amazon prüfen*')
-    3. '### Zubereitung' als nummerierte Anleitung.
+    Erstelle das Rezept für {portions} Person(en) im System {unit_instruction}.
+    Inhalt: Dauer, Schwierigkeit, Backtemperatur, Personenanzahl, Mengen-Tabelle (mit Amazon-Links), Zubereitung.
     """
     try:
         response = client.chat.completions.create(
@@ -84,7 +74,6 @@ def create_pdf(text_content, recipe_title):
     pdf.set_left_margin(10)
     pdf.set_right_margin(10)
     pdf.add_page()
-    
     display_title = recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "..."
     pdf.set_fill_color(230, 230, 230) 
     pdf.set_font("Arial", style="B", size=14)
@@ -95,29 +84,23 @@ def create_pdf(text_content, recipe_title):
         safe_header = "Dein Rezept"
     pdf.cell(190, 15, txt=safe_header, ln=True, align='C', fill=True)
     pdf.ln(5)
-    
     lines = text_content.split('\n')
     is_instruction = False
-
     for line in lines:
         line = line.strip()
         if not line or '---' in line: continue
-        
         if 'Zubereitung' in line:
             is_instruction = True
             pdf.ln(5)
             pdf.set_font("Arial", style="B", size=12)
             pdf.cell(0, 10, txt="Zubereitung:", ln=True)
             continue
-
         headers = ['Dauer:', 'Schwierigkeit:', 'Backtemperatur:', 'Personen:', 'Einheiten:']
         if any(line.startswith(h) for h in headers):
             pdf.set_font("Arial", style="B", size=11)
             pdf.cell(0, 8, txt=line.encode('latin-1', 'replace').decode('latin-1'), ln=True)
             continue
-
         pdf.set_x(10)
-        
         if '|' in line and not is_instruction:
             parts = [p.strip() for p in line.split('|') if p.strip()]
             if len(parts) >= 2 and ("Menge" in parts[0] or "Zutat" in parts[1]):
@@ -141,40 +124,53 @@ def create_pdf(text_content, recipe_title):
                 pdf.multi_cell(190, 7, txt=safe_text, align='L')
                 if is_instruction: pdf.ln(2)
             except: continue
-
     return bytes(pdf.output())
 
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲", layout="centered")
 
+# --- ZAHLUNGS-LOGIK VORBEREITUNG (Session State) ---
+if "counter" not in st.session_state:
+    st.session_state.counter = 0
 if "recipe_result" not in st.session_state:
     st.session_state.recipe_result = None
 if "recipe_title" not in st.session_state:
     st.session_state.recipe_title = ""
 
+# --- SIDEBAR ---
 with st.sidebar:
     st.title("🍳 ChefList Pro")
-    st.info("Dein smarter Küchenhelfer.")
+    st.info(f"Anzahl Analysen in dieser Sitzung: {st.session_state.counter}")
+    
+    st.markdown("### 💎 Premium Support")
+    st.write("Hilf uns, ChefList Pro zu betreiben.")
+    
+    # 0,90€ Button
+    st.markdown(f'''
+    <a href="{pay_link_90c}" target="_blank">
+        <button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            ⚡ Analyse unterstützen (0,90€)
+        </button>
+    </a>
+    ''', unsafe_allow_html=True)
+    
+    st.markdown("---")
     with st.expander("ℹ️ Über & Rechtliches"):
-        st.subheader("Was ist ChefList Pro?")
-        st.write("Wandle Kochvideos in Einkaufslisten & Anleitungen um.")
-        st.divider()
-        st.subheader("⚖️ Impressum")
+        st.subheader("Impressum")
         st.caption("**Betreiber:** Markus Simmel")
         st.caption("**Kontakt:** legemasim@gmail.com")
         st.divider()
         st.subheader("✨ Affiliate Hinweis")
-        st.caption("Als Amazon-Partner verdiene ich an qualifizierten Verkäufen. Die Links in der Tabelle (*) sind Affiliate-Links.")
-        st.divider()
-        st.subheader("🛡️ Datenschutz")
-        st.caption("Wir speichern keine persönlichen Daten.")
+        st.caption("Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
 
+# --- HAUPTBEREICH ---
 st.title("🍲 ChefList Pro")
-st.write("Link einfügen, Portionen wählen und Einheiten anpassen.")
 
-# INPUTS
+# Warnung wenn Counter hochgeht (sanfter Einstieg)
+if st.session_state.counter >= 3:
+    st.warning("Du hast bereits 3 Analysen heute gemacht. Bitte unterstütze das Projekt mit 0,90€, um weitere Kosten zu decken!")
+
 video_url = st.text_input("YouTube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
-
 col_opt1, col_opt2 = st.columns(2)
 with col_opt1:
     portions = st.slider("Portionen:", 1, 10, 4)
@@ -183,15 +179,17 @@ with col_opt2:
 
 if st.button("Rezept generieren ✨", use_container_width=True):
     if video_url:
-        with st.status(f"Berechne Rezept für {portions} Personen...", expanded=True) as status:
+        with st.status(f"Analysiere Video...", expanded=True) as status:
             title, transcript, description = get_full_video_data(video_url)
             st.session_state.recipe_title = title
             if transcript or description:
                 result = generate_smart_recipe(transcript, description, amazon_tag, portions, unit_system)
                 st.session_state.recipe_result = result
-                status.update(label="Rezept wurde erfolgreich angepasst!", state="complete", expanded=False)
+                # Counter hochzählen
+                st.session_state.counter += 1
+                status.update(label="Bereit!", state="complete", expanded=False)
             else:
-                st.error("Keine Video-Daten gefunden.")
+                st.error("Keine Daten gefunden.")
 
 if st.session_state.recipe_result:
     st.divider()
