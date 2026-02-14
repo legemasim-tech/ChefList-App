@@ -190,7 +190,7 @@ if st.session_state.counter >= 3:
 video_url = st.text_input("YouTube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
 col_opt1, col_opt2 = st.columns(2)
 portions = col_opt1.slider("Portionen:", 1, 10, 4)
-unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten"], horizontal=True)
+unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
 
 if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
     if video_url:
@@ -218,3 +218,4 @@ if st.session_state.recipe_result:
         st.download_button("📄 PDF Rezept herunterladen", pdf_data, file_name=f"ChefList_{clean_filename}.pdf", mime="application/pdf", use_container_width=True)
     except:
         st.error("Fehler beim PDF-Export.")
+
