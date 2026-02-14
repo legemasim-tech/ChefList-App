@@ -23,30 +23,27 @@ if not api_key:
 
 client = openai.OpenAI(api_key=api_key)
 
-# --- NEU: FUNKTION FÜR DEN GLOBALEN ZÄHLER ---
+# --- GLOBALER ZÄHLER ---
 def update_global_counter():
     file_path = "total_recipes.txt"
-    if not os.path.exists(file_path):
-        with open(file_path, "w") as f:
-            f.write("0")
-    
-    with open(file_path, "r") as f:
-        count = int(f.read())
-    
-    count += 1
-    
-    with open(file_path, "w") as f:
-        f.write(str(count))
-    return count
+    try:
+        if not os.path.exists(file_path):
+            with open(file_path, "w") as f: f.write("0")
+        with open(file_path, "r") as f: count = int(f.read())
+        count += 1
+        with open(file_path, "w") as f: f.write(str(count))
+        return count
+    except: return 0
 
 def get_total_count():
     file_path = "total_recipes.txt"
     if os.path.exists(file_path):
-        with open(file_path, "r") as f:
-            return f.read()
+        try:
+            with open(file_path, "r") as f: return f.read()
+        except: return "0"
     return "0"
 
-# --- 2. HILFSFUNKTIONEN (Bleiben gleich) ---
+# --- 2. HILFSFUNKTIONEN ---
 def get_full_video_data(video_url):
     try:
         ydl_opts = {'quiet': True, 'skip_download': True, 'writesubtitles': True, 'writeautomaticsub': True, 'subtitleslangs': ['de', 'en']}
@@ -78,9 +75,14 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
     unit_instruction = "METRISCH (g/ml)" if unit_system == "Metrisch (g/ml)" else "US-Einheiten (cups/oz)"
     
+    # VERSCHÄRFTER PROMPT FÜR MATHEMATISCHE KORREKTHEIT
     system_prompt = f"""
-    Du bist ein Profi-Koch und Mathe-Experte.
-    HAUPTAUFGABE: Berechne alle Mengen aus dem Video exakt auf {portions} Person(en) um. 
+    Du bist ein Profi-Koch und ein extrem präziser Mathematiker.
+    
+    DEINE WICHTIGSTE REGEL: 
+    1. Identifiziere für wie viele Personen das Originalrezept im Video ist (meist 2 oder 4).
+    2. Berechne alle Mengen EXAKT auf genau {portions} Person(en) um. 
+    3. Die Zahlen in deiner Tabelle MÜSSEN sich proportional zur Portionszahl {portions} ändern. Überprüfe deine Rechnung doppelt!
     
     STRUKTUR:
     1. Eckdaten (Dauer, Schwierigkeit, Personenanzahl: {portions})
@@ -89,7 +91,7 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
        -> Link-Text: '🛒 Auf Amazon kaufen*'
     3. Zubereitung (Schritt-für-Schritt, Mengen auch hier an {portions} Personen anpassen!)
     
-    WICHTIG: Nutze für das System {unit_instruction}.
+    WICHTIG: Nutze für das System {unit_instruction}. Wenn US-Einheiten gewählt sind, schreibe IMMER die Einheit hinter die Zahl.
     """
     try:
         response = client.chat.completions.create(
@@ -190,8 +192,6 @@ with st.sidebar:
         st.title("🍳 ChefList Pro")
         
     st.info(f"Deine erstellten Rezepte: {st.session_state.counter}")
-    
-    # NEU: Anzeige der globalen Statistik
     st.write(f"🌍 Insgesamt analysierte Videos: **{get_total_count()}**")
     
     st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ ChefList Pro unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
@@ -214,7 +214,7 @@ if st.session_state.counter >= 3:
 video_url = st.text_input("YouTube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
 col_opt1, col_opt2 = st.columns(2)
 portions = col_opt1.slider("Portionen:", 1, 10, 4)
-unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten"], horizontal=True)
+unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
 
 if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
     if video_url:
@@ -225,7 +225,6 @@ if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
                 result = generate_smart_recipe(transcript, description, amazon_tag, portions, unit_system)
                 st.session_state.recipe_result = result
                 st.session_state.counter += 1
-                # NEU: Globalen Zähler erhöhen
                 update_global_counter()
                 status.update(label="Bereit!", state="complete", expanded=False)
             else:
