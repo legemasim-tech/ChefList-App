@@ -72,9 +72,7 @@ def create_pdf(text_content, recipe_title):
     pdf.set_right_margin(10)
     pdf.add_page()
     
-    # TITEL-KÜRZUNG FÜR PDF HEADER (max 40 Zeichen)
     display_title = recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "..."
-    
     pdf.set_fill_color(230, 230, 230) 
     pdf.set_font("Arial", style="B", size=14)
     pdf_header = f"Einkaufsliste: {display_title}"
@@ -126,15 +124,12 @@ if "recipe_result" not in st.session_state:
 if "recipe_title" not in st.session_state:
     st.session_state.recipe_title = ""
 
-# --- SIDEBAR (AUFGERÄUMT) ---
+# --- SIDEBAR (NEU SORTIERT) ---
 with st.sidebar:
     st.title("🍳 ChefList Pro")
     st.info("Dein smarter Küchenhelfer.")
     
-    # Platzhalter, um den Expander nach unten zu schieben
-    st.markdown("<br>" * 15, unsafe_allow_html=True) 
-    st.markdown("---")
-    
+    # Der Expander sitzt jetzt direkt unter der Info-Box
     with st.expander("ℹ️ Über & Rechtliches"):
         st.subheader("Was ist ChefList Pro?")
         st.write("Wandle Kochvideos in Sekunden in organisierte Einkaufslisten um.")
@@ -151,10 +146,10 @@ with st.sidebar:
         st.divider()
         st.subheader("🛡️ Datenschutz")
         st.caption("Wir speichern keine Video-URLs oder persönlichen Daten.")
-        
+
 # --- HAUPTBEREICH ---
 st.title("🍲 Deine smarte Einkaufsliste")
-st.write("Einfach YouTube-Link einfügen und loslegen!")
+st.write("YouTube-Link einfügen und Liste generieren!")
 
 video_url = st.text_input("YouTube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
 
@@ -168,11 +163,10 @@ if st.button("Jetzt Liste erstellen ✨", use_container_width=True):
                 st.session_state.recipe_result = result
                 status.update(label="Analyse abgeschlossen!", state="complete", expanded=False)
             else:
-                st.error("Keine Untertitel gefunden. Versuche ein anderes Video.")
+                st.error("Keine Untertitel gefunden.")
 
 if st.session_state.recipe_result:
     st.divider()
-    # ANZEIGE IM BROWSER (etwas länger erlaubt)
     display_title_ui = st.session_state.recipe_title if len(st.session_state.recipe_title) <= 60 else st.session_state.recipe_title[:57] + "..."
     st.subheader(f"📋 Einkaufsliste für: {display_title_ui}")
     st.markdown(st.session_state.recipe_result)
@@ -184,8 +178,6 @@ if st.session_state.recipe_result:
     with col2:
         try:
             pdf_data = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
-            
-            # DATEINAME-KÜRZUNG (max 40 Zeichen)
             short_title = st.session_state.recipe_title[:40].strip()
             clean_filename = re.sub(r'[^\w\s-]', '', short_title).strip().replace(' ', '_')
             
@@ -198,5 +190,3 @@ if st.session_state.recipe_result:
             )
         except Exception as e:
             st.error("Fehler beim PDF-Erzeugen.")
-
-
