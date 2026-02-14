@@ -78,23 +78,15 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
         return response.choices[0].message.content
     except: return None
 
-# --- 3. PDF GENERATOR (VERBESSERT) ---
+# --- 3. PDF GENERATOR (RE-DESIGNED FOR STABILITY) ---
 def clean_txt(text):
-    """Bereinigt Text für FPDF Standard-Fonts extrem gründlich."""
     if not text: return ""
-    # Bekannte Problemzeichen ersetzen
-    rep = {
-        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', 
-        '€': 'Euro', '–': '-', '—': '-', '„': '"', '“': '"', '’': "'", '‘': "'", '”': '"',
-        '…': '...', '·': '*', '•': '*'
-    }
+    rep = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
     for k, v in rep.items():
         text = text.replace(k, v)
-    # Alles entfernen, was nicht im Latin-1 Bereich liegt
-    text = text.encode('ascii', 'ignore').decode('ascii')
-    # Markdown Links säubern
-    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
-    return text
+    text = re.sub(r'[^\x00-\x7F]+', '', text) # Radikal ASCII
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text) # Markdown Links säubern
+    return text.strip()
 
 def create_pdf(text_content, recipe_title):
     try:
@@ -102,59 +94,53 @@ def create_pdf(text_content, recipe_title):
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         
-        # LOGO Check
+        # Logo Platzierung
         logo_file = "logo.png"
         if os.path.exists(logo_file):
             try:
                 pdf.image(logo_file, x=10, y=8, w=25)
-                pdf.set_xy(40, 15)
-            except:
-                pdf.set_xy(10, 15)
-        else:
-            pdf.set_xy(10, 15)
+            except: pass
         
         pdf.set_font("Arial", 'B', 14)
+        pdf.ln(20) # Platz für Logo lassen
         pdf.set_fill_color(245, 245, 245)
-        title_clean = clean_txt(recipe_title[:45])
-        pdf.cell(0, 12, f"Rezept: {title_clean}", ln=True, align='C', fill=True)
-        pdf.ln(10)
+        pdf.cell(0, 10, clean_txt(f"Rezept: {recipe_title[:40]}"), ln=True, align='C', fill=True)
+        pdf.ln(5)
         
         is_step = False
+        pdf.set_font("Arial", '', 10)
+        
         for line in text_content.split('\n'):
             line = line.strip()
             if not line or line.startswith('---'): continue
             
-            line_clean = clean_txt(line)
+            l_clean = clean_txt(line)
             
-            if 'zubereitung' in line.lower():
+            # Überschriften erkennen
+            if 'zubereitung' in l_clean.lower():
                 is_step = True
-                pdf.ln(4)
-                pdf.set_font("Arial", 'B', 12)
-                pdf.cell(0, 8, "Zubereitung:", ln=True)
+                pdf.ln(5)
+                pdf.set_font("Arial", 'B', 11)
+                pdf.cell(0, 8, "ZUBEREITUNG:", ln=True)
                 pdf.set_font("Arial", '', 10)
                 continue
 
-            # Header-Zeilen (Dauer etc.) fett
-            if any(line_clean.startswith(h) for h in ['Dauer:', 'Schwierigkeit:', 'Backtemperatur:', 'Personen:']):
+            # Eckdaten fett
+            if any(l_clean.startswith(h) for h in ['Dauer:', 'Schwierigkeit:', 'Backtemperatur:', 'Personen:']):
                 pdf.set_font("Arial", 'B', 10)
-                pdf.cell(0, 6, line_clean, ln=True)
+                pdf.cell(0, 6, l_clean, ln=True)
                 pdf.set_font("Arial", '', 10)
                 continue
 
-            # Tabellen-Logik
-            if '|' in line_clean and not is_step:
-                pdf.set_font("Arial", '', 10)
-                p = [i.strip() for i in line_clean.split('|') if i.strip()]
+            # Tabelle (als einfache Liste rendern für 100% Stabilität)
+            if '|' in l_clean and not is_step:
+                p = [i.strip() for i in l_clean.split('|') if i.strip()]
                 if len(p) >= 2 and "zutat" not in p[1].lower():
-                    # Wir nehmen nur Menge und Zutat
-                    row = f"- {p[0]} {p[1]}"
-                    pdf.cell(0, 6, row, ln=True)
+                    pdf.cell(0, 6, f"- {p[0]} {p[1]}", ln=True)
             else:
-                # Normaler Text / Anleitung
-                pdf.set_font("Arial", '', 10)
-                # Entferne Sterne von Markdown Fett-Formatierung
-                line_clean = line_clean.replace('**', '').replace('*', '')
-                pdf.multi_cell(0, 6, line_clean)
+                # Normaler Fließtext
+                l_clean = l_clean.replace('**', '').replace('*', '')
+                pdf.multi_cell(0, 6, l_clean)
                 if is_step: pdf.ln(1)
 
         pdf.ln(10)
@@ -163,17 +149,16 @@ def create_pdf(text_content, recipe_title):
         
         return pdf.output(dest='S').encode('latin-1')
     except Exception as e:
-        st.error(f"Interner PDF Fehler: {e}")
+        st.error(f"PDF-Fehler: {e}")
         return None
 
 # --- 4. STREAMLIT INTERFACE ---
-st.set_page_config(page_title="ChefList Pro", page_icon="🍲", layout="centered")
+st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
 
-st.markdown("""
-    <style>
-        [data-testid="stSidebar"] img { background-color: white; padding: 10px; border-radius: 10px; margin-bottom: 20px; }
-    </style>
-    """, unsafe_allow_html=True)
+# Logo in Sidebar mit CSS fixiert
+st.markdown("""<style>
+    [data-testid="stSidebar"] img { background-color: white; padding: 10px; border-radius: 10px; margin-bottom: 20px; }
+    </style>""", unsafe_allow_html=True)
 
 if "counter" not in st.session_state: st.session_state.counter = 0
 if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
@@ -185,42 +170,35 @@ with st.sidebar:
     st.info(f"Erstellte Rezepte: {st.session_state.counter}")
     st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Rezept unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
     st.markdown("---")
-    with st.expander("ℹ️ Über & Rechtliches"):
-        st.caption("**Betreiber:** Markus Simmel\n**Kontakt:** legemasim@gmail.com")
-        st.divider()
-        st.caption("✨ Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
-        st.divider()
-        st.subheader("🛡️ Datenschutz")
-        st.caption("Keine Datenspeicherung. Verschlüsselte Verarbeitung.")
+    with st.expander("ℹ️ Info"):
+        st.caption("Betreiber: Markus Simmel\nKontakt: legemasim@gmail.com")
+        st.caption("Affiliate: Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
 
 st.title("🍲 ChefList Pro")
 
-video_url = st.text_input("YouTube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
-col_opt1, col_opt2 = st.columns(2)
-portions = col_opt1.slider("Portionen:", 1, 10, 4)
-unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
+video_url = st.text_input("YouTube URL:", placeholder="Link einfügen...")
+c1, c2 = st.columns(2)
+portions = c1.slider("Portionen:", 1, 10, 4)
+unit_system = c2.radio("Einheiten:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
 
 if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
     if video_url:
-        with st.status("Berechne Rezept...", expanded=True) as status:
-            title, transcript, description = get_full_video_data(video_url)
-            st.session_state.recipe_title = title
-            if transcript or description:
-                result = generate_smart_recipe(transcript, description, amazon_tag, portions, unit_system)
-                if result:
-                    st.session_state.recipe_result = result
-                    st.session_state.counter += 1
-                    status.update(label="Fertig!", state="complete", expanded=False)
-                else: st.error("KI hat kein Ergebnis geliefert.")
-            else: st.error("Video konnte nicht ausgelesen werden.")
+        with st.status("Analysiere Video...", expanded=True) as s:
+            t, trans, d = get_full_video_data(video_url)
+            st.session_state.recipe_title = t
+            res = generate_smart_recipe(trans, d, amazon_tag, portions, unit_system)
+            if res:
+                st.session_state.recipe_result = res
+                st.session_state.counter += 1
+                s.update(label="Fertig!", state="complete")
+            else: st.error("Fehler.")
 
 if st.session_state.recipe_result:
     st.divider()
-    st.subheader(f"📖 {st.session_state.recipe_title}")
+    st.subheader(st.session_state.recipe_title)
     st.markdown(st.session_state.recipe_result)
     
     st.divider()
     pdf_bytes = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
     if pdf_bytes:
-        clean_name = "".join([c for c in st.session_state.recipe_title if c.isalnum() or c in (' ', '_')]).strip()[:30]
-        st.download_button("📄 PDF Rezept herunterladen", pdf_bytes, file_name=f"ChefList_{clean_name}.pdf", mime="application/pdf", use_container_width=True)
+        st.download_button("📄 PDF herunterladen", pdf_bytes, file_name="Rezept.pdf", mime="application/pdf", use_container_width=True)
