@@ -14,7 +14,6 @@ except:
 amazon_tag = "cheflist21-21" 
 paypal_email = "legemasim@gmail.com"
 
-# PayPal Link für 0,90€
 pay_link_90c = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name=ChefList_Pro_Rezept_Erstellung&amount=0.90&currency_code=EUR"
 
 if not api_key:
@@ -55,18 +54,18 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
     unit_instruction = "METRISCH (g/ml)" if unit_system == "Metrisch (g/ml)" else "US-Einheiten (cups/oz)"
     
-    # KORREKTUR: STRENGER PROMPT FÜR AMAZON LINKS
     system_prompt = f"""
-    Du bist ein Profi-Koch. Analysiere das Transkript UND die Videobeschreibung.
-    Erstelle das Rezept für {portions} Person(en) im System {unit_instruction}.
+    Du bist ein Profi-Koch und Mathe-Experte. Analysiere das Transkript UND die Videobeschreibung.
+    
+    AUFGABE: Erstelle das Rezept exakt für {portions} Person(en). 
+    Rechne ALLE Mengenangaben aus dem Originalvideo (meist für 4 Personen) strikt mathematisch auf {portions} Person(en) um.
+    Nutze das System {unit_instruction}.
     
     WICHTIG FÜR DIE LINKS:
-    Verwende AUSSCHLIESSLICH dieses Link-Format in der Tabelle: 
-    https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
-    Erfinde NIEMALS Links mit /dp/ oder ASINs. 
+    Nutze NUR: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
     Link-Text: '🛒 Auf Amazon prüfen*'
     
-    Inhalt: Dauer, Schwierigkeit, Backtemperatur, Personenanzahl, Mengen-Tabelle, Zubereitung.
+    Inhalt: Dauer, Schwierigkeit, Backtemperatur, Personenanzahl ({portions}), Mengen-Tabelle, Zubereitung (auch hier Mengen anpassen!).
     """
     try:
         response = client.chat.completions.create(
@@ -86,28 +85,34 @@ def create_pdf(text_content, recipe_title):
     pdf.set_fill_color(230, 230, 230) 
     pdf.set_font("Arial", style="B", size=14)
     pdf_header = f"Rezept: {display_title}"
-    try:
-        safe_header = pdf_header.encode('latin-1', 'replace').decode('latin-1')
-    except:
-        safe_header = "Dein Rezept"
+    
+    # Header cleanen (keine Emojis)
+    safe_header = pdf_header.encode('latin-1', 'replace').decode('latin-1')
     pdf.cell(190, 15, txt=safe_header, ln=True, align='C', fill=True)
     pdf.ln(5)
+    
     lines = text_content.split('\n')
     is_instruction = False
     for line in lines:
         line = line.strip()
         if not line or '---' in line: continue
+        
+        # Emoji-Ersatz für das PDF (🛒 entfernen)
+        line = line.replace('🛒 Auf Amazon prüfen*', '(Auf Amazon ansehen*)')
+        
         if 'Zubereitung' in line:
             is_instruction = True
             pdf.ln(5)
             pdf.set_font("Arial", style="B", size=12)
             pdf.cell(0, 10, txt="Zubereitung:", ln=True)
             continue
+            
         headers = ['Dauer:', 'Schwierigkeit:', 'Backtemperatur:', 'Personen:', 'Einheiten:']
         if any(line.startswith(h) for h in headers):
             pdf.set_font("Arial", style="B", size=11)
             pdf.cell(0, 8, txt=line.encode('latin-1', 'replace').decode('latin-1'), ln=True)
             continue
+            
         pdf.set_x(10)
         if '|' in line and not is_instruction:
             parts = [p.strip() for p in line.split('|') if p.strip()]
@@ -126,6 +131,7 @@ def create_pdf(text_content, recipe_title):
             except: continue
         else:
             pdf.set_font("Arial", size=10)
+            # Links/Markdown entfernen für PDF
             clean_text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line).replace('*', '')
             try:
                 safe_text = clean_text.encode('latin-1', 'replace').decode('latin-1')
@@ -133,7 +139,6 @@ def create_pdf(text_content, recipe_title):
                 if is_instruction: pdf.ln(2)
             except: continue
     
-    # KORREKTUR: TEAM GRUSS AM ENDE
     pdf.ln(10)
     pdf.set_font("Arial", style="I", size=10)
     pdf.cell(0, 10, txt="Guten Appetit wuenscht das Team von ChefList Pro!", ln=True, align='C')
@@ -150,14 +155,10 @@ if "recipe_result" not in st.session_state:
 if "recipe_title" not in st.session_state:
     st.session_state.recipe_title = ""
 
-# --- SIDEBAR ---
 with st.sidebar:
     st.title("🍳 ChefList Pro")
-    st.info(f"Erstellte Rezepte in dieser Sitzung: {st.session_state.counter}")
-    
+    st.info(f"Erstellte Rezepte: {st.session_state.counter}")
     st.markdown("### 💎 Premium Support")
-    st.write("Hilf uns, ChefList Pro zu betreiben.")
-    
     st.markdown(f'''
     <a href="{pay_link_90c}" target="_blank">
         <button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">
@@ -165,7 +166,6 @@ with st.sidebar:
         </button>
     </a>
     ''', unsafe_allow_html=True)
-    
     st.markdown("---")
     with st.expander("ℹ️ Über & Rechtliches"):
         st.subheader("Impressum")
@@ -175,15 +175,13 @@ with st.sidebar:
         st.subheader("✨ Affiliate Hinweis")
         st.caption("Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
         st.divider()
-        # KORREKTUR: DATENSCHUTZHINWEIS WIEDER DA
         st.subheader("🛡️ Datenschutz")
         st.caption("Wir speichern keine persönlichen Daten. Die Verarbeitung erfolgt über API-Schnittstellen.")
 
-# --- HAUPTBEREICH ---
 st.title("🍲 ChefList Pro")
 
 if st.session_state.counter >= 3:
-    st.warning("Du hast bereits 3 Rezepte erstellt. Bitte unterstütze das Projekt mit 0,90€!")
+    st.warning("Du hast bereits 3 Rezepte erstellt. Bitte unterstütze das Projekt!")
 
 video_url = st.text_input("YouTube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
 col_opt1, col_opt2 = st.columns(2)
@@ -194,14 +192,14 @@ with col_opt2:
 
 if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
     if video_url:
-        with st.status(f"Berechne Rezept...", expanded=True) as status:
+        with st.status(f"Berechne Rezept für {portions} Personen...", expanded=True) as status:
             title, transcript, description = get_full_video_data(video_url)
             st.session_state.recipe_title = title
             if transcript or description:
                 result = generate_smart_recipe(transcript, description, amazon_tag, portions, unit_system)
                 st.session_state.recipe_result = result
                 st.session_state.counter += 1
-                status.update(label="Bereit!", state="complete", expanded=False)
+                status.update(label="Fertig!", state="complete", expanded=False)
             else:
                 st.error("Keine Daten gefunden.")
 
@@ -218,7 +216,7 @@ if st.session_state.recipe_result:
         st.download_button(
             label="📄 PDF Rezept herunterladen",
             data=pdf_data,
-            file_name=f"ChefList_{clean_filename}.pdf",
+            file_name=f"ChefList_Rezept_{clean_filename}.pdf",
             mime="application/pdf",
             use_container_width=True
         )
