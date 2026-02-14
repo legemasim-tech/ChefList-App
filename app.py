@@ -78,83 +78,92 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
         return response.choices[0].message.content
     except: return None
 
-# --- 3. PDF GENERATOR ---
-def clean_for_pdf(text):
-    """Bereinigt Text für FPDF Standard-Fonts."""
+# --- 3. PDF GENERATOR (VERBESSERT) ---
+def clean_txt(text):
+    """Bereinigt Text für FPDF Standard-Fonts extrem gründlich."""
     if not text: return ""
-    replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro', '–': '-', '„': '"', '“': '"'}
-    for char, replacement in replacements.items():
-        text = text.replace(char, replacement)
-    # Entferne alle Nicht-ASCII Zeichen
-    text = re.sub(r'[^\x00-\x7F]+', '', text)
-    # Entferne Markdown Links: [Text](URL) -> Text
+    # Bekannte Problemzeichen ersetzen
+    rep = {
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', 
+        '€': 'Euro', '–': '-', '—': '-', '„': '"', '“': '"', '’': "'", '‘': "'", '”': '"',
+        '…': '...', '·': '*', '•': '*'
+    }
+    for k, v in rep.items():
+        text = text.replace(k, v)
+    # Alles entfernen, was nicht im Latin-1 Bereich liegt
+    text = text.encode('ascii', 'ignore').decode('ascii')
+    # Markdown Links säubern
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
 def create_pdf(text_content, recipe_title):
     try:
         pdf = FPDF()
-        pdf.set_left_margin(10)
-        pdf.set_right_margin(10)
+        pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         
-        # LOGO-LOGIK: Sicher eingebettet
-        logo_path = "logo.png"
-        if os.path.exists(logo_path):
+        # LOGO Check
+        logo_file = "logo.png"
+        if os.path.exists(logo_file):
             try:
-                pdf.image(logo_path, x=10, y=8, w=25)
-                pdf.set_x(40)
+                pdf.image(logo_file, x=10, y=8, w=25)
+                pdf.set_xy(40, 15)
             except:
-                pdf.set_x(10) # Falls Bild-Format fehlerhaft
+                pdf.set_xy(10, 15)
         else:
-            pdf.set_x(10)
+            pdf.set_xy(10, 15)
         
-        pdf.set_fill_color(240, 240, 240) 
-        pdf.set_font("Arial", style="B", size=12)
-        
-        header_text = clean_for_pdf(f"Rezept: {recipe_title[:40]}")
-        pdf.cell(0, 15, txt=header_text, ln=True, align='C', fill=True)
+        pdf.set_font("Arial", 'B', 14)
+        pdf.set_fill_color(245, 245, 245)
+        title_clean = clean_txt(recipe_title[:45])
+        pdf.cell(0, 12, f"Rezept: {title_clean}", ln=True, align='C', fill=True)
         pdf.ln(10)
         
-        is_instruction = False
+        is_step = False
         for line in text_content.split('\n'):
             line = line.strip()
-            if not line or '---' in line: continue
+            if not line or line.startswith('---'): continue
             
-            line = clean_for_pdf(line)
+            line_clean = clean_txt(line)
             
-            if 'Zubereitung' in line.lower():
-                is_instruction = True
-                pdf.ln(5)
-                pdf.set_font("Arial", style="B", size=12)
-                pdf.cell(0, 10, txt="Zubereitung:", ln=True)
+            if 'zubereitung' in line.lower():
+                is_step = True
+                pdf.ln(4)
+                pdf.set_font("Arial", 'B', 12)
+                pdf.cell(0, 8, "Zubereitung:", ln=True)
+                pdf.set_font("Arial", '', 10)
                 continue
-                
-            if any(line.startswith(h) for h in ['Dauer:', 'Schwierigkeit:', 'Backtemperatur:', 'Personen:', 'Einheiten:']):
-                pdf.set_font("Arial", style="B", size=10)
-                pdf.cell(0, 7, txt=line, ln=True)
+
+            # Header-Zeilen (Dauer etc.) fett
+            if any(line_clean.startswith(h) for h in ['Dauer:', 'Schwierigkeit:', 'Backtemperatur:', 'Personen:']):
+                pdf.set_font("Arial", 'B', 10)
+                pdf.cell(0, 6, line_clean, ln=True)
+                pdf.set_font("Arial", '', 10)
                 continue
-                
-            if '|' in line and not is_instruction:
-                parts = [p.strip() for p in line.split('|') if p.strip()]
-                if len(parts) >= 2 and not ("Menge" in parts[0] and "Zutat" in parts[1]):
-                    pdf.set_font("Arial", size=10)
-                    content = f"[  ] {parts[0]} {parts[1]}"
-                    pdf.cell(0, 7, txt=content, ln=True)
-                    pdf.set_draw_color(200, 200, 200)
-                    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+
+            # Tabellen-Logik
+            if '|' in line_clean and not is_step:
+                pdf.set_font("Arial", '', 10)
+                p = [i.strip() for i in line_clean.split('|') if i.strip()]
+                if len(p) >= 2 and "zutat" not in p[1].lower():
+                    # Wir nehmen nur Menge und Zutat
+                    row = f"- {p[0]} {p[1]}"
+                    pdf.cell(0, 6, row, ln=True)
             else:
-                pdf.set_font("Arial", size=10)
-                pdf.multi_cell(0, 6, txt=line.replace('*', ''), align='L')
-                if is_instruction: pdf.ln(1)
-                
+                # Normaler Text / Anleitung
+                pdf.set_font("Arial", '', 10)
+                # Entferne Sterne von Markdown Fett-Formatierung
+                line_clean = line_clean.replace('**', '').replace('*', '')
+                pdf.multi_cell(0, 6, line_clean)
+                if is_step: pdf.ln(1)
+
         pdf.ln(10)
-        pdf.set_font("Arial", style="I", size=9)
-        pdf.cell(0, 10, txt="Guten Appetit wuenscht das Team von ChefList Pro!", ln=True, align='C')
-        return bytes(pdf.output())
+        pdf.set_font("Arial", 'I', 8)
+        pdf.cell(0, 10, "Guten Appetit wuenscht das Team von ChefList Pro!", align='C', ln=True)
+        
+        return pdf.output(dest='S').encode('latin-1')
     except Exception as e:
-        # Debugging Hilfe
-        print(f"PDF Error Detail: {e}")
+        st.error(f"Interner PDF Fehler: {e}")
         return None
 
 # --- 4. STREAMLIT INTERFACE ---
@@ -202,8 +211,8 @@ if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
                     st.session_state.recipe_result = result
                     st.session_state.counter += 1
                     status.update(label="Fertig!", state="complete", expanded=False)
-                else: st.error("KI-Fehler.")
-            else: st.error("Keine Video-Daten.")
+                else: st.error("KI hat kein Ergebnis geliefert.")
+            else: st.error("Video konnte nicht ausgelesen werden.")
 
 if st.session_state.recipe_result:
     st.divider()
@@ -211,9 +220,7 @@ if st.session_state.recipe_result:
     st.markdown(st.session_state.recipe_result)
     
     st.divider()
-    pdf_data = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
-    if pdf_data:
-        clean_filename = re.sub(r'[^\w\s-]', '', st.session_state.recipe_title[:30]).strip().replace(' ', '_')
-        st.download_button("📄 PDF Rezept herunterladen", pdf_data, file_name=f"ChefList_{clean_filename}.pdf", mime="application/pdf", use_container_width=True)
-    else:
-        st.error("Fehler beim PDF-Export. Bitte versuche es erneut.")
+    pdf_bytes = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
+    if pdf_bytes:
+        clean_name = "".join([c for c in st.session_state.recipe_title if c.isalnum() or c in (' ', '_')]).strip()[:30]
+        st.download_button("📄 PDF Rezept herunterladen", pdf_bytes, file_name=f"ChefList_{clean_name}.pdf", mime="application/pdf", use_container_width=True)
