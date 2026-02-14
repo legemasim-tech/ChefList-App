@@ -54,7 +54,6 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
     unit_instruction = "METRISCH (g/ml)" if unit_system == "Metrisch (g/ml)" else "US-Einheiten (cups/oz)"
     
-    # STRENGER PROMPT: Mengen umrechnen & Amazon Links NUR in die Tabelle
     system_prompt = f"""
     Du bist ein Profi-Koch und Mathe-Experte.
     AUFGABE: Erstelle das Rezept exakt für {portions} Person(en). Rechne alle Mengen mathematisch korrekt um.
@@ -86,7 +85,9 @@ def create_pdf(text_content, recipe_title):
     pdf.set_fill_color(230, 230, 230) 
     pdf.set_font("Arial", style="B", size=14)
     
-    pdf_header = f"Rezept: {display_title}"
+    # Header Bereinigung
+    clean_header_title = re.sub(r'[^\x00-\x7F]+', '', display_title)
+    pdf_header = f"Rezept: {clean_header_title}"
     pdf.cell(190, 15, txt=pdf_header.encode('latin-1', 'replace').decode('latin-1'), ln=True, align='C', fill=True)
     pdf.ln(5)
     
@@ -96,8 +97,8 @@ def create_pdf(text_content, recipe_title):
         line = line.strip()
         if not line or '---' in line: continue
         
-        # Emojis für PDF entfernen (verhindert Fragezeichen)
-        line = line.replace('🛒 ', '').replace('📖 ', '').replace('🍳 ', '')
+        # ALLE Emojis und Nicht-Latein-Sonderzeichen radikal entfernen (verhindert ? im PDF)
+        line = re.sub(r'[^\x00-\x7F]+', '', line)
         
         if 'Zubereitung' in line:
             is_instruction = True
@@ -148,7 +149,6 @@ if "recipe_result" not in st.session_state: st.session_state.recipe_result = Non
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
-    # LOGO EINBINDUNG
     try:
         st.image("logo.png", use_container_width=True)
     except:
