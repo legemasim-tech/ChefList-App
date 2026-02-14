@@ -53,20 +53,24 @@ def get_full_video_data(video_url):
 
 def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
-    unit_instruction = "METRISCH (g/ml)" if unit_system == "Metrisch (g/ml)" else "US-Einheiten (cups, oz, lbs, tsp, tbsp)"
     
+    # Verstärkte Anweisung für Einheiten
+    if unit_system == "US-Einheiten (cups/oz)":
+        unit_instruction = "US-Einheiten (cups, oz, lbs, tsp, tbsp). Schreibe IMMER 'cups' oder 'oz' hinter die Menge!"
+    else:
+        unit_instruction = "METRISCH (g, ml, kg, l)."
+
     system_prompt = f"""
     Du bist ein Profi-Koch und Mathe-Experte.
     AUFGABE: Erstelle das Rezept exakt für {portions} Person(en). Rechne alle Mengen mathematisch korrekt um.
     
-    EINHEITEN-REGEL: Nutze das System {unit_instruction}. 
-    WICHTIG: Schreibe bei US-Einheiten IMMER die Einheit (z.B. 'cup', 'oz', 'tbsp') direkt hinter die Zahl.
+    WICHTIG: Nutze das System {unit_instruction}. In der Mengen-Tabelle muss bei jeder Zahl die Einheit (z.B. '2 cups' oder '150g') dabei stehen.
     
     STRUKTUR:
     1. Eckdaten (Dauer, Schwierigkeit, Personenanzahl: {portions})
-    2. Mengen-Tabelle (Spalten: Menge | Zutat | Kaufen)
-       -> In der Spalte 'Kaufen' NUR diesen Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
-       -> Link-Text: '🛒 Auf Amazon prüfen*'
+    2. Mengen-Tabelle (Menge | Zutat | Kaufen)
+       -> Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
+       -> Text: '🛒 Auf Amazon prüfen*'
     3. Zubereitung (Schritt-für-Schritt)
     """
     try:
@@ -82,9 +86,7 @@ def clean_for_pdf(text):
     replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
     for char, replacement in replacements.items():
         text = text.replace(char, replacement)
-    # Nur ASCII Zeichen erlauben, um ? zu vermeiden
     text = re.sub(r'[^\x00-\x7F]+', '', text)
-    # Markdown Links entfernen
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
@@ -151,10 +153,16 @@ def create_pdf(text_content, recipe_title):
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲", layout="centered")
 
+# CSS FÜR WEISSEN LOGO-HINTERGRUND & STANDARD SIDEBAR
 st.markdown("""
     <style>
-        [data-testid="stSidebar"] { background-color: #f1f3f4; }
-        [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span { color: #333333 !important; }
+        /* Logo-Styling: Weißer Hintergrund und Abrundung */
+        [data-testid="stSidebar"] img {
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -181,13 +189,10 @@ with st.sidebar:
 
 st.title("🍲 ChefList Pro")
 
-if st.session_state.counter >= 3:
-    st.warning("Du hast 3 Rezepte erstellt. Bitte unterstütze uns mit 0,90€!")
-
 video_url = st.text_input("YouTube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
 col_opt1, col_opt2 = st.columns(2)
 portions = col_opt1.slider("Portionen:", 1, 10, 4)
-unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten"], horizontal=True)
+unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
 
 if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
     if video_url:
