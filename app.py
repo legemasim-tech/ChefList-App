@@ -4,6 +4,7 @@ import requests
 import re
 import yt_dlp
 from fpdf import FPDF
+import os
 
 # --- 1. KONFIGURATION & API ---
 try:
@@ -61,8 +62,8 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     STRUKTUR:
     1. Eckdaten (Dauer, Schwierigkeit, Personenanzahl: {portions})
     2. Mengen-Tabelle (Spalten: Menge | Zutat | Kaufen)
-       -> In der Spalte 'Kaufen' NUR diesen Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
-       -> Link-Text: '🛒 Auf Amazon prüfen*'
+       -> WICHTIG: Erstelle für JEDE Zutat in der Spalte 'Kaufen' diesen Link: https://www.amazon.de/s?k=[ZUTATENNAME]&tag={tag}
+       -> Link-Text: '🛒 Auf Amazon kaufen*'
     3. Zubereitung (Schritt-für-Schritt)
     
     WICHTIG: Erfinde keine ASIN/dp/ Links. Nutze für das System {unit_instruction}.
@@ -148,14 +149,15 @@ def create_pdf(text_content, recipe_title):
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲", layout="centered")
 
-# SIDEBAR DESIGN FIX (Heller Hintergrund + Dunkle Schrift)
+# LOGO DESIGN CSS (Weißer Hintergrund & Rahmen)
 st.markdown("""
     <style>
-        [data-testid="stSidebar"] {
-            background-color: #f1f3f4;
-        }
-        [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
-            color: #333333 !important;
+        [data-testid="stSidebar"] img {
+            background-color: white;
+            padding: 10px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            margin-bottom: 20px;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -165,9 +167,9 @@ if "recipe_result" not in st.session_state: st.session_state.recipe_result = Non
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
-    try:
+    if os.path.exists("logo.png"):
         st.image("logo.png", use_container_width=True)
-    except:
+    else:
         st.title("🍳 ChefList Pro")
         
     st.info(f"Erstellte Rezepte: {st.session_state.counter}")
@@ -178,8 +180,10 @@ with st.sidebar:
         st.divider()
         st.caption("✨ Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
         st.divider()
-        st.subheader("🛡️ Datenschutz")
+        st.subheader("🛡️ Datenschutz & Sicherheit")
         st.caption("Wir speichern keine persönlichen Daten. Die Verarbeitung erfolgt verschlüsselt.")
+        st.divider()
+        st.caption("⚠️ **Hinweis:** Diese App nutzt eine KI. KI kann Fehler machen – bitte prüfe die Angaben (z.B. Backzeiten) vor dem Kochen.")
 
 st.title("🍲 ChefList Pro")
 
@@ -193,7 +197,7 @@ unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheit
 
 if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
     if video_url:
-        with st.status(f"Berechne Rezept für {portions} Personen...", expanded=True) as status:
+        with st.status(f"Berechne Rezept für {portions} Personen... dies kann ein paar Sekunden dauern.", expanded=True) as status:
             title, transcript, description = get_full_video_data(video_url)
             st.session_state.recipe_title = title
             if transcript or description:
@@ -207,7 +211,8 @@ if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
 if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.recipe_title}")
-    st.markdown(st.session_state.recipe_result)
+    # Der Text in der App zeigt jetzt "Auf Amazon kaufen"
+    st.markdown(st.session_state.recipe_result.replace("Auf Amazon prüfen", "Auf Amazon kaufen"))
     
     st.divider()
     try:
