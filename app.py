@@ -5,6 +5,7 @@ import re
 import yt_dlp
 from fpdf import FPDF
 import os
+import io
 
 # --- 1. KONFIGURATION & API ---
 try:
@@ -52,14 +53,11 @@ def get_full_video_data(video_url):
 
 def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
-    
     unit_instruction = "US-Einheiten (cups, oz, lbs, tsp, tbsp)" if unit_system == "US-Einheiten (cups/oz)" else "METRISCH (g, ml, kg, l)"
 
     system_prompt = f"""
     Du bist ein Profi-Koch und Mathe-Experte. 
-    WICHTIGSTE AUFGABE: Analysiere die Mengen im Video (oft für 2 oder 4 Personen) und RECHNE SIE MATHEMATISCH EXAKT auf genau {portions} Person(en) um.
-    Die Mengen in der Tabelle MÜSSEN sich ändern, wenn die Personenanzahl {portions} geändert wird!
-    
+    WICHTIGSTE AUFGABE: Rechne alle Mengen im Video mathematisch exakt auf genau {portions} Person(en) um.
     NUTZE: {unit_instruction}. Schreibe bei US-Einheiten immer die Einheit hinter die Zahl.
     
     STRUKTUR:
@@ -76,7 +74,7 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
         return response.choices[0].message.content
     except: return None
 
-# --- 3. PDF GENERATOR ---
+# --- 3. PDF GENERATOR (FIXED) ---
 def clean_txt(text):
     if not text: return ""
     rep = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
@@ -113,14 +111,15 @@ def create_pdf(text_content, recipe_title):
                 l_clean = l_clean.replace('**', '').replace('*', '')
                 pdf.multi_cell(0, 7, l_clean)
         
-        return pdf.output(dest='S').encode('latin-1')
-    except:
+        # Output als String-Buffer für Streamlit
+        return pdf.output(dest='S').encode('latin-1', 'ignore')
+    except Exception as e:
         return None
 
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
 
-# Logo in Sidebar mit Design
+# Logo Styling für die Sidebar
 st.markdown("<style>[data-testid='stSidebar'] img { background-color: white; padding: 10px; border-radius: 12px; margin-bottom: 20px; }</style>", unsafe_allow_html=True)
 
 if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
@@ -132,20 +131,20 @@ with st.sidebar:
     st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
     st.divider()
     with st.expander("ℹ️ Rechtliches"):
-        st.caption("Betreiber: Markus Simmel | Kontakt: legemasim@gmail.com")
-        st.caption("Amazon-Partner: Ich verdiene an qualifizierten Verkäufen.")
-        st.caption("Datenschutz: Keine Speicherung, verschlüsselte Verarbeitung.")
+        st.caption("**Betreiber:** Markus Simmel | **Kontakt:** legemasim@gmail.com")
+        st.caption("✨ Amazon-Partner: Ich verdiene an qualifizierten Verkäufen.")
+        st.caption("🛡️ Datenschutz: Keine Speicherung, verschlüsselte Verarbeitung.")
 
 st.title("🍲 ChefList Pro")
 
-video_url = st.text_input("YouTube Link:", placeholder="Link einfügen...")
+video_url = st.text_input("YouTube Link:", placeholder="YouTube URL hier einfügen...")
 c1, c2 = st.columns(2)
 portions = c1.slider("Portionen:", 1, 10, 4)
-unit_system = c2.radio("System:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
+unit_system = c2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
 
 if st.button("Rezept erstellen ✨", use_container_width=True):
     if video_url:
-        with st.spinner(f"Rechne Rezept auf {portions} Personen um..."):
+        with st.spinner(f"Berechne Rezept für {portions} Personen..."):
             t, trans, d = get_full_video_data(video_url)
             st.session_state.recipe_title = t
             res = generate_smart_recipe(trans, d, amazon_tag, portions, unit_system)
@@ -157,6 +156,16 @@ if st.session_state.recipe_result:
     st.markdown(st.session_state.recipe_result)
     
     st.divider()
-    pdf_data = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
-    if pdf_data:
-        st.download_button("📄 PDF herunterladen", pdf_data, file_name="Rezept.pdf", mime="application/pdf", use_container_width=True)
+    # Hier wird das PDF generiert und zum Download angeboten
+    pdf_bytes = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
+    if pdf_bytes:
+        st.download_button(
+            label="📄 PDF Rezept herunterladen",
+            data=pdf_bytes,
+            file_name="ChefList_Pro_Rezept.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+    else:
+        st.error("PDF-Export fehlgeschlagen. Bitte versuche es erneut.")
+    
