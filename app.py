@@ -76,19 +76,32 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     except: return None
 
 # --- 3. PDF GENERATOR ---
+def clean_for_pdf(text):
+    """Ersetzt deutsche Sonderzeichen und entfernt URLs/Emojis für PDF-Kompatibilität."""
+    replacements = {
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue',
+        'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue',
+        'ß': 'ss', '€': 'Euro'
+    }
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
+    # Entfernt alle verbleibenden Emojis/Sonderzeichen
+    text = re.sub(r'[^\x00-\x7F]+', '', text)
+    # Entfernt Amazon-Links komplett (Format [Text](URL))
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+    return text
+
 def create_pdf(text_content, recipe_title):
     pdf = FPDF()
     pdf.set_left_margin(10)
     pdf.set_right_margin(10)
     pdf.add_page()
-    display_title = recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "..."
+    
     pdf.set_fill_color(230, 230, 230) 
     pdf.set_font("Arial", style="B", size=14)
     
-    # Header Bereinigung
-    clean_header_title = re.sub(r'[^\x00-\x7F]+', '', display_title)
-    pdf_header = f"Rezept: {clean_header_title}"
-    pdf.cell(190, 15, txt=pdf_header.encode('latin-1', 'replace').decode('latin-1'), ln=True, align='C', fill=True)
+    display_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
+    pdf.cell(190, 15, txt=f"Rezept: {display_title}", ln=True, align='C', fill=True)
     pdf.ln(5)
     
     lines = text_content.split('\n')
@@ -97,8 +110,7 @@ def create_pdf(text_content, recipe_title):
         line = line.strip()
         if not line or '---' in line: continue
         
-        # ALLE Emojis und Nicht-Latein-Sonderzeichen radikal entfernen (verhindert ? im PDF)
-        line = re.sub(r'[^\x00-\x7F]+', '', line)
+        line = clean_for_pdf(line)
         
         if 'Zubereitung' in line:
             is_instruction = True
@@ -110,7 +122,7 @@ def create_pdf(text_content, recipe_title):
         headers = ['Dauer:', 'Schwierigkeit:', 'Backtemperatur:', 'Personen:', 'Einheiten:']
         if any(line.startswith(h) for h in headers):
             pdf.set_font("Arial", style="B", size=11)
-            pdf.cell(0, 8, txt=line.encode('latin-1', 'replace').decode('latin-1'), ln=True)
+            pdf.cell(0, 8, txt=line, ln=True)
             continue
             
         pdf.set_x(10)
@@ -121,20 +133,17 @@ def create_pdf(text_content, recipe_title):
                 content = "MENGE - ZUTAT"
             elif len(parts) >= 2:
                 pdf.set_font("Arial", size=11)
+                # Nur Menge und Zutat übernehmen, den Link-Teil (Part 3) ignorieren
                 content = f"[  ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
             else: continue
-            try:
-                pdf.cell(190, 8, txt=content.encode('latin-1', 'replace').decode('latin-1'), ln=True)
-                pdf.set_draw_color(220, 220, 220)
-                pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-            except: continue
+            
+            pdf.cell(190, 8, txt=content, ln=True)
+            pdf.set_draw_color(220, 220, 220)
+            pdf.line(10, pdf.get_y(), 200, pdf.get_y())
         else:
             pdf.set_font("Arial", size=10)
-            clean_text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line).replace('*', '')
-            try:
-                pdf.multi_cell(190, 7, txt=clean_text.encode('latin-1', 'replace').decode('latin-1'), align='L')
-                if is_instruction: pdf.ln(2)
-            except: continue
+            pdf.multi_cell(190, 7, txt=line.replace('*', ''), align='L')
+            if is_instruction: pdf.ln(2)
             
     pdf.ln(10)
     pdf.set_font("Arial", style="I", size=10)
@@ -143,6 +152,15 @@ def create_pdf(text_content, recipe_title):
 
 # --- 4. STREAMLIT INTERFACE ---
 st.set_page_config(page_title="ChefList Pro", page_icon="🍲", layout="centered")
+
+# HELLERE SIDEBAR CSS
+st.markdown("""
+    <style>
+        [data-testid="stSidebar"] {
+            background-color: #f8f9fa;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 if "counter" not in st.session_state: st.session_state.counter = 0
 if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
