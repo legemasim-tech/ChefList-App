@@ -4,8 +4,6 @@ import requests
 import re
 import yt_dlp
 from fpdf import FPDF
-import os
-import io
 
 # --- 1. KONFIGURATION & API ---
 try:
@@ -15,6 +13,7 @@ except:
 
 amazon_tag = "cheflist21-21" 
 paypal_email = "legemasim@gmail.com"
+
 pay_link_90c = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name=ChefList_Pro_Rezept_Erstellung&amount=0.90&currency_code=EUR"
 
 if not api_key:
@@ -53,18 +52,20 @@ def get_full_video_data(video_url):
 
 def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
-    unit_instruction = "US-Einheiten (cups, oz, lbs, tsp, tbsp)" if unit_system == "US-Einheiten (cups/oz)" else "METRISCH (g, ml, kg, l)"
-
+    unit_instruction = "METRISCH (g/ml)" if unit_system == "Metrisch (g/ml)" else "US-Einheiten (cups/oz)"
+    
     system_prompt = f"""
-    Du bist ein Profi-Koch und Mathe-Experte. 
-    WICHTIGSTE AUFGABE: Rechne alle Mengen im Video mathematisch exakt auf genau {portions} Person(en) um.
-    NUTZE: {unit_instruction}. Schreibe bei US-Einheiten immer die Einheit hinter die Zahl.
+    Du bist ein Profi-Koch und Mathe-Experte.
+    AUFGABE: Erstelle das Rezept exakt für {portions} Person(en). Rechne alle Mengen mathematisch korrekt um.
     
     STRUKTUR:
     1. Eckdaten (Dauer, Schwierigkeit, Personenanzahl: {portions})
-    2. Mengen-Tabelle (Menge | Zutat | Kaufen)
-       -> Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
+    2. Mengen-Tabelle (Spalten: Menge | Zutat | Kaufen)
+       -> In der Spalte 'Kaufen' NUR diesen Link: https://www.amazon.de/s?k=[ZUTAT]&tag={tag}
+       -> Link-Text: '🛒 Auf Amazon prüfen*'
     3. Zubereitung (Schritt-für-Schritt)
+    
+    WICHTIG: Erfinde keine ASIN/dp/ Links. Nutze für das System {unit_instruction}.
     """
     try:
         response = client.chat.completions.create(
@@ -74,98 +75,144 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
         return response.choices[0].message.content
     except: return None
 
-# --- 3. PDF GENERATOR (FIXED) ---
-def clean_txt(text):
-    if not text: return ""
-    rep = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
-    for k, v in rep.items(): text = text.replace(k, v)
+# --- 3. PDF GENERATOR ---
+def clean_for_pdf(text):
+    """Ersetzt deutsche Sonderzeichen und entfernt URLs/Emojis für PDF-Kompatibilität."""
+    replacements = {
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue',
+        'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue',
+        'ß': 'ss', '€': 'Euro'
+    }
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
     text = re.sub(r'[^\x00-\x7F]+', '', text)
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
-    return text.strip()
+    return text
 
 def create_pdf(text_content, recipe_title):
-    try:
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 10, clean_txt(recipe_title[:50]), ln=True, align='C')
-        pdf.ln(10)
-        pdf.set_font("Arial", '', 11)
+    pdf = FPDF()
+    pdf.set_left_margin(10)
+    pdf.set_right_margin(10)
+    pdf.add_page()
+    pdf.set_fill_color(230, 230, 230) 
+    pdf.set_font("Arial", style="B", size=14)
+    
+    display_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
+    pdf.cell(190, 15, txt=f"Rezept: {display_title}", ln=True, align='C', fill=True)
+    pdf.ln(5)
+    
+    lines = text_content.split('\n')
+    is_instruction = False
+    for line in lines:
+        line = line.strip()
+        if not line or '---' in line: continue
+        line = clean_for_pdf(line)
         
-        is_step = False
-        for line in text_content.split('\n'):
-            l_clean = clean_txt(line)
-            if not l_clean or '---' in l_clean: continue
+        if 'Zubereitung' in line:
+            is_instruction = True
+            pdf.ln(5)
+            pdf.set_font("Arial", style="B", size=12)
+            pdf.cell(0, 10, txt="Zubereitung:", ln=True)
+            continue
             
-            if 'zubereitung' in l_clean.lower():
-                is_step = True
-                pdf.ln(5); pdf.set_font("Arial", 'B', 12)
-                pdf.cell(0, 10, "ZUBEREITUNG:", ln=True); pdf.set_font("Arial", '', 11)
-                continue
-
-            if '|' in l_clean and not is_step:
-                p = [i.strip() for i in l_clean.split('|') if i.strip()]
-                if len(p) >= 2 and "zutat" not in p[1].lower():
-                    pdf.cell(0, 7, f"- {p[0]} {p[1]}", ln=True)
-            else:
-                l_clean = l_clean.replace('**', '').replace('*', '')
-                pdf.multi_cell(0, 7, l_clean)
-        
-        # Output als String-Buffer für Streamlit
-        return pdf.output(dest='S').encode('latin-1', 'ignore')
-    except Exception as e:
-        return None
+        headers = ['Dauer:', 'Schwierigkeit:', 'Backtemperatur:', 'Personen:', 'Einheiten:']
+        if any(line.startswith(h) for h in headers):
+            pdf.set_font("Arial", style="B", size=11)
+            pdf.cell(0, 8, txt=line, ln=True)
+            continue
+            
+        pdf.set_x(10)
+        if '|' in line and not is_instruction:
+            parts = [p.strip() for p in line.split('|') if p.strip()]
+            if len(parts) >= 2 and ("Menge" in parts[0] or "Zutat" in parts[1]):
+                pdf.set_font("Arial", style="B", size=10)
+                content = "MENGE - ZUTAT"
+            elif len(parts) >= 2:
+                pdf.set_font("Arial", size=11)
+                content = f"[  ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
+            else: continue
+            
+            pdf.cell(190, 8, txt=content, ln=True)
+            pdf.set_draw_color(220, 220, 220)
+            pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        else:
+            pdf.set_font("Arial", size=10)
+            pdf.multi_cell(190, 7, txt=line.replace('*', ''), align='L')
+            if is_instruction: pdf.ln(2)
+            
+    pdf.ln(10)
+    pdf.set_font("Arial", style="I", size=10)
+    pdf.cell(0, 10, txt="Guten Appetit wuenscht das Team von ChefList Pro!", ln=True, align='C')
+    return bytes(pdf.output())
 
 # --- 4. STREAMLIT INTERFACE ---
-st.set_page_config(page_title="ChefList Pro", page_icon="🍲")
+st.set_page_config(page_title="ChefList Pro", page_icon="🍲", layout="centered")
 
-# Logo Styling für die Sidebar
-st.markdown("<style>[data-testid='stSidebar'] img { background-color: white; padding: 10px; border-radius: 12px; margin-bottom: 20px; }</style>", unsafe_allow_html=True)
+# SIDEBAR DESIGN FIX (Heller Hintergrund + Dunkle Schrift)
+st.markdown("""
+    <style>
+        [data-testid="stSidebar"] {
+            background-color: #f1f3f4;
+        }
+        [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
+            color: #333333 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
+if "counter" not in st.session_state: st.session_state.counter = 0
 if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
-    if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
-    else: st.title("🍳 ChefList Pro")
-    st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
-    st.divider()
-    with st.expander("ℹ️ Rechtliches"):
-        st.caption("**Betreiber:** Markus Simmel | **Kontakt:** legemasim@gmail.com")
-        st.caption("✨ Amazon-Partner: Ich verdiene an qualifizierten Verkäufen.")
-        st.caption("🛡️ Datenschutz: Keine Speicherung, verschlüsselte Verarbeitung.")
+    try:
+        st.image("logo.png", use_container_width=True)
+    except:
+        st.title("🍳 ChefList Pro")
+        
+    st.info(f"Erstellte Rezepte: {st.session_state.counter}")
+    st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ Rezept unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
+    st.markdown("---")
+    with st.expander("ℹ️ Über & Rechtliches"):
+        st.caption("**Betreiber:** Markus Simmel\n\n**Kontakt:** legemasim@gmail.com")
+        st.divider()
+        st.caption("✨ Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
+        st.divider()
+        st.subheader("🛡️ Datenschutz")
+        st.caption("Wir speichern keine persönlichen Daten. Die Verarbeitung erfolgt verschlüsselt.")
 
 st.title("🍲 ChefList Pro")
 
-video_url = st.text_input("YouTube Link:", placeholder="YouTube URL hier einfügen...")
-c1, c2 = st.columns(2)
-portions = c1.slider("Portionen:", 1, 10, 4)
-unit_system = c2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"], horizontal=True)
+if st.session_state.counter >= 3:
+    st.warning("Du hast 3 Rezepte erstellt. Bitte unterstütze uns mit 0,90€!")
 
-if st.button("Rezept erstellen ✨", use_container_width=True):
+video_url = st.text_input("YouTube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
+col_opt1, col_opt2 = st.columns(2)
+portions = col_opt1.slider("Portionen:", 1, 10, 4)
+unit_system = col_opt2.radio("Einheitensystem:", ["Metrisch (g/ml)", "US-Einheiten"], horizontal=True)
+
+if st.button("Rezept jetzt erstellen ✨", use_container_width=True):
     if video_url:
-        with st.spinner(f"Berechne Rezept für {portions} Personen..."):
-            t, trans, d = get_full_video_data(video_url)
-            st.session_state.recipe_title = t
-            res = generate_smart_recipe(trans, d, amazon_tag, portions, unit_system)
-            st.session_state.recipe_result = res
+        with st.status(f"Berechne Rezept für {portions} Personen...", expanded=True) as status:
+            title, transcript, description = get_full_video_data(video_url)
+            st.session_state.recipe_title = title
+            if transcript or description:
+                result = generate_smart_recipe(transcript, description, amazon_tag, portions, unit_system)
+                st.session_state.recipe_result = result
+                st.session_state.counter += 1
+                status.update(label="Bereit!", state="complete", expanded=False)
+            else:
+                st.error("Keine Daten gefunden.")
 
 if st.session_state.recipe_result:
     st.divider()
-    st.subheader(st.session_state.recipe_title)
+    st.subheader(f"📖 {st.session_state.recipe_title}")
     st.markdown(st.session_state.recipe_result)
     
     st.divider()
-    # Hier wird das PDF generiert und zum Download angeboten
-    pdf_bytes = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
-    if pdf_bytes:
-        st.download_button(
-            label="📄 PDF Rezept herunterladen",
-            data=pdf_bytes,
-            file_name="ChefList_Pro_Rezept.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
-    else:
-        st.error("PDF-Export fehlgeschlagen. Bitte versuche es erneut.")
-    
+    try:
+        pdf_data = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title)
+        clean_filename = re.sub(r'[^\w\s-]', '', st.session_state.recipe_title[:40]).strip().replace(' ', '_')
+        st.download_button("📄 PDF Rezept herunterladen", pdf_data, file_name=f"ChefList_{clean_filename}.pdf", mime="application/pdf", use_container_width=True)
+    except:
+        st.error("Fehler beim PDF-Export.")
