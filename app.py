@@ -37,11 +37,13 @@ def update_global_counter():
 
 def get_total_count():
     file_path = "total_recipes.txt"
+    base_value = 17 # Dein gewünschter Startwert
     if os.path.exists(file_path):
         try:
-            with open(file_path, "r") as f: return f.read()
-        except: return "0"
-    return "0"
+            with open(file_path, "r") as f: 
+                return int(f.read()) + base_value
+        except: return base_value
+    return base_value
 
 # --- 2. HILFSFUNKTIONEN ---
 def get_full_video_data(video_url):
@@ -197,7 +199,6 @@ with st.sidebar:
     with st.expander("ℹ️ Über & Rechtliches"):
         st.caption("**Betreiber:** Markus Simmel\n\n**Kontakt:** legemasim@gmail.com")
         st.divider()
-        # Globaler Zähler hierher verschoben und umbenannt
         st.write(f"📊 Bereits generierte Rezepte: **{get_total_count()}**")
         st.divider()
         st.caption("✨ Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
