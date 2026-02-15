@@ -75,7 +75,6 @@ def generate_smart_recipe(transcript, description, tag, portions, unit_system):
     combined_input = f"VIDEOTITEL:\n{transcript}\n\nINFOTEXT/BESCHREIBUNG:\n{description}"
     unit_instruction = "METRISCH (g/ml)" if unit_system == "Metrisch (g/ml)" else "US-Einheiten (cups/oz)"
     
-    # VERSCHÄRFTER PROMPT FÜR MATHEMATISCHE KORREKTHEIT
     system_prompt = f"""
     Du bist ein Profi-Koch und ein extrem präziser Mathematiker.
     
@@ -192,12 +191,14 @@ with st.sidebar:
         st.title("🍳 ChefList Pro")
         
     st.info(f"Deine erstellten Rezepte: {st.session_state.counter}")
-    st.write(f"🌍 Insgesamt analysierte Videos: **{get_total_count()}**")
     
     st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ ChefList Pro unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
     st.markdown("---")
     with st.expander("ℹ️ Über & Rechtliches"):
         st.caption("**Betreiber:** Markus Simmel\n\n**Kontakt:** legemasim@gmail.com")
+        st.divider()
+        # Globaler Zähler hierher verschoben und umbenannt
+        st.write(f"📊 Bereits generierte Rezepte: **{get_total_count()}**")
         st.divider()
         st.caption("✨ Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.")
         st.divider()
