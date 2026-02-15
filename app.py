@@ -198,7 +198,7 @@ with st.sidebar:
     st.markdown(f'''<a href="{pay_link_90c}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">⚡ ChefList Pro unterstützen (0,90€)</button></a>''', unsafe_allow_html=True)
     
     # NEU: Kleiner Hinweis-Link zur englischen Version
-    st.markdown('<p style="text-align: center; font-size: 0.8em; margin-top: 10px;"><a href="https://cheflist-app-en.streamlit.app/" target="_blank">Switch to English Version 🇺🇸</a></p>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; font-size: 0.8em; margin-top: 10px;"><a href="https://cheflist-app-en.streamlit.app/" target="_blank">Switch to English Version</a></p>', unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -250,4 +250,5 @@ if st.session_state.recipe_result:
         st.download_button("📄 PDF Rezept herunterladen", pdf_data, file_name=f"ChefList_{clean_filename}.pdf", mime="application/pdf", use_container_width=True)
     except:
         st.error("Fehler beim PDF-Export.")
+
 
