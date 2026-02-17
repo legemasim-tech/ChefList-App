@@ -56,8 +56,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 Descargar receta PDF", "ui_buy": "Comprar en Amazon*",
         "ui_counter_text": "Recetas creadas:",
         "ui_fb_header": "¡Ayúdanos a mejorar! 🍲", "ui_fb_btn": "Enviar ✨",
-        "ui_fb_placeholder": "¿Cómo podemos mejorar? (Errores, deseos, ideas)",
-        "ui_fb_mail": "Correo (opcional)", "ui_fb_success": "¡Gracias! Tu feedback ha sido guardado. 🙌",
+        "ui_fb_placeholder": "¿Cómo podemos mejorar?", "ui_fb_mail": "Correo (opcional)", "ui_fb_success": "¡Gracias! 🙌",
         "legal_title": "Información Legal", "legal_op": "**Operador:** Markus Simmel", "legal_contact": "**Contacto:** legemasim@gmail.com",
         "legal_total": "Total de recetas generadas:", "legal_amz": "✨ Como asociado de Amazon, gano con las compras que califican.", 
         "legal_privacy_title": "🛡️ Protección de datos", "legal_privacy_body": "No almacenamos datos personales. El procesamiento está encriptado.", 
@@ -73,9 +72,8 @@ LANG_CONFIG = {
         "ui_wait": "Calcul pour {0} personnes...", "ui_ready": "Prêt!",
         "ui_dl": "📄 Télécharger le PDF", "ui_buy": "Acheter sur Amazon*",
         "ui_counter_text": "Recettes créées:",
-        "ui_fb_header": "Aidez-nous à nous améliorer ! 🍲", "ui_fb_btn": "Envoyer ✨",
-        "ui_fb_placeholder": "Comment s'améliorer ? (Erreurs, souhaits, idées)",
-        "ui_fb_mail": "Email (optionnel)", "ui_fb_success": "Merci ! Votre avis a été enregistré. 🙌",
+        "ui_fb_header": "Aidez-nous! 🍲", "ui_fb_btn": "Envoyer ✨",
+        "ui_fb_placeholder": "Comment s'améliorer?", "ui_fb_mail": "Email (optionnel)", "ui_fb_success": "Merci! 🙌",
         "legal_title": "Mentions Légales", "legal_op": "**Opérateur:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
         "legal_total": "Total des recettes générées :", "legal_amz": "✨ En tant que partenaire Amazon, je réalise un bénéfice sur les achats remplissant les conditions requises.", 
         "legal_privacy_title": "🛡️ Protection des données", "legal_privacy_body": "Nous ne stockons pas de données personnelles. Le traitement est crypté.", 
@@ -92,8 +90,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 Scarica la ricetta PDF", "ui_buy": "Acquista su Amazon*",
         "ui_counter_text": "Ricette create:",
         "ui_fb_header": "Aiutaci a migliorare! 🍲", "ui_fb_btn": "Invia ✨",
-        "ui_fb_placeholder": "Come possiamo migliorare? (Errori, desideri, idee)",
-        "ui_fb_mail": "Email (opzionale)", "ui_fb_success": "Grazie! Il tuo feedback è stato salvato. 🙌",
+        "ui_fb_placeholder": "Come possiamo migliorare?", "ui_fb_mail": "Email (opzionale)", "ui_fb_success": "Grazie! 🙌",
         "legal_title": "Informazioni Legali", "legal_op": "**Operatore:** Markus Simmel", "legal_contact": "**Contatto:** legemasim@gmail.com",
         "legal_total": "Totale ricette generate:", "legal_amz": "✨ In qualità di affiliato Amazon, ricevo un guadagno per ogni acquisto idoneo.", 
         "legal_privacy_title": "🛡️ Protezione dei dati", "legal_privacy_body": "Non memorizziamo dati personali. L'elaborazione è crittografata.", 
@@ -110,13 +107,12 @@ LANG_CONFIG = {
         "ui_dl": "📄 Baixar receita em PDF", "ui_buy": "Comprar na Amazon*",
         "ui_counter_text": "Receitas criadas:",
         "ui_fb_header": "Ajude-nos a melhorar! 🍲", "ui_fb_btn": "Enviar ✨",
-        "ui_fb_placeholder": "Como podemos melhorar? (Erros, desejos, ideias)",
-        "ui_fb_mail": "E-mail (opcional)", "ui_fb_success": "Obrigado! Seu feedback foi salvo. 🙌",
-        "legal_title": "Informações Legais", "legal_op": "**Operador:** Markus Simmel", "legal_contact": "**Contato:** legemasim@gmail.com",
+        "ui_fb_placeholder": "Como podemos melhorar?", "ui_fb_mail": "E-mail", "ui_fb_success": "Obrigado! 🙌",
+        "legal_title": "Info Legal", "legal_op": "**Operador:** Markus Simmel", "legal_contact": "**Contato:** legemasim@gmail.com",
         "legal_total": "Total de receitas geradas:", "legal_amz": "✨ Como associado da Amazon, ganho com compras qualificadas.", 
         "legal_privacy_title": "🛡️ Privacidade de dados", "legal_privacy_body": "Não armazenamos dados pessoais. O processamento é criptografado.", 
         "legal_note": "⚠️ **Nota:** Este aplicativo usa IA. A IA pode cometer erros – verifique tempos e temperaturas.", 
-        "admin_label": "🔑 Acesso Admin"
+        "admin_label": "🔑 Admin"
     },
     "Nederlands": {
         "tag": "cheflist21-20", "amz": "amazon.nl", "curr": "EUR", "iso": "nl",
@@ -128,13 +124,12 @@ LANG_CONFIG = {
         "ui_dl": "📄 PDF downloaden", "ui_buy": "Koop op Amazon*",
         "ui_counter_text": "Recepten gemaakt:",
         "ui_fb_header": "Help ons verbeteren! 🍲", "ui_fb_btn": "Verzenden ✨",
-        "ui_fb_placeholder": "Ideeën of fouten? (Fouten, wensen, ideeën)",
-        "ui_fb_mail": "E-mail (optioneel)", "ui_fb_success": "Bedankt! Je feedback is opgeslagen. 🙌",
+        "ui_fb_placeholder": "Ideeën of fouten?", "ui_fb_mail": "E-mail", "ui_fb_success": "Bedankt! 🙌",
         "legal_title": "Info & Juridisch", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
         "legal_total": "Totaal aantal generaties:", "legal_amz": "✨ Als Amazon-partner verdien ik aan gekwalificeerde aankopen.", 
         "legal_privacy_title": "🛡️ Gegevensbescherming", "legal_privacy_body": "Wij slaan geen persoonlijke gegevens op. Verwerking is versleuteld.", 
         "legal_note": "⚠️ **Opmerking:** Deze app maakt gebruik van AI. AI kan fouten maken - controleer kooktijden.", 
-        "admin_label": "🔑 Admin Toegang"
+        "admin_label": "🔑 Admin"
     },
     "Polski": {
         "tag": "cheflist21-20", "amz": "amazon.pl", "curr": "PLN", "iso": "pl",
@@ -146,13 +141,12 @@ LANG_CONFIG = {
         "ui_dl": "📄 Pobierz przepis PDF", "ui_buy": "Kup na Amazon*",
         "ui_counter_text": "Przepisy utworzone:",
         "ui_fb_header": "Pomóż nam się doskonalić! 🍲", "ui_fb_btn": "Wyślij ✨",
-        "ui_fb_placeholder": "Co możemy poprawić? (Błędy, życzenia, pomysły)",
-        "ui_fb_mail": "E-mail (opcjonalnie)", "ui_fb_success": "Dziękujemy! Twoja opinia została zapisana. 🙌",
-        "legal_title": "Informacje Prawne", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Kontakt:** legemasim@gmail.com",
-        "legal_total": "Suma wygenerowanych przepisów:", "legal_amz": "✨ Jako partner Amazon zarabiam na kwalifikujących się zakupach.", 
-        "legal_privacy_title": "🛡️ Prywatność danych", "legal_privacy_body": "Nie przechowujemy danych osobowych. Przetwarzanie jest szyfrowane.", 
+        "ui_fb_placeholder": "Co możemy poprawić?", "ui_fb_mail": "E-mail", "ui_fb_success": "Dziękujemy! 🙌",
+        "legal_title": "Info Prawne", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Kontakt:** legemasim@gmail.com",
+        "legal_total": "Suma wygenerowanych przepisów:", "legal_amz": "✨ Partner Amazon.", "legal_privacy_title": "🛡️ Prywatność danych",
+        "legal_privacy_body": "Nie przechowujemy danych osobowych. Przetwarzanie jest szyfrowane.", 
         "legal_note": "⚠️ **Uwaga:** Ta aplikacja korzysta z AI. AI może popełniać błędy - sprawdź czasy gotowania.", 
-        "admin_label": "🔑 Panel Admina"
+        "admin_label": "🔑 Admin"
     },
     "Türkçe": {
         "tag": "cheflist21-20", "amz": "amazon.com.tr", "curr": "TRY", "iso": "tr",
@@ -164,13 +158,12 @@ LANG_CONFIG = {
         "ui_dl": "📄 PDF İndir", "ui_buy": "Amazon'dan satın al*",
         "ui_counter_text": "Oluşturulan tarifler:",
         "ui_fb_header": "Bize yardım edin! 🍲", "ui_fb_btn": "Gönder ✨",
-        "ui_fb_placeholder": "Neyi daha iyi yapabiliriz? (Hatalar, dilekler, fikirler)",
-        "ui_fb_mail": "E-posta (isteğe bağlı)", "ui_fb_success": "Teşekkürler! Geri bildiriminiz kaydedildi. 🙌",
+        "ui_fb_placeholder": "Neyi daha iyi yapabiliriz?", "ui_fb_mail": "E-posta", "ui_fb_success": "Teşekkürler! 🙌",
         "legal_title": "Yasal Bilgi", "legal_op": "**Operatör:** Markus Simmel", "legal_contact": "**İletişim:** legemasim@gmail.com",
         "legal_total": "Toplam oluşturulan tarif:", "legal_amz": "✨ Bir Amazon ortağı olarak, nitelikli satın alımlardan kazanç sağlıyorum.", 
         "legal_privacy_title": "🛡️ Veri Koruması", "legal_privacy_body": "Kişisel verileri saklamıyoruz. İşleme şifrelenmiştir.", 
         "legal_note": "⚠️ **Not:** Yapay zeka hata yapabilir - lütfen pişirme sürelerini doğrulayın.", 
-        "admin_label": "🔑 Admin Girişi"
+        "admin_label": "🔑 Admin"
     },
     "日本語": {
         "tag": "cheflist21-20", "amz": "amazon.co.jp", "curr": "JPY", "iso": "ja",
@@ -182,8 +175,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 PDFレシピをダウンロード", "ui_buy": "Amazonで購入*",
         "ui_counter_text": "作成済みレシピ数:",
         "ui_fb_header": "改善にご協力ください！ 🍲", "ui_fb_btn": "送信 ✨",
-        "ui_fb_placeholder": "どのような改善ができますか？（エラー、希望、アイデア）",
-        "ui_fb_mail": "メールアドレス（任意）", "ui_fb_success": "ありがとうございます！フィードバックが保存されました。 🙌",
+        "ui_fb_placeholder": "どのような改善ができますか？", "ui_fb_mail": "メールアドレス", "ui_fb_success": "ありがとうございます！ 🙌",
         "legal_title": "法的情報", "legal_op": "**運営者:** Markus Simmel", "legal_contact": "**連絡先:** legemasim@gmail.com",
         "legal_total": "累計レシピ生成数:", "legal_amz": "✨ Amazonアソシエイトとして、適格販売により収入を得ています。", 
         "legal_privacy_title": "🛡️ データ保護", "legal_privacy_body": "個人データは保存されません。処理は暗号化されています。", 
@@ -296,19 +288,25 @@ def create_pdf(text_content, recipe_title):
         pdf.cell(190, 15, txt=f"Recipe: {display_title}", ln=True, align='C', fill=True)
         pdf.ln(5); pdf.set_font("Arial", size=10)
         pdf.multi_cell(185, 7, txt=clean_for_pdf(text_content))
-        return pdf.output()
-    except: return None
+        
+        # WICHTIG: Rückgabe als BYTES für Streamlit
+        return pdf.output(dest='S') # S steht für String/Bytes Stream
+    except Exception as e:
+        print(f"PDF Error: {e}")
+        return None
 
-# --- 5. INTERFACE ---
+# --- 5. INTERFACE & LOGIK ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="🍲", layout="centered")
 
+# CSS: Einzeiliger Button & Logo Styling
 st.markdown("<style>.stButton>button { font-size: 13px !important; } [data-testid='stSidebar'] img { background-color: white; padding: 10px; border-radius: 12px; border: 2px solid #e0e0e0; margin-bottom: 20px; }</style>", unsafe_allow_html=True)
 
+# Session State Initialisierung
 if "counter" not in st.session_state: st.session_state.counter = 0
 if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
-# Auto-Detection
+# Automatische Spracherkennung
 if "user_lang_selection" not in st.session_state:
     try:
         accept_lang = st.context.headers.get("Accept-Language", "en")
@@ -347,7 +345,7 @@ with st.sidebar:
         st.divider()
         
         if st.checkbox(c["admin_label"]):
-            admin_pw = st.text_input("Password", type="password", key="admin_pw_final")
+            admin_pw = st.text_input("Password", type="password", key="admin_pw_final_key")
             if admin_pw == "Gemini_Cheflist_pw":
                 if os.path.exists("user_feedback.txt"):
                     with open("user_feedback.txt", "r") as f: st.text_area("Feedback Log:", value=f.read(), height=200)
@@ -388,13 +386,22 @@ if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.get('recipe_title', 'Recipe')}")
     st.markdown(st.session_state.recipe_result.replace("Check on Amazon", c['ui_buy']))
-    pdf_bytes = create_pdf(st.session_state.recipe_result, st.session_state.get("recipe_title", "Recipe"))
-    if pdf_bytes:
-        st.download_button(c['ui_dl'], pdf_bytes, file_name="Recipe.pdf", mime="application/pdf", use_container_width=True)
+    
+    # PDF ERZEUGUNG
+    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.get("recipe_title", "Recipe"))
+    
+    if pdf_output:
+        st.download_button(
+            label=c['ui_dl'],
+            data=pdf_output, # Hier werden nun die Bytes übergeben
+            file_name="ChefList_Recipe.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
 
 st.divider()
 st.subheader(c['ui_fb_header'])
-with st.form("fb_form_last"):
+with st.form("fb_form_final"):
     fb_text = st.text_area(c['ui_fb_placeholder'])
     fb_mail = st.text_input(c['ui_fb_mail'])
     if st.form_submit_button(c['ui_fb_btn']):
