@@ -55,7 +55,7 @@ LANG_CONFIG = {
         "legal_total": "Total recetas:", "legal_amz": "✨ Socio de Amazon.", "legal_privacy_title": "🛡️ Privacidad", 
         "legal_privacy_body": "No guardamos datos.", "legal_note": "⚠️ IA puede fallar.",
         "ai_lang": "SPANISH", "fb_header": "¡Ayúdanos! 🍲", "fb_btn": "Enviar ✨",
-        "fb_place": "¿Ideas?", "fb_mail": "Email", "fb_thx": "¡Gracias! 🙌",
+        "fb_place": "¿Ideas?", "fb_mail": "Correo", "fb_thx": "¡Gracias! 🙌",
         "pdf_rec": "Receta", "pdf_instr": "Instrucciones", "pdf_enjoy": "¡Buen provecho!"
     },
     "Français": {
@@ -158,7 +158,7 @@ LANG_CONFIG = {
     }
 }
 
-# --- 2. CONFIGURATION & API ---
+# --- 2. KONFIGURATION & API ---
 try: api_key = st.secrets["OPENAI_API_KEY"]
 except: api_key = None
 paypal_email = "legemasim@gmail.com"
@@ -192,7 +192,7 @@ def get_full_video_data(video_url):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
         video_title = info.get('title', 'Recipe')
-        channel_name = info.get('uploader', 'Chef')
+        channel_name = info.get('uploader', 'Unknown Chef')
         description = info.get('description', '') 
         subs = info.get('subtitles') or info.get('automatic_captions')
         transcript = ""
@@ -210,6 +210,7 @@ def get_full_video_data(video_url):
     except: return "Recipe", None, None, "Chef"
 
 def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
+    # Einfache Logik für Einheiten
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
     system_prompt = f"""
@@ -223,62 +224,69 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
         return response.choices[0].message.content
     except: return None
 
-# --- 4. PDF GENERATOR (EXTREM STABILISIERT) ---
+# --- PDF GENERATOR (EXTREME CLEANING) ---
 def clean_for_pdf(text):
     if not text: return ""
     text = str(text)
-    # Zeichen ersetzen, die Probleme machen
-    replacements = {'€': 'EUR', '”': '"', '“': '"', '’': "'", '–': '-', '…': '...'}
+    # 1. Bekannte Problemzeichen manuell tauschen
+    replacements = {
+        '€': 'EUR', '”': '"', '“': '"', '’': "'", '‘': "'", '–': '-', '—': '-', '…': '...',
+        '✨': '', '🍲': '', '👨‍🍳': ''
+    }
     for k, v in replacements.items(): text = text.replace(k, v)
     
-    # Der wichtigste Schritt: Wir erzwingen Latin-1.
-    # Alles was nicht passt (Emojis, Japanisch) wird entfernt, damit das PDF generiert wird.
-    return text.encode('latin-1', 'ignore').decode('latin-1')
+    # 2. Gnadenlose Codierung: Alles was nicht Latin-1 ist (z.B. Japanisch, Arabisch, Emojis) wird entfernt.
+    # Das verhindert den Absturz.
+    try:
+        return text.encode('latin-1', 'replace').decode('latin-1')
+    except:
+        return "?"
 
 def create_pdf(text_content, recipe_title, config):
     try:
         pdf = FPDF()
         pdf.add_page(); pdf.set_font("Arial", style="B", size=14)
         
-        # Titel sicher machen
+        # Titel
         safe_title = clean_for_pdf(recipe_title)[:50]
-        safe_rec_label = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
-        
-        pdf.cell(190, 15, txt=f"{safe_rec_label}: {safe_title}", ln=True, align='C', fill=True)
+        label_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
+        pdf.cell(190, 15, txt=f"{label_rec}: {safe_title}", ln=True, align='C', fill=True)
         pdf.ln(5)
         
-        pdf.set_font("Arial", size=10)
+        lines = text_content.split('\n')
+        is_instruction = False
         
-        for line in text_content.split('\n'):
+        for line in lines:
             line = line.strip()
             if not line or '---' in line: continue
             
-            # Überschriften erkennen
+            # Instruktionen erkennen
             if any(x in line for x in ['Instructions', 'Zubereitung', 'Instrucciones', 'Istruzioni']):
+                is_instruction = True
                 pdf.ln(5); pdf.set_font("Arial", style="B", size=12)
-                safe_instr_label = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
-                pdf.cell(0, 10, txt=safe_instr_label, ln=True)
+                label_instr = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
+                pdf.cell(0, 10, txt=label_instr, ln=True)
                 continue
-                
+            
             clean_line = clean_for_pdf(line)
-            if not clean_line: continue
             
             # Tabelle
-            if '|' in clean_line:
+            if '|' in clean_line and not is_instruction:
                 parts = [p.strip() for p in clean_line.split('|') if p.strip()]
                 if len(parts) >= 2:
                     content = f"[ ] {parts[0]} {parts[1]}"
                     pdf.set_font("Arial", style="B", size=11)
-                    pdf.cell(0, 8, txt=content, ln=True)
+                    pdf.cell(185, 8, txt=content, ln=True)
+                    pdf.set_draw_color(220, 220, 220)
+                    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             else:
                 pdf.set_font("Arial", size=10)
-                pdf.multi_cell(0, 7, txt=clean_line)
-
+                pdf.multi_cell(185, 7, txt=clean_line, align='L')
+                
         pdf.ln(10); pdf.set_font("Arial", style="I", size=10)
-        safe_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Enjoy!'))
-        pdf.cell(0, 10, txt=safe_enjoy, ln=True, align='C')
-
-        # Byte-Return für Streamlit
+        label_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Enjoy!'))
+        pdf.cell(0, 10, txt=label_enjoy, ln=True, align='C')
+        
         return pdf.output(dest='S').encode('latin-1', 'ignore')
     except Exception as e:
         print(f"PDF Error: {e}")
@@ -360,14 +368,13 @@ if st.session_state.recipe_result:
     st.subheader(f"📖 {st.session_state.recipe_title}")
     st.markdown(st.session_state.recipe_result.replace("Check on Amazon", c['ui_buy']))
     
-    # PDF mit aggressivem Cleaning
+    # PDF
     pdf_bytes = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
     if pdf_bytes:
         st.download_button(c['ui_dl'], data=pdf_bytes, file_name="Recipe.pdf", mime="application/pdf", use_container_width=True)
     else:
-        st.error("PDF Failed (Encoding).")
+        st.error("PDF Failed (Encoding Issue).")
 
-# Feedback Block (Wiederhergestellt)
 st.divider()
 st.subheader(c['fb_header'])
 with st.form("fb"):
