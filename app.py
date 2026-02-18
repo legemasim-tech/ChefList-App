@@ -219,41 +219,36 @@ def get_full_video_data(video_url):
         return video_title, transcript, description, channel_name
     except: return "Recipe", None, None, "Chef"
 
-def generate_smart_recipe(video_title, channel_name, transcript, description, tag, portions, unit_system):
-    combined_input = f"ORIGINAL TITLE: {video_title}\nSOURCE CHANNEL: {channel_name}\n\nTRANSCRIPT:\n{transcript}\n\nDESCRIPTION:\n{description}"
+def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
+    u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
-    unit_instruction = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
+    # Text für den Link (z.B. "Auf Amazon kaufen")
+    buy_text = config['ui_buy'].replace('*', '')
     
     system_prompt = f"""
-    You are a professional chef and a high-precision mathematician. Respond in {config['ai_lang']}.
+    You are a professional chef. Respond in {config['ai_lang']}.
     Servings: {portions}. Units: {u_inst}.
     
-    MAIN TASK: 
-    1. TRANSLATE the recipe title into the {config['ai_lang']}
-    2. Identify the original serving size from the video.
-    3. Recalculate and CONVERT all quantities EXACTLY for {portions} person(s). 
-    4. IMPORTANT: Use {unit_instruction}
-    5. Write the entire recipe in {config['ai_lang']}.
+    Structure your response exactly like this:
     
-    STRUCTURE:
-    - TITLE: Write the title in this exact format: "[Recipe Name] by [Author]"
-       Example: "Easiest Beef Wellington by Joshua Weissman"
-    - Key Data (Time, difficulty, servings: {portions})
-    - Ingredients Table (Amount | Ingredient | Shop)
-      -> Link: https://www.amazon.com/s?k=[INGREDIENTNAME]&tag={tag}
-      -> Link-Text: '🛒 buy on Amazon*'
-    - Instructions (Step-by-step)
+    1. "TITLE: [Recipe Name] by [Author]"
     
-    Start your response directly with the TITLE."""
-
+    2. Create a Markdown Table with exactly these headers:
+       | Amount | Ingredient | Shop |
+       |---|---|---|
+       (Then list the ingredients below. In the 'Shop' column, place the link: [{buy_text}](https://www.{config['amz']}/s?k=[KEYWORD]&tag={config['tag']}))
+    
+    3. "Instructions:" 
+       Write detailed step-by-step cooking instructions after the table.
+    
+    # Rules for the Link:
+    - Replace [KEYWORD] in the URL with the simple English noun of the ingredient (e.g. for "Frische Petersilie" use "Parsley").
+    """
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": combined_input[:16000]}]
-        )
+        response = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": f"TITLE: {video_title}\nTRANSCRIPT: {transcript[:12000]}"}])
         return response.choices[0].message.content
     except: return None
-
+        
 # --- 4. PDF GENERATOR (EXACT COPY OF WORKING LOGIC + EXTENDED MAP) ---
 def clean_for_pdf(text):
     if not text: return ""
@@ -586,6 +581,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
