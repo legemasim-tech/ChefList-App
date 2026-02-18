@@ -215,7 +215,8 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     You are a professional chef. Respond in {config['ai_lang']}.
     Servings: {portions}. Units: {u_inst}.
     Format: "TITLE: [Recipe Name] by [Author]"
-    Table: Amount | Ingredient | Shop (Link: https://www.{config['amz']}/s?k=[ITEM]&tag={config['tag']})
+    Table: Amount | Ingredient | Shop (Link: https://www.{config['amz']}/s?k=[ONLY_THE_MAIN_INGREDIENT_KEYWORD]&tag={config['tag']})
+    # Rule: For the Link [ITEM], use ONLY the main noun (e.g. use "Parsley" instead of "fresh chopped parsley").
     """
     try:
         response = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": f"TITLE: {video_title}\nTRANSCRIPT: {transcript[:12000]}"}])
@@ -487,6 +488,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
