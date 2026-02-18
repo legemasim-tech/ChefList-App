@@ -273,7 +273,7 @@ def create_pdf(text_content, recipe_title, config):
     try:
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.set_left_margin(10); pdf.set_right_margin(10)
+        pdf.set_left_margin(15); pdf.set_right_margin(10)
         pdf.add_page()
         pdf.set_fill_color(230, 230, 230)
         
@@ -330,9 +330,11 @@ def create_pdf(text_content, recipe_title, config):
                         content = f"{parts[0].upper()} - {parts[1].upper()}"
                     else:
                         pdf.set_font("Arial", style="B", size=11)
-                        content = f"[ ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
+                        clean_amount = parts[0].replace('*','').replace('[','').replace(']','').strip()
+                        clean_ingredient = parts[1].replace('*','').replace('[','').replace(']','').strip()
+                        content = f"- {clean_amount} {clean_ingredient}"
                     
-                    pdf.cell(185, 8, txt=content, ln=True)
+                    pdf.cell(175, 8, txt=content, ln=True)
                     pdf.set_draw_color(220, 220, 220)
                     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             
@@ -341,8 +343,8 @@ def create_pdf(text_content, recipe_title, config):
                 pdf.set_font("Arial", size=10)
                 # multi_cell braucht eine feste Breite. 0 bedeutet bis zum rechten Rand.
                 # Wir setzen die X-Position vor multi_cell explizit.
-                pdf.set_x(10)
-                pdf.multi_cell(185, 6, txt=clean_line.replace('*', ''), align='L')
+                pdf.set_x(15)
+                pdf.multi_cell(180, 6, txt=clean_line.replace('*', ''), align='L')
                 # Kleiner Abstand nach jedem Absatz/Schritt
                 pdf.ln(2)
                 
@@ -559,6 +561,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
