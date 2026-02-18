@@ -378,41 +378,38 @@ if "recipe_result" not in st.session_state: st.session_state.recipe_result = Non
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
-    # 1. Flaggen-Mapping für schönere Optik
-    FLAG_LABELS = {
-        "English": "🇺🇸 English", "Deutsch": "🇩🇪 Deutsch", "Español": "🇪🇸 Español",
-        "Français": "🇫🇷 Français", "Italiano": "🇮🇹 Italiano", "Português": "🇧🇷 Português",
-        "Nederlands": "🇳🇱 Nederlands", "Polski": "🇵🇱 Polski", "Türkçe": "🇹🇷 Türkçe",
-        "日本語": "🇯🇵 日本語"
-    }
+    # --- SPRACHAUSWAHL (EXPANDER TRICK) ---
+    # Ermitteln der aktuellen Sprache für den Titel
+    current_lang = st.session_state.get("user_lang_selection", "English")
     
-    # Rückwärts-Suche (Label -> Config Key)
-    label_to_key = {v: k for k, v in FLAG_LABELS.items()}
-
-    # Aktuelle Auswahl ermitteln
-    current_key = st.session_state.get("user_lang_selection", "English")
-    if current_key not in FLAG_LABELS: current_key = "English"
-    default_label = FLAG_LABELS[current_key]
-
-    # 2. Modernes Auswahlmenü (Pills) statt Radio/Selectbox
-    st.markdown("### 🌍 Language")
-    selected_label = st.pills(
-        "Sprache wählen",
-        options=list(FLAG_LABELS.values()),
-        default=default_label,
-        label_visibility="collapsed"
-    )
-
-    # Auswahl verarbeiten
-    if selected_label:
-        selected_lang = label_to_key[selected_label]
-        st.session_state.user_lang_selection = selected_lang
-    else:
-        selected_lang = current_key # Fallback
+    # Ein Expander dient als "Dropdown", das alle Optionen sofort zeigt
+    with st.expander(f"🌍 Language: {current_lang}", expanded=False):
+        # Liste aller Sprachen
+        lang_options = list(LANG_CONFIG.keys())
+        try: 
+            curr_index = lang_options.index(current_lang)
+        except: 
+            curr_index = 0
+            
+        # Radio-Button zeigt alle Optionen untereinander an -> Kein Scrollen im Menü nötig
+        selected_lang = st.radio(
+            "Sprache wählen",
+            options=lang_options,
+            index=curr_index,
+            label_visibility="collapsed",
+            key="lang_radio"
+        )
+        
+        # Wenn sich die Auswahl ändert, State updaten und Seite neu laden
+        if selected_lang != current_lang:
+            st.session_state.user_lang_selection = selected_lang
+            st.rerun()
 
     c = LANG_CONFIG[selected_lang]
     
-    # --- Rest der Sidebar wie gehabt ---
+    # --- REST DER SIDEBAR (LOGO, COUNTER, PAYPAL, RECHT) ---
+    st.divider() # Kleiner Abstand nach dem Menü
+    
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
     else: st.title("🍳 ChefList Pro")
     
@@ -518,3 +515,4 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
