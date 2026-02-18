@@ -211,7 +211,6 @@ def get_full_video_data(video_url):
 
 def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
-    
     system_prompt = f"""
     You are a professional chef. Respond in {config['ai_lang']}.
     Servings: {portions}. Units: {u_inst}.
@@ -223,87 +222,93 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
         return response.choices[0].message.content
     except: return None
 
-# --- 4. PDF GENERATOR (EXACT COPY OF WORKING LOGIC + CONFIG SUPPORT) ---
+# --- 4. PDF GENERATOR (ULTIMATE FIX) ---
 def clean_for_pdf(text):
-    # DEINE ORIGINAL LOGIK
-    replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
-    for char, replacement in replacements.items():
-        text = text.replace(char, replacement)
+    if not text: return ""
+    text = str(text)
     
-    text = text.replace('“', '"').replace('”', '"').replace('’', "'").replace('–', '-')
-    # DER CRASH-VERHINDERER:
-    text = re.sub(r'[^\x00-\x7F]+', '', text) 
+    # 1. Erweiterte Ersetzungen für europäische Sprachen
+    replacements = {
+        # Deutsch
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss',
+        # Französisch / Spanisch / Italienisch
+        'é': 'e', 'è': 'e', 'à': 'a', 'ù': 'u', 'ç': 'c', 'ñ': 'n', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        # Polnisch
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        # Türkisch
+        'ş': 's', 'ğ': 'g', 'ı': 'i', 'İ': 'I', 'ç': 'c', 'ö': 'o', 'ü': 'u',
+        # Symbole
+        '€': 'EUR', '”': '"', '“': '"', '’': "'", '–': '-', '…': '...'
+    }
+    for char, rep in replacements.items():
+        text = text.replace(char, rep)
+    
+    # 2. RADIKALE BEREINIGUNG (Wie in deinem funktionierenden Code)
+    # Entfernt ALLES, was nicht ASCII ist. Das verhindert den Absturz sicher.
+    text = re.sub(r'[^\x00-\x7F]+', '', text)
+    
+    # Markdown Links bereinigen
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+    
     return text
 
 def create_pdf(text_content, recipe_title, config):
     try:
         pdf = FPDF()
-        pdf.set_left_margin(10)
-        pdf.set_right_margin(10)
-        pdf.add_page()
-        pdf.set_fill_color(230, 230, 230)
-        pdf.set_font("Arial", style="B", size=14)
+        pdf.add_page(); pdf.set_font("Arial", style="B", size=14)
         
-        # Titel aus Config + Bereinigung
-        safe_rec_label = clean_for_pdf(config['pdf_rec']) 
-        safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
+        # JEDEN String durch den Cleaner jagen!
+        safe_rec_label = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
+        safe_title = clean_for_pdf(recipe_title[:50])
         
         pdf.cell(190, 15, txt=f"{safe_rec_label}: {safe_title}", ln=True, align='C', fill=True)
         pdf.ln(5)
         
         lines = text_content.split('\n')
         is_instruction = False
+        
         for line in lines:
             line = line.strip()
             if not line or '---' in line: continue
-            line = clean_for_pdf(line)
             
-            # Prüfen auf Instruktionen (erweitert um Config-Wert)
-            # Wir prüfen, ob das Wort aus der Config (z.B. "Zubereitung") in der Zeile vorkommt
-            if any(word in line for word in ['Instructions', 'Preparation', 'Directions', clean_for_pdf(config['pdf_instr'])]):
+            # Instruktionen erkennen (multilingual)
+            if any(x in line for x in ['Instructions', 'Zubereitung', 'Instrucciones', 'Istruzioni', 'Talimatlar']):
                 is_instruction = True
-                pdf.ln(5)
-                pdf.set_font("Arial", style="B", size=12)
-                # Nutze den übersetzten Begriff
-                pdf.cell(0, 10, txt=clean_for_pdf(config['pdf_instr']) + ":", ln=True)
-                continue
-            
-            # Headers
-            headers = ['Time:', 'Difficulty:', 'Temperature:', 'Servings:', 'Units:', 'Zeit:', 'Dauer:', 'Temp:', 'Portionen:']
-            if any(line.startswith(h) for h in headers):
-                pdf.set_font("Arial", style="B", size=11)
-                pdf.cell(0, 8, txt=line, ln=True)
+                pdf.ln(5); pdf.set_font("Arial", style="B", size=12)
+                safe_instr_label = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
+                pdf.cell(0, 10, txt=safe_instr_label, ln=True)
                 continue
                 
-            pdf.set_x(10)
-            if '|' in line and not is_instruction:
-                parts = [p.strip() for p in line.split('|') if p.strip()]
+            clean_line = clean_for_pdf(line)
+            if not clean_line: continue
+            
+            # Header erkennen
+            headers = ['Time', 'Difficulty', 'Temp', 'Servings', 'Units', 'Zeit', 'Dauer', 'Portionen']
+            if any(clean_line.startswith(h) for h in headers):
+                pdf.set_font("Arial", style="B", size=11)
+                pdf.cell(0, 8, txt=clean_line, ln=True)
+                continue
+
+            # Tabelle
+            if '|' in clean_line and not is_instruction:
+                parts = [p.strip() for p in clean_line.split('|') if p.strip()]
                 if len(parts) >= 2:
-                    # Tabellen Logik
-                    if "Amount" in parts[0] or "Ingredient" in parts[1] or "Menge" in parts[0] or "Zutat" in parts[1]:
-                        pdf.set_font("Arial", style="B", size=10)
-                        content = "AMOUNT - INGREDIENT"
-                    else:
-                        pdf.set_font("Arial", style="B", size=11)
-                        content = f"[ ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
-                    
+                    content = f"[ ] {parts[0]} {parts[1]}"
+                    pdf.set_font("Arial", style="B", size=11)
                     pdf.cell(185, 8, txt=content, ln=True)
                     pdf.set_draw_color(220, 220, 220)
                     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             else:
                 pdf.set_font("Arial", size=10)
-                pdf.multi_cell(185, 7, txt=line.replace('*', ''), align='L')
-                if is_instruction: pdf.ln(2)
+                pdf.multi_cell(185, 7, txt=clean_line, align='L')
                 
-        pdf.ln(10)
-        pdf.set_font("Arial", style="I", size=10)
-        pdf.cell(0, 10, txt=clean_for_pdf(config['pdf_enjoy']), ln=True, align='C')
+        pdf.ln(10); pdf.set_font("Arial", style="I", size=10)
+        safe_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Enjoy!'))
+        pdf.cell(0, 10, txt=safe_enjoy, ln=True, align='C')
         
-        # WICHTIG: Byte-Encoding für Streamlit Cloud
         return pdf.output(dest='S').encode('latin-1', 'ignore')
     except Exception as e:
-        print(f"PDF Debug: {e}")
+        print(f"PDF Error: {e}")
         return None
 
 # --- 5. INTERFACE ---
@@ -381,13 +386,14 @@ if st.session_state.recipe_result:
     st.subheader(f"📖 {st.session_state.recipe_title}")
     st.markdown(st.session_state.recipe_result.replace("Check on Amazon", c['ui_buy']))
     
-    # PDF
+    # PDF Generator aufrufen
     pdf_bytes = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
     if pdf_bytes:
         st.download_button(c['ui_dl'], data=pdf_bytes, file_name="Recipe.pdf", mime="application/pdf", use_container_width=True)
     else:
-        st.error("PDF Failed (Encoding Issue).")
+        st.error("PDF Error (Encoding).")
 
+# Feedback Block
 st.divider()
 st.subheader(c['fb_header'])
 with st.form("fb"):
