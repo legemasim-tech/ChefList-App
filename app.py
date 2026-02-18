@@ -24,7 +24,8 @@ LANG_CONFIG = {
         "ai_lang": "ENGLISH", 
         "fb_header": "Help us improve! 🍲", "fb_btn": "Send ✨", 
         "fb_place": "What can we do better?", "fb_mail": "Email (optional)", "fb_thx": "Saved! 🙌",
-        "pdf_rec": "Recipe", "pdf_instr": "Instructions", "pdf_enjoy": "Enjoy your meal!"
+        "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
+        "pdf_enjoy": "Happy cooking from the Cheflist Pro Team!"
     },
     "Deutsch": {
         "tag": "cheflist21-21", "amz": "amazon.de", "curr": "EUR", "iso": "de",
@@ -42,7 +43,8 @@ LANG_CONFIG = {
         "ai_lang": "GERMAN", 
         "fb_header": "Hilf uns besser zu werden! 🍲", "fb_btn": "Senden ✨",
         "fb_place": "Was können wir besser machen?", "fb_mail": "E-Mail (optional)", "fb_thx": "Gespeichert! 🙌",
-        "pdf_rec": "Rezept", "pdf_instr": "Zubereitung", "pdf_enjoy": "Guten Appetit!"
+        "pdf_rec": "Rezept", "pdf_instr": "Zubereitung", 
+        "pdf_enjoy": "Gutes Gelingen wünscht das Team von Cheflist Pro."
     },
     "Español": {
         "tag": "cheflist21-20", "amz": "amazon.es", "curr": "EUR", "iso": "es",
@@ -56,7 +58,8 @@ LANG_CONFIG = {
         "legal_privacy_body": "No guardamos datos.", "legal_note": "⚠️ IA puede fallar.",
         "ai_lang": "SPANISH", "fb_header": "¡Ayúdanos! 🍲", "fb_btn": "Enviar ✨",
         "fb_place": "¿Ideas?", "fb_mail": "Correo", "fb_thx": "¡Gracias! 🙌",
-        "pdf_rec": "Receta", "pdf_instr": "Instrucciones", "pdf_enjoy": "¡Buen provecho!"
+        "pdf_rec": "Receta", "pdf_instr": "Instrucciones", 
+        "pdf_enjoy": "¡El equipo de Cheflist Pro le desea mucho éxito!"
     },
     "Français": {
         "tag": "cheflist21-20", "amz": "amazon.fr", "curr": "EUR", "iso": "fr",
@@ -70,7 +73,8 @@ LANG_CONFIG = {
         "legal_privacy_body": "Pas de stockage.", "legal_note": "⚠️ L'IA peut faire des erreurs.",
         "ai_lang": "FRENCH", "fb_header": "Aidez-nous! 🍲", "fb_btn": "Envoyer ✨",
         "fb_place": "Idées?", "fb_mail": "Email", "fb_thx": "Merci! 🙌",
-        "pdf_rec": "Recette", "pdf_instr": "Instructions", "pdf_enjoy": "Bon appétit!"
+        "pdf_rec": "Recette", "pdf_instr": "Instructions", 
+        "pdf_enjoy": "L'équipe de Cheflist Pro vous souhaite une bonne réussite !"
     },
     "Italiano": {
         "tag": "cheflist21-20", "amz": "amazon.it", "curr": "EUR", "iso": "it",
@@ -84,10 +88,11 @@ LANG_CONFIG = {
         "legal_privacy_body": "Dati protetti.", "legal_note": "⚠️ IA può sbagliare.",
         "ai_lang": "ITALIAN", "fb_header": "Aiutaci! 🍲", "fb_btn": "Invia ✨",
         "fb_place": "Idee?", "fb_mail": "Email", "fb_thx": "Grazie! 🙌",
-        "pdf_rec": "Ricetta", "pdf_instr": "Istruzioni", "pdf_enjoy": "Buon appetito!"
+        "pdf_rec": "Ricetta", "pdf_instr": "Istruzioni", 
+        "pdf_enjoy": "Buona fortuna dal team di Cheflist Pro!"
     },
     "Português": {
-        "tag": "cheflist21-20", "amz": "amazon.es", "curr": "EUR", "iso": "pt",
+        "tag": "cheflist21-20", "amz": "amazon.com.br", "curr": "BRL", "iso": "pt",
         "ui_header": "YouTube para PDF", "ui_input_label": "URL do vídeo:",
         "ui_servings": "Porções:", "ui_units": "Unidades:", "ui_unit_opts": ["Métrico (g/ml)", "US (cups/oz)"],
         "ui_create": "Criar ✨", "ui_wait": "Calculando...", "ui_ready": "Pronto!",
@@ -98,7 +103,8 @@ LANG_CONFIG = {
         "legal_privacy_body": "Dados seguros.", "legal_note": "⚠️ IA pode errar.",
         "ai_lang": "PORTUGUESE", "fb_header": "Ajuda! 🍲", "fb_btn": "Enviar ✨",
         "fb_place": "Ideias?", "fb_mail": "Email", "fb_thx": "Obrigado! 🙌",
-        "pdf_rec": "Receita", "pdf_instr": "Instruções", "pdf_enjoy": "Bom apetite!"
+        "pdf_rec": "Receita", "pdf_instr": "Instruções", 
+        "pdf_enjoy": "Boa sorte da equipa Cheflist Pro!"
     },
     "Nederlands": {
         "tag": "cheflist21-20", "amz": "amazon.nl", "curr": "EUR", "iso": "nl",
@@ -112,7 +118,8 @@ LANG_CONFIG = {
         "legal_privacy_body": "Geen dataopslag.", "legal_note": "⚠️ AI kan fouten maken.",
         "ai_lang": "DUTCH", "fb_header": "Help ons! 🍲", "fb_btn": "Verzenden ✨",
         "fb_place": "Ideeën?", "fb_mail": "Email", "fb_thx": "Bedankt! 🙌",
-        "pdf_rec": "Recept", "pdf_instr": "Instructies", "pdf_enjoy": "Eet smakelijk!"
+        "pdf_rec": "Recept", "pdf_instr": "Instructies", 
+        "pdf_enjoy": "Veel succes gewenst door het Cheflist Pro team."
     },
     "Polski": {
         "tag": "cheflist21-20", "amz": "amazon.pl", "curr": "PLN", "iso": "pl",
@@ -126,7 +133,8 @@ LANG_CONFIG = {
         "legal_privacy_body": "Dane szyfrowane.", "legal_note": "⚠️ AI błędy.",
         "ai_lang": "POLISH", "fb_header": "Pomoc! 🍲", "fb_btn": "Wyślij ✨",
         "fb_place": "Pomysły?", "fb_mail": "Email", "fb_thx": "Dzięki! 🙌",
-        "pdf_rec": "Przepis", "pdf_instr": "Instrukcje", "pdf_enjoy": "Smacznego!"
+        "pdf_rec": "Przepis", "pdf_instr": "Instrukcje", 
+        "pdf_enjoy": "Powodzenia życzy zespół Cheflist Pro."
     },
     "Türkçe": {
         "tag": "cheflist21-20", "amz": "amazon.com.tr", "curr": "TRY", "iso": "tr",
@@ -140,7 +148,8 @@ LANG_CONFIG = {
         "legal_privacy_body": "Şifreli.", "legal_note": "⚠️ AI hata.",
         "ai_lang": "TURKISH", "fb_header": "Yardım! 🍲", "fb_btn": "Gönder ✨",
         "fb_place": "Fikirler?", "fb_mail": "E-posta", "fb_thx": "Teşekkürler! 🙌",
-        "pdf_rec": "Tarif", "pdf_instr": "Talimatlar", "pdf_enjoy": "Afiyet olsun!"
+        "pdf_rec": "Tarif", "pdf_instr": "Talimatlar", 
+        "pdf_enjoy": "Cheflist Pro ekibi başarılar diler."
     },
     "日本語": {
         "tag": "cheflist21-20", "amz": "amazon.co.jp", "curr": "JPY", "iso": "ja",
@@ -154,7 +163,8 @@ LANG_CONFIG = {
         "legal_privacy_body": "暗号化済み。", "legal_note": "⚠️ AIミス.",
         "ai_lang": "JAPANESE", "fb_header": "改善にご協力ください！ 🍲", "fb_btn": "送信 ✨",
         "fb_place": "ご意見", "fb_mail": "メール", "fb_thx": "感謝! 🙌",
-        "pdf_rec": "Recipe", "pdf_instr": "Instructions", "pdf_enjoy": "Enjoy!"
+        "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
+        "pdf_enjoy": "Cheflist Proチームより、幸運を祈ります！"
     }
 }
 
@@ -526,5 +536,6 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
