@@ -254,17 +254,17 @@ def clean_for_pdf(text):
     if not text: return ""
     text = str(text)
     
-    replacements = {
-        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss',
-        'é': 'e', 'è': 'e', 'à': 'a', 'ù': 'u', 'ç': 'c', 'ñ': 'n', 'í': 'i', 'ó': 'o', 'ú': 'u',
-        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
-        'ş': 's', 'ğ': 'g', 'ı': 'i', 'İ': 'I', 'ç': 'c', 'ö': 'o', 'ü': 'u',
-        '€': 'EUR', '”': '"', '“': '"', '’': "'", '–': '-', '…': '...',
-        '•': '-' 
+   replacements = {
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 
+        'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 
+        'ß': 'ss',
+        'é': 'e', 'è': 'e', 'à': 'a', 'ù': 'u', 'ç': 'c', 
+        'ñ': 'n', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        '€': 'EUR', '„': '"', '“': '"', '”': '"', '’': "'", '–': '-'
     }
+    
     for char, rep in replacements.items():
         text = text.replace(char, rep)
-    
     text = re.sub(r'[^\x00-\x7F]+', '', text)
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
@@ -561,6 +561,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
