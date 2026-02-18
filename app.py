@@ -555,27 +555,34 @@ if st.session_state.recipe_result:
         )
     else:
         st.error("The PDF could not be generated.")
-        
+
     st.divider()
     st.caption("🛒 " + ("Copy Ingredients" if c['iso'] == 'en' else "Zutaten kopieren"))
     
     shopping_list = []
     # Wir gehen durch jede Zeile des KI-Ergebnisses
     for line in st.session_state.recipe_result.split('\n'):
-        # Wir suchen Tabellenzeilen (|), ignorieren aber Trennlinien (---) und Überschriften (Amount/Menge)
+        # Wir suchen Tabellenzeilen (|), ignorieren aber Trennlinien (---) und Header
         if '|' in line and '---' not in line:
-            if any(x in line for x in ["Amount", "Menge", "Ingredient", "Zutat", "Miktar", "Ilość"]):
+            # Begriffe zum Ignorieren (Überschriften in allen Sprachen)
+            ignore_terms = ["Amount", "Menge", "Ingredient", "Zutat", "Miktar", "Ilosc", "Shop", "Kaufen", "Buy"]
+            if any(x.lower() in line.lower() for x in ignore_terms):
                 continue
             
-            # 1. Pipe-Symbole entfernen
-            clean = line.replace('|', ' ').strip()
-            # 2. Markdown Links entfernen: [Name](URL) wird zu Name
-            clean = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', clean)
-            # 3. Mehrfache Leerzeichen entfernen
-            clean = " ".join(clean.split())
-            
-            if clean:
-                shopping_list.append(clean)
+            # 1. Spalten trennen
+            parts = line.split('|')
+            if len(parts) >= 3:
+                amount = parts[1].strip()
+                ingredient = parts[2].strip()
+                
+                # 2. Markdown Links in der Zutat entfernen: [Name](URL) -> Name
+                ingredient = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', ingredient)
+                
+                # 3. Falls die KI die Links in die Zutat-Spalte gepackt hat, säubern wir alles
+                clean_line = f"{amount} {ingredient}".strip()
+                
+                if clean_line and clean_line != "":
+                    shopping_list.append(clean_line)
     
     # Anzeige als Code-Block (hat oben rechts einen Kopier-Button)
     if shopping_list:
@@ -588,29 +595,3 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
