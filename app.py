@@ -222,7 +222,7 @@ def get_full_video_data(video_url):
 def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
-      buy_text = config['ui_buy'].replace('*', '')
+    buy_text = config['ui_buy'].replace('*', '')
     
     system_prompt = f"""
     You are a professional chef. Respond in {config['ai_lang']}.
@@ -241,7 +241,6 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
         response = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": f"TITLE: {video_title}\nTRANSCRIPT: {transcript[:12000]}"}])
         return response.choices[0].message.content
     except: return None
-
 
 # --- 4. PDF GENERATOR (EXACT COPY OF WORKING LOGIC + EXTENDED MAP) ---
 def clean_for_pdf(text):
@@ -575,6 +574,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
