@@ -262,10 +262,20 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
 # --- 4. PDF GENERATOR ---
 def clean_for_pdf(text):
     if not text: return ""
-    replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro', '–': '-', '’': "'", '“': '"', '”': '"'}
-    for char, rep in replacements.items(): text = text.replace(char, rep)
-    # Entfernt alles nicht-ASCII um Abstürze zu vermeiden
-    return re.sub(r'[^\x00-\x7F]+', '', text)
+    # 1. Gängige Sonderzeichen ersetzen
+    replacements = {
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 
+        'ß': 'ss', '€': 'EUR', '–': '-', '’': "'", '“': '"', '”': '"', '…': '...'
+    }
+    for char, rep in replacements.items(): 
+        text = text.replace(char, rep)
+    
+    # 2. Brutale Bereinigung: Alles was nicht Latin-1 ist, wird entfernt.
+    # Das verhindert den Absturz bei Emojis oder asiatischen Zeichen.
+    try:
+        return text.encode('latin-1', 'ignore').decode('latin-1')
+    except:
+        return ""
 
 def create_pdf(text_content, recipe_title, config):
     try:
@@ -273,11 +283,14 @@ def create_pdf(text_content, recipe_title, config):
         pdf.add_page()
         pdf.set_left_margin(10); pdf.set_right_margin(10)
         pdf.set_fill_color(230, 230, 230)
+        
+        # Wir nutzen Standard-Font 'Arial' (kann nur Latin-1)
         pdf.set_font("Arial", style="B", size=14)
         
         # Titel
-        title = clean_for_pdf(recipe_title[:40])
-        pdf.cell(190, 15, txt=f"{config['pdf_rec']}: {title}", ln=True, align='C', fill=True)
+        safe_title = clean_for_pdf(recipe_title)[:50]
+        header = f"{config.get('pdf_rec', 'Recipe')}: {safe_title}"
+        pdf.cell(190, 15, txt=header, ln=True, align='C', fill=True)
         pdf.ln(5)
         
         lines = text_content.split('\n')
@@ -287,17 +300,18 @@ def create_pdf(text_content, recipe_title, config):
             line = line.strip()
             if not line or '---' in line: continue
             
-            # Instruktionen erkennen (multilingual)
+            # Instruktionen erkennen (multilingual robust)
             if any(x in line for x in ['Instructions', 'Zubereitung', 'Instrucciones', 'Istruzioni', 'Instruções', 'Talimatlar']):
                 is_instruction = True
                 pdf.ln(5)
                 pdf.set_font("Arial", style="B", size=12)
-                pdf.cell(0, 10, txt=config['pdf_instr'], ln=True)
+                instr_title = config.get('pdf_instr', 'Instructions')
+                pdf.cell(0, 10, txt=instr_title, ln=True)
                 continue
             
             clean_line = clean_for_pdf(line)
             
-            # Tabellen-Logik wie im Original
+            # Tabellen-Logik
             if '|' in clean_line and not is_instruction:
                 parts = [p.strip() for p in clean_line.split('|') if p.strip()]
                 if len(parts) >= 2:
@@ -312,11 +326,16 @@ def create_pdf(text_content, recipe_title, config):
                 
         pdf.ln(10)
         pdf.set_font("Arial", style="I", size=10)
-        pdf.cell(0, 10, txt=config['pdf_enjoy'], ln=True, align='C')
+        footer = config.get('pdf_enjoy', 'Enjoy!')
+        pdf.cell(0, 10, txt=clean_for_pdf(footer), ln=True, align='C')
         
+        # WICHTIG: Ausgabe als String codiert in Latin-1
         return pdf.output(dest='S').encode('latin-1', 'ignore')
-    except: return None
-
+        
+    except Exception as e:
+        print(f"PDF Error: {e}")
+        return None
+        
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="🍲", layout="centered")
 
@@ -399,16 +418,23 @@ if st.button(c['ui_create'], use_container_width=True):
 if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.recipe_title}")
+    
+    # Text anzeigen
     st.markdown(st.session_state.recipe_result.replace("Check on Amazon", c['ui_buy']))
     
+    st.divider()
+    
+    # PDF generieren
     pdf_bytes = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
+    
     if pdf_bytes:
-        st.download_button(c['ui_dl'], data=pdf_bytes, file_name="Recipe.pdf", mime="application/pdf", use_container_width=True)
-
-st.divider()
-st.subheader(c['fb_header'])
-with st.form("fb"):
-    txt = st.text_area(c['fb_place']); mail = st.text_input(c['fb_mail'])
-    if st.form_submit_button(c['fb_btn']):
-        with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
-        st.success(c['fb_thx'])
+        st.download_button(
+            label=c['ui_dl'], 
+            data=pdf_bytes, 
+            file_name="ChefList_Recipe.pdf", 
+            mime="application/pdf", 
+            use_container_width=True
+        )
+    else:
+        st.error("PDF generation failed due to special characters. Please try a standard recipe.")
+    
