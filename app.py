@@ -325,6 +325,44 @@ def create_pdf(text_content, recipe_title, config):
 
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="🍲")
+# --- DESIGN TWEAKS ---
+st.markdown("""
+<style>
+    /* Hauptüberschrift zentrieren und stylen */
+    h1 {
+        text-align: center;
+        color: #FF4B4B;
+    }
+    /* Unterüberschrift zentrieren */
+    h3 {
+        text-align: center;
+        color: #555;
+    }
+    /* Den "Rezept erstellen" Button größer und auffälliger machen */
+    div.stButton > button:first-child {
+        width: 100%;
+        background-color: #FF4B4B;
+        color: white;
+        font-weight: bold;
+        border: none;
+        padding: 15px;
+        font-size: 18px;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #FF2B2B;
+        color: white;
+        border: none;
+    }
+    /* Sidebar Bild schön einrahmen */
+    [data-testid='stSidebar'] img {
+        background-color: white;
+        padding: 15px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 if "user_lang_selection" not in st.session_state:
     try:
@@ -424,3 +462,4 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
