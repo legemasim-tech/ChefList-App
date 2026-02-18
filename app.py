@@ -222,11 +222,9 @@ def get_full_video_data(video_url):
 def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
-    # Begriffe für die Tabelle und Anleitung vorbereiten
     buy_text = config['ui_buy'].replace('*', '')
     instr_header = config.get('pdf_instr', 'Instructions')
     
-    # Sprache für Tabellen-Header festlegen
     lang_map = {
         "de": ("Menge", "Zutat"),
         "en": ("Amount", "Ingredient"),
@@ -250,17 +248,19 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
 
     | {h_amount} | {h_ingredient} | {buy_text} |
     |---|---|---|
-    | [Amount] | [Ingredient] | [{buy_text}](https://www.{config['amz']}/s?k=[KEYWORD]&tag={config['tag']}) |
-    
+    [Detailed Ingredients List]
+
     ### {instr_header}
-    1. [First step]
-    2. [Second step]
+    1. [First detailed step]
+    2. [Second detailed step]
+    ...
     
-    # CRITICAL RULES:
-    1. The third column of the table MUST show the text "{buy_text}" as a clickable link for EVERY row.
-    2. Replace [KEYWORD] with the simple English noun of the ingredient.
-    3. Start numbering (1., 2., ...) ONLY in the {instr_header} section.
-    4. Do not use the word 'Title' or 'Link' as plain text.
+    # CRITICAL INSTRUCTIONS FOR QUALITY:
+    1. The "{instr_header}" section MUST be detailed, comprehensive, and professional. 
+    2. Do not summarize too much. Explain the cooking process step-by-step so a beginner can follow.
+    3. Use the third column of the table for the link: [{buy_text}](https://www.{config['amz']}/s?k=[KEYWORD]&tag={config['tag']}).
+    4. Start numbering only in the {instr_header} section.
+    5. Ensure the instructions reflect the full content of the video transcript.
     """
     try:
         response = client.chat.completions.create(
@@ -272,7 +272,7 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
         )
         return response.choices[0].message.content
     except: return None
-            
+    
 # --- 4. PDF GENERATOR (FIXED ALIGNMENT & SPACING) ---
 def clean_for_pdf(text):
     if not text: return ""
@@ -587,6 +587,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
