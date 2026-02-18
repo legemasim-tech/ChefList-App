@@ -326,34 +326,46 @@ def create_pdf(text_content, recipe_title, config):
 
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="🍲")
-# --- DESIGN TWEAKS ---
 st.markdown("""
 <style>
-    /* Hauptüberschrift zentrieren und stylen */
-    h1 {
-        text-align: center;
-        color: #FF4B4B;
-    }
-    /* Unterüberschrift zentrieren */
-    h3 {
-        text-align: center;
-        color: #555;
-    }
-    /* Den "Rezept erstellen" Button größer und auffälliger machen */
-    div.stButton > button:first-child {
+    /* Hauptüberschrift zentrieren */
+    h1 { text-align: center; color: #FF4B4B; }
+    h3 { text-align: center; color: #555; }
+
+    /* 1. Der "Rezept erstellen" Button (Standard) -> BLAU */
+    div.stButton > button {
         width: 100%;
-        background-color: #FF4B4B;
+        background-color: #0070ba; /* Royal Blue (seriös) */
         color: white;
         font-weight: bold;
         border: none;
         padding: 15px;
         font-size: 18px;
+        border-radius: 8px;
     }
-    div.stButton > button:first-child:hover {
-        background-color: #FF2B2B;
+    div.stButton > button:hover {
+        background-color: #005a9e; /* Dunkleres Blau beim Drüberfahren */
         color: white;
         border: none;
     }
+
+    /* 2. Der "PDF Download" Button -> ROT */
+    /* Wir nutzen den spezifischen Selektor für Download-Buttons */
+    [data-testid="stDownloadButton"] > button {
+        width: 100%;
+        background-color: #FF4B4B !important; /* Signalrot */
+        color: white !important;
+        font-weight: bold;
+        border: none;
+        padding: 15px;
+        font-size: 18px;
+        border-radius: 8px;
+    }
+    [data-testid="stDownloadButton"] > button:hover {
+        background-color: #cc0000 !important; /* Dunkleres Rot beim Drüberfahren */
+        color: white !important;
+    }
+
     /* Sidebar Bild schön einrahmen */
     [data-testid='stSidebar'] img {
         background-color: white;
@@ -364,7 +376,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
 if "user_lang_selection" not in st.session_state:
     try:
         lang_header = st.context.headers.get("Accept-Language", "en")
@@ -515,4 +526,5 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
