@@ -260,20 +260,45 @@ def clean_for_pdf(text):
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
+def clean_for_pdf(text):
+    if not text: return ""
+    text = str(text)
+    
+    # Erweiterte Map für internationale Zeichen
+    replacements = {
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss',
+        'é': 'e', 'è': 'e', 'à': 'a', 'ù': 'u', 'ç': 'c', 'ñ': 'n', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        'ş': 's', 'ğ': 'g', 'ı': 'i', 'İ': 'I', 'ç': 'c', 'ö': 'o', 'ü': 'u',
+        '€': 'EUR', '”': '"', '“': '"', '’': "'", '–': '-', '…': '...',
+        '•': '-' # Bulletpoints ersetzen
+    }
+    for char, rep in replacements.items():
+        text = text.replace(char, rep)
+    
+    # Alles andere nicht-ASCII entfernen (verhindert Absturz)
+    text = re.sub(r'[^\x00-\x7F]+', '', text)
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+    return text
+
 def create_pdf(text_content, recipe_title, config):
     try:
         pdf = FPDF()
-        pdf.set_left_margin(10)
-        pdf.set_right_margin(10)
+        pdf.set_auto_page_break(auto=True, margin=15) # Wichtig für lange Texte
+        pdf.set_left_margin(10); pdf.set_right_margin(10)
         pdf.add_page()
         pdf.set_fill_color(230, 230, 230)
         pdf.set_font("Arial", style="B", size=14)
         
-        # Konfig-Texte auch bereinigen!
+        # Logo Check
+        if os.path.exists("logo.png"):
+            try: pdf.image("logo.png", x=160, y=10, w=25)
+            except: pass
+
+        # Titel
         safe_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
         safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
-        
-        pdf.cell(190, 15, txt=f"{safe_rec}: {safe_title}", ln=True, align='C', fill=True)
+        pdf.cell(150, 15, txt=f"{safe_rec}: {safe_title}", ln=True, align='L', fill=True)
         pdf.ln(5)
         
         lines = text_content.split('\n')
@@ -283,34 +308,37 @@ def create_pdf(text_content, recipe_title, config):
             line = line.strip()
             if not line or '---' in line: continue
             
-            # Zuerst bereinigen, damit der String sicher ist
-            line = clean_for_pdf(line)
-            if not line: continue
+            # Bereinigen
+            clean_line = clean_for_pdf(line)
+            if not clean_line: continue
             
-            # Check Keywords (auch bereinigt)
+            # 1. Prüfen auf "Instruction" Header (um ihn Fett zu machen)
             safe_instr_key = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
             check_words = ['Instructions', 'Preparation', 'Directions', 'Zubereitung', 'Instrucciones', 'Istruzioni', safe_instr_key]
             
-            if any(word in line for word in check_words):
+            # Wenn es eine Überschrift ist:
+            if any(word.lower() in clean_line.lower() for word in check_words) and len(clean_line) < 50:
                 is_instruction = True
                 pdf.ln(5)
                 pdf.set_font("Arial", style="B", size=12)
-                pdf.cell(0, 10, txt=safe_instr_key + ":", ln=True)
+                pdf.cell(0, 10, txt=clean_line, ln=True)
                 continue
-            
+
+            # 2. Prüfen auf Metadaten (Zeit, Portionen...) -> Fett gedruckt
             headers = ['Time', 'Difficulty', 'Temp', 'Servings', 'Units', 'Zeit', 'Dauer']
-            if any(line.startswith(h) for h in headers):
+            if any(clean_line.startswith(h) for h in headers):
                 pdf.set_font("Arial", style="B", size=11)
-                pdf.cell(0, 8, txt=line, ln=True)
+                pdf.cell(0, 8, txt=clean_line, ln=True)
                 continue
                 
-            pdf.set_x(10)
+            # 3. Tabelle (Zutaten)
             if '|' in line and not is_instruction:
+                pdf.set_x(10)
                 parts = [p.strip() for p in line.split('|') if p.strip()]
                 if len(parts) >= 2:
-                    if "Amount" in parts[0] or "Ingredient" in parts[1] or "Menge" in parts[0]:
+                    if any(x in parts[0] for x in ["Amount", "Menge", "Ingredient", "Zutat"]):
                         pdf.set_font("Arial", style="B", size=10)
-                        content = "AMOUNT - INGREDIENT"
+                        content = f"{parts[0].upper()} - {parts[1].upper()}"
                     else:
                         pdf.set_font("Arial", style="B", size=11)
                         content = f"[ ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
@@ -318,22 +346,23 @@ def create_pdf(text_content, recipe_title, config):
                     pdf.cell(185, 8, txt=content, ln=True)
                     pdf.set_draw_color(220, 220, 220)
                     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+            
+            # 4. Alles andere -> TEXT (Das sind die Instruktionen!)
             else:
                 pdf.set_font("Arial", size=10)
-                pdf.multi_cell(185, 7, txt=line.replace('*', ''), align='L')
-                if is_instruction: pdf.ln(2)
+                pdf.multi_cell(185, 7, txt=clean_line.replace('*', ''), align='L')
                 
+        # Footer am Ende
         pdf.ln(10)
         pdf.set_font("Arial", style="I", size=10)
         safe_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Enjoy!'))
         pdf.cell(0, 10, txt=safe_enjoy, ln=True, align='C')
         
-        # WICHTIG: Die Rückgabe exakt wie im funktionierenden Code
         return pdf.output()
     except Exception as e:
         print(f"PDF Debug: {e}")
         return None
-
+        
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="🍲")
 st.markdown("""
@@ -536,6 +565,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
