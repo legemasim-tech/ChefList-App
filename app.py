@@ -300,7 +300,7 @@ def create_pdf(text_content, recipe_title, config):
             if not clean_line: continue
             
             # Reset X-Position am Anfang jeder Zeile, um Verschiebung zu verhindern
-            pdf.set_x(10)
+            pdf.set_x(15)
             
             # 1. Überschriften (Instructions, Zubereitung...)
             safe_instr_key = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
@@ -563,6 +563,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
