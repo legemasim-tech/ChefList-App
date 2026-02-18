@@ -380,6 +380,31 @@ if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 with st.sidebar:
     try: idx = list(LANG_CONFIG.keys()).index(st.session_state.user_lang_selection)
     except: idx = 0
+    selected_lang = st.radio("🌍 Language", list(LANG_CONFIG.keys()), index=idx)
+    
+    c = LANG_CONFIG[selected_lang]
+    
+    if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
+    else: st.title("🍳 ChefList Pro")
+    
+    st.info(f"{c['ui_counter_text']} {st.session_state.counter}")
+    
+    pay_url = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name=ChefList_Pro_Support&amount=0.90&currency_code={c['curr']}"
+    st.markdown(f'''<a href="{pay_url}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%;">{c['ui_btn_pay']}</button></a>''', unsafe_allow_html=True)
+    
+    st.markdown("---")
+    with st.expander(f"ℹ️ {c['legal_title']}"):
+        st.caption(c["legal_op"]); st.caption(c["legal_contact"]); st.divider()
+        st.write(f"📊 {c['legal_total']} {get_total_count()}")
+        st.divider(); st.caption(c["legal_amz"]); st.subheader(c["legal_privacy_title"]); st.caption(c["legal_privacy_body"])
+        st.divider(); st.caption(c["legal_note"])
+        
+    st.divider()
+    if st.checkbox("Admin"):
+        pw = st.text_input("PW", type="password")
+        if pw == "Gemini_Cheflist_pw" and os.path.exists("user_feedback.txt"):
+            with open("user_feedback.txt", "r") as f: st.text_area("Log", f.read())
+                
     selected_lang = st.selectbox("🌍 Language", list(LANG_CONFIG.keys()), index=idx)
     c = LANG_CONFIG[selected_lang]
     
@@ -488,6 +513,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
