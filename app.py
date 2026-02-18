@@ -237,7 +237,6 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     }
     h_amount, h_ingredient = lang_map.get(config['iso'], ("Amount", "Ingredient"))
 
-    # Wir bauen die Basis-URL hier vor, um Fehler im Prompt zu vermeiden
     base_url = f"https://www.{config['amz']}/s?k="
     tag_part = f"&tag={config['tag']}"
 
@@ -249,18 +248,20 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     
     | {h_amount} | {h_ingredient} | {buy_text} |
     |---|---|---|
-    | [Amount] | [Ingredient] | [{buy_text}]({base_url}[KEYWORD]{tag_part}) |
+    [Full Ingredients List]
 
     ### {instr_header}
-    1. [First detailed step]
-    2. [Second detailed step]
+    1. [Extremely detailed step 1]
+    2. [Extremely detailed step 2]
+    ...
     
-    # CRITICAL RULES:
-    1. The link in the third column MUST be a valid external URL.
-    2. Format: [{buy_text}]({base_url}[KEYWORD]{tag_part})
-    3. Replace [KEYWORD] with the ingredient's English name.
-    4. NO recipe title, NO author. Start with the table.
-    5. Detailed instructions are mandatory.
+    # CRITICAL INSTRUCTIONS:
+    1. THE COOKING STEPS MUST BE LONG AND DETAILED. Do not summarize. Explain exactly how to prepare, cook, and serve the dish based on the transcript.
+    2. Write at least 4-8 comprehensive steps if the transcript allows it.
+    3. The third column MUST use this link format: [{buy_text}]({base_url}[KEYWORD]{tag_part})
+    4. Replace [KEYWORD] with the simple English noun of the ingredient.
+    5. NO title, NO author. Start directly with the table.
+    6. Numbering (1., 2., ...) ONLY in the {instr_header} section.
     """
     try:
         response = client.chat.completions.create(
@@ -587,6 +588,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
