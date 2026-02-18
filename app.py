@@ -254,7 +254,7 @@ def clean_for_pdf(text):
     if not text: return ""
     text = str(text)
     
-   replacements = {
+    replacements = {
         'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 
         'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 
         'ß': 'ss',
@@ -561,6 +561,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
