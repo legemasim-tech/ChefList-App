@@ -231,7 +231,7 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     
     Structure your response exactly like this:
     
-    1. "TITLE: [Recipe Name] by [Author]"
+    1. "[Recipe Name] by [Author]"
     
     2. Create a Markdown Table with exactly these headers:
        | Amount | Ingredient | Shop |
@@ -563,6 +563,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
