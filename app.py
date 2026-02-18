@@ -286,7 +286,7 @@ def create_pdf(text_content, recipe_title, config):
         pdf.set_font("Arial", style="B", size=14)
         safe_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
         safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
-        pdf.cell(150, 15, txt=f"{safe_rec}: {safe_title}", ln=True, align='L', fill=True)
+        pdf.cell(150, 15, txt=f"{safe_title}", ln=True, align='L', fill=True)
         pdf.ln(5)
         
         lines = text_content.split('\n')
@@ -563,6 +563,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
