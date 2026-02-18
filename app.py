@@ -158,7 +158,7 @@ LANG_CONFIG = {
     }
 }
 
-# --- 2. KONFIGURATION & API ---
+# --- 2. CONFIGURATION & API ---
 try: api_key = st.secrets["OPENAI_API_KEY"]
 except: api_key = None
 paypal_email = "legemasim@gmail.com"
@@ -192,7 +192,7 @@ def get_full_video_data(video_url):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
         video_title = info.get('title', 'Recipe')
-        channel_name = info.get('uploader', 'Unknown Chef')
+        channel_name = info.get('uploader', 'Chef')
         description = info.get('description', '') 
         subs = info.get('subtitles') or info.get('automatic_captions')
         transcript = ""
@@ -210,7 +210,6 @@ def get_full_video_data(video_url):
     except: return "Recipe", None, None, "Chef"
 
 def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
-    # Einfache Logik für Einheiten
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
     system_prompt = f"""
@@ -224,78 +223,92 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
         return response.choices[0].message.content
     except: return None
 
-# --- PDF GENERATOR (EXTREME CLEANING) ---
+# --- 4. PDF GENERATOR (EXACT COPY OF WORKING LOGIC + CONFIG SUPPORT) ---
 def clean_for_pdf(text):
-    if not text: return ""
-    text = str(text)
-    # 1. Bekannte Problemzeichen manuell tauschen
-    replacements = {
-        '€': 'EUR', '”': '"', '“': '"', '’': "'", '‘': "'", '–': '-', '—': '-', '…': '...',
-        '✨': '', '🍲': '', '👨‍🍳': ''
-    }
-    for k, v in replacements.items(): text = text.replace(k, v)
+    # DEINE ORIGINAL LOGIK
+    replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
     
-    # 2. Gnadenlose Codierung: Alles was nicht Latin-1 ist (z.B. Japanisch, Arabisch, Emojis) wird entfernt.
-    # Das verhindert den Absturz.
-    try:
-        return text.encode('latin-1', 'replace').decode('latin-1')
-    except:
-        return "?"
+    text = text.replace('“', '"').replace('”', '"').replace('’', "'").replace('–', '-')
+    # DER CRASH-VERHINDERER:
+    text = re.sub(r'[^\x00-\x7F]+', '', text) 
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+    return text
 
 def create_pdf(text_content, recipe_title, config):
     try:
         pdf = FPDF()
-        pdf.add_page(); pdf.set_font("Arial", style="B", size=14)
+        pdf.set_left_margin(10)
+        pdf.set_right_margin(10)
+        pdf.add_page()
+        pdf.set_fill_color(230, 230, 230)
+        pdf.set_font("Arial", style="B", size=14)
         
-        # Titel
-        safe_title = clean_for_pdf(recipe_title)[:50]
-        label_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
-        pdf.cell(190, 15, txt=f"{label_rec}: {safe_title}", ln=True, align='C', fill=True)
+        # Titel aus Config + Bereinigung
+        safe_rec_label = clean_for_pdf(config['pdf_rec']) 
+        safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
+        
+        pdf.cell(190, 15, txt=f"{safe_rec_label}: {safe_title}", ln=True, align='C', fill=True)
         pdf.ln(5)
         
         lines = text_content.split('\n')
         is_instruction = False
-        
         for line in lines:
             line = line.strip()
             if not line or '---' in line: continue
+            line = clean_for_pdf(line)
             
-            # Instruktionen erkennen
-            if any(x in line for x in ['Instructions', 'Zubereitung', 'Instrucciones', 'Istruzioni']):
+            # Prüfen auf Instruktionen (erweitert um Config-Wert)
+            # Wir prüfen, ob das Wort aus der Config (z.B. "Zubereitung") in der Zeile vorkommt
+            if any(word in line for word in ['Instructions', 'Preparation', 'Directions', clean_for_pdf(config['pdf_instr'])]):
                 is_instruction = True
-                pdf.ln(5); pdf.set_font("Arial", style="B", size=12)
-                label_instr = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
-                pdf.cell(0, 10, txt=label_instr, ln=True)
+                pdf.ln(5)
+                pdf.set_font("Arial", style="B", size=12)
+                # Nutze den übersetzten Begriff
+                pdf.cell(0, 10, txt=clean_for_pdf(config['pdf_instr']) + ":", ln=True)
                 continue
             
-            clean_line = clean_for_pdf(line)
-            
-            # Tabelle
-            if '|' in clean_line and not is_instruction:
-                parts = [p.strip() for p in clean_line.split('|') if p.strip()]
+            # Headers
+            headers = ['Time:', 'Difficulty:', 'Temperature:', 'Servings:', 'Units:', 'Zeit:', 'Dauer:', 'Temp:', 'Portionen:']
+            if any(line.startswith(h) for h in headers):
+                pdf.set_font("Arial", style="B", size=11)
+                pdf.cell(0, 8, txt=line, ln=True)
+                continue
+                
+            pdf.set_x(10)
+            if '|' in line and not is_instruction:
+                parts = [p.strip() for p in line.split('|') if p.strip()]
                 if len(parts) >= 2:
-                    content = f"[ ] {parts[0]} {parts[1]}"
-                    pdf.set_font("Arial", style="B", size=11)
+                    # Tabellen Logik
+                    if "Amount" in parts[0] or "Ingredient" in parts[1] or "Menge" in parts[0] or "Zutat" in parts[1]:
+                        pdf.set_font("Arial", style="B", size=10)
+                        content = "AMOUNT - INGREDIENT"
+                    else:
+                        pdf.set_font("Arial", style="B", size=11)
+                        content = f"[ ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
+                    
                     pdf.cell(185, 8, txt=content, ln=True)
                     pdf.set_draw_color(220, 220, 220)
                     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             else:
                 pdf.set_font("Arial", size=10)
-                pdf.multi_cell(185, 7, txt=clean_line, align='L')
+                pdf.multi_cell(185, 7, txt=line.replace('*', ''), align='L')
+                if is_instruction: pdf.ln(2)
                 
-        pdf.ln(10); pdf.set_font("Arial", style="I", size=10)
-        label_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Enjoy!'))
-        pdf.cell(0, 10, txt=label_enjoy, ln=True, align='C')
+        pdf.ln(10)
+        pdf.set_font("Arial", style="I", size=10)
+        pdf.cell(0, 10, txt=clean_for_pdf(config['pdf_enjoy']), ln=True, align='C')
         
+        # WICHTIG: Byte-Encoding für Streamlit Cloud
         return pdf.output(dest='S').encode('latin-1', 'ignore')
     except Exception as e:
-        print(f"PDF Error: {e}")
+        print(f"PDF Debug: {e}")
         return None
 
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="🍲")
 
-# Automatik Init
 if "user_lang_selection" not in st.session_state:
     try:
         lang_header = st.context.headers.get("Accept-Language", "en")
