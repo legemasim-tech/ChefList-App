@@ -233,11 +233,11 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     
     1. "[Recipe Name] by [Author]"
     
-    2. Create a Markdown Table with exactly these headers:
-       | Amount | Ingredient | Shop |
+    2. Create a Markdown Table with these headers:
+       | {header_amount} | {header_ingredient} | {buy_text} |
        |---|---|---|
-       (Then list the ingredients below. In the 'Shop' column, place the link: [{buy_text}](https://www.{config['amz']}/s?k=[KEYWORD]&tag={config['tag']}))
-    
+       (In the third column, place the link: [{buy_text}](https://www.{config['amz']}/s?k=[KEYWORD]&tag={config['tag']}))
+       
     3. "Instructions:" 
        Write detailed step-by-step cooking instructions after the table.
     
@@ -563,6 +563,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
