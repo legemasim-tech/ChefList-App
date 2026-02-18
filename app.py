@@ -87,7 +87,7 @@ LANG_CONFIG = {
         "pdf_rec": "Ricetta", "pdf_instr": "Istruzioni", "pdf_enjoy": "Buon appetito!"
     },
     "Português": {
-        "tag": "cheflist21-20", "amz": "amazon.com.br", "curr": "BRL", "iso": "pt",
+        "tag": "cheflist21-20", "amz": "amazon.es", "curr": "EUR", "iso": "pt",
         "ui_header": "YouTube para PDF", "ui_input_label": "URL do vídeo:",
         "ui_servings": "Porções:", "ui_units": "Unidades:", "ui_unit_opts": ["Métrico (g/ml)", "US (cups/oz)"],
         "ui_create": "Criar ✨", "ui_wait": "Calculando...", "ui_ready": "Pronto!",
@@ -488,6 +488,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
