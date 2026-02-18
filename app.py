@@ -237,6 +237,10 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     }
     h_amount, h_ingredient = lang_map.get(config['iso'], ("Amount", "Ingredient"))
 
+    # Wir bauen die Basis-URL hier vor, um Fehler im Prompt zu vermeiden
+    base_url = f"https://www.{config['amz']}/s?k="
+    tag_part = f"&tag={config['tag']}"
+
     system_prompt = f"""
     You are a professional chef. Respond in {config['ai_lang']}.
     Servings: {portions}. Units: {u_inst}.
@@ -245,18 +249,18 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     
     | {h_amount} | {h_ingredient} | {buy_text} |
     |---|---|---|
-    [Detailed Ingredients List]
+    | [Amount] | [Ingredient] | [{buy_text}]({base_url}[KEYWORD]{tag_part}) |
 
     ### {instr_header}
     1. [First detailed step]
     2. [Second detailed step]
-    ...
     
     # CRITICAL RULES:
-    1. DO NOT include the recipe title or author in your response. Start directly with the table.
-    2. The "{instr_header}" section MUST be detailed and comprehensive based on the transcript.
-    3. The third column of the table MUST show the text "{buy_text}" as a clickable link.
-    4. Start numbering (1., 2., ...) ONLY in the {instr_header} section.
+    1. The link in the third column MUST be a valid external URL.
+    2. Format: [{buy_text}]({base_url}[KEYWORD]{tag_part})
+    3. Replace [KEYWORD] with the ingredient's English name.
+    4. NO recipe title, NO author. Start with the table.
+    5. Detailed instructions are mandatory.
     """
     try:
         response = client.chat.completions.create(
@@ -583,6 +587,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
