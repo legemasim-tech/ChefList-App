@@ -454,6 +454,31 @@ if st.session_state.recipe_result:
         )
     else:
         st.error("The PDF could not be generated.")
+        
+st.divider()
+    st.caption("🛒 " + ("Copy Ingredients" if c['iso'] == 'en' else "Zutaten kopieren"))
+    
+    shopping_list = []
+    # Wir gehen durch jede Zeile des KI-Ergebnisses
+    for line in st.session_state.recipe_result.split('\n'):
+        # Wir suchen Tabellenzeilen (|), ignorieren aber Trennlinien (---) und Überschriften (Amount/Menge)
+        if '|' in line and '---' not in line:
+            if any(x in line for x in ["Amount", "Menge", "Ingredient", "Zutat", "Miktar", "Ilość"]):
+                continue
+            
+            # 1. Pipe-Symbole entfernen
+            clean = line.replace('|', ' ').strip()
+            # 2. Markdown Links entfernen: [Name](URL) wird zu Name
+            clean = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', clean)
+            # 3. Mehrfache Leerzeichen entfernen
+            clean = " ".join(clean.split())
+            
+            if clean:
+                shopping_list.append(clean)
+    
+    # Anzeige als Code-Block (hat oben rechts einen Kopier-Button)
+    if shopping_list:
+        st.code("\n".join(shopping_list), language="text")
 
 st.divider()
 st.subheader(c['fb_header'])
@@ -462,4 +487,5 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
