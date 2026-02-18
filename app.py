@@ -222,6 +222,7 @@ def get_full_video_data(video_url):
 def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
+    # Wir holen uns den Text für den Button (z.B. "Auf Amazon kaufen") und entfernen das Sternchen
     buy_text = config['ui_buy'].replace('*', '')
     
     system_prompt = f"""
@@ -574,6 +575,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
