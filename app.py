@@ -455,7 +455,7 @@ if st.session_state.recipe_result:
     else:
         st.error("The PDF could not be generated.")
         
-st.divider()
+    st.divider()
     st.caption("🛒 " + ("Copy Ingredients" if c['iso'] == 'en' else "Zutaten kopieren"))
     
     shopping_list = []
@@ -487,5 +487,6 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
