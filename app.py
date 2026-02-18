@@ -259,38 +259,44 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
         return response.choices[0].message.content
     except: return None
 
-# --- 4. PDF GENERATOR ---
+# --- 4. PDF GENERATOR (ROBUST & CRASH-SICHER) ---
 def clean_for_pdf(text):
     if not text: return ""
-    # 1. Gängige Sonderzeichen ersetzen
-    replacements = {
-        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 
-        'ß': 'ss', '€': 'EUR', '–': '-', '’': "'", '“': '"', '”': '"', '…': '...'
-    }
-    for char, rep in replacements.items(): 
-        text = text.replace(char, rep)
+    text = str(text) # Sicherheitshalber in String wandeln
     
-    # 2. Brutale Bereinigung: Alles was nicht Latin-1 ist, wird entfernt.
-    # Das verhindert den Absturz bei Emojis oder asiatischen Zeichen.
+    # 1. Manuelle Reparatur wichtiger Zeichen
+    replacements = {
+        '€': 'EUR', '”': '"', '“': '"', '’': "'", '–': '-', 
+        '…': '...', '—': '-', '✨': '', '🍲': '', '🛒': ''
+    }
+    for k, v in replacements.items():
+        text = text.replace(k, v)
+
+    # 2. Die "Waschmaschine": Alles was nicht Standard-Lateinisch ist, fliegt raus.
+    # Das ersetzt unbekannte Zeichen (wie Japanisch oder Emojis) durch ein Fragezeichen '?'
+    # anstatt abzustürzen.
     try:
-        return text.encode('latin-1', 'ignore').decode('latin-1')
+        return text.encode('latin-1', 'replace').decode('latin-1')
     except:
-        return ""
+        return "Error: Text encoding failed"
 
 def create_pdf(text_content, recipe_title, config):
     try:
         pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         pdf.set_left_margin(10); pdf.set_right_margin(10)
         pdf.set_fill_color(230, 230, 230)
         
-        # Wir nutzen Standard-Font 'Arial' (kann nur Latin-1)
+        # Wir nutzen Standard-Font 'Arial'. Dieser kann KEIN Chinesisch/Arabisch etc.
+        # Daher ist clean_for_pdf extrem wichtig.
         pdf.set_font("Arial", style="B", size=14)
         
-        # Titel
+        # Titel (bereinigt)
+        safe_header = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
         safe_title = clean_for_pdf(recipe_title)[:50]
-        header = f"{config.get('pdf_rec', 'Recipe')}: {safe_title}"
-        pdf.cell(190, 15, txt=header, ln=True, align='C', fill=True)
+        
+        pdf.cell(190, 15, txt=f"{safe_header}: {safe_title}", ln=True, align='C', fill=True)
         pdf.ln(5)
         
         lines = text_content.split('\n')
@@ -300,15 +306,17 @@ def create_pdf(text_content, recipe_title, config):
             line = line.strip()
             if not line or '---' in line: continue
             
-            # Instruktionen erkennen (multilingual robust)
+            # Instruktionen erkennen (multilingual)
             if any(x in line for x in ['Instructions', 'Zubereitung', 'Instrucciones', 'Istruzioni', 'Instruções', 'Talimatlar']):
                 is_instruction = True
                 pdf.ln(5)
                 pdf.set_font("Arial", style="B", size=12)
-                instr_title = config.get('pdf_instr', 'Instructions')
-                pdf.cell(0, 10, txt=instr_title, ln=True)
+                # Auch den Config-Text bereinigen!
+                safe_instr = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
+                pdf.cell(0, 10, txt=safe_instr, ln=True)
                 continue
             
+            # Zeile bereinigen
             clean_line = clean_for_pdf(line)
             
             # Tabellen-Logik
@@ -326,14 +334,16 @@ def create_pdf(text_content, recipe_title, config):
                 
         pdf.ln(10)
         pdf.set_font("Arial", style="I", size=10)
-        footer = config.get('pdf_enjoy', 'Enjoy!')
-        pdf.cell(0, 10, txt=clean_for_pdf(footer), ln=True, align='C')
         
-        # WICHTIG: Ausgabe als String codiert in Latin-1
+        # Footer bereinigen
+        safe_footer = clean_for_pdf(config.get('pdf_enjoy', 'Enjoy!'))
+        pdf.cell(0, 10, txt=safe_footer, ln=True, align='C')
+        
+        # Output als Latin-1 Bytes erzwingen
         return pdf.output(dest='S').encode('latin-1', 'ignore')
         
     except Exception as e:
-        print(f"PDF Error: {e}")
+        print(f"PDF Crash: {e}")
         return None
         
 # --- 5. INTERFACE ---
@@ -438,3 +448,4 @@ if st.session_state.recipe_result:
     else:
         st.error("PDF generation failed due to special characters. Please try a standard recipe.")
     
+
