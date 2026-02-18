@@ -535,58 +535,56 @@ if st.button(c['ui_create'], use_container_width=True):
 if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.recipe_title}")
-    st.markdown(st.session_state.recipe_result.replace("Check on Amazon", c['ui_buy']))
     
-    # PDF Aufruf (Exakt wie im funktionierenden Code)
+    # Anzeige des Rezepts
+    st.markdown(st.session_state.recipe_result)
+    
+    # PDF Aufruf
     pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
     
     if pdf_output is not None:
-        try:
-            pdf_bytes = bytes(pdf_output)
-        except:
-            pdf_bytes = pdf_output 
-            
         st.download_button(
             label=c['ui_dl'],
-            data=pdf_bytes,
-            file_name="Recipe.pdf",
+            data=bytes(pdf_output) if not isinstance(pdf_output, bytes) else pdf_output,
+            file_name=f"{clean_for_pdf(st.session_state.recipe_title)}.pdf",
             mime="application/pdf",
             use_container_width=True
         )
     else:
         st.error("The PDF could not be generated.")
 
+    # --- EINKAUFSLISTE (FIXED LOGIC) ---
     st.divider()
     st.caption("🛒 " + ("Copy Ingredients" if c['iso'] == 'en' else "Zutaten kopieren"))
     
     shopping_list = []
-    # Wir gehen durch jede Zeile des KI-Ergebnisses
-    for line in st.session_state.recipe_result.split('\n'):
-        # Wir suchen Tabellenzeilen (|), ignorieren aber Trennlinien (---) und Header
-        if '|' in line and '---' not in line:
-            # Begriffe zum Ignorieren (Überschriften in allen Sprachen)
-            ignore_terms = ["Amount", "Menge", "Ingredient", "Zutat", "Miktar", "Ilosc", "Shop", "Kaufen", "Buy"]
-            if any(x.lower() in line.lower() for x in ignore_terms):
-                continue
-            
-            # 1. Spalten trennen
-            parts = line.split('|')
-            if len(parts) >= 3:
-                amount = parts[1].strip()
-                ingredient = parts[2].strip()
-                
-                # 2. Markdown Links in der Zutat entfernen: [Name](URL) -> Name
-                ingredient = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', ingredient)
-                
-                # 3. Falls die KI die Links in die Zutat-Spalte gepackt hat, säubern wir alles
-                clean_line = f"{amount} {ingredient}".strip()
-                
-                if clean_line and clean_line != "":
-                    shopping_list.append(clean_line)
+    lines = st.session_state.recipe_result.split('\n')
     
-    # Anzeige als Code-Block (hat oben rechts einen Kopier-Button)
+    for line in lines:
+        line = line.strip()
+        # Wir suchen Zeilen mit Pipes, die keine Trenner sind
+        if '|' in line and '---' not in line:
+            # Spalten extrahieren und leere Strings (vom Rand der Tabelle) entfernen
+            parts = [p.strip() for p in line.split('|') if p.strip()]
+            
+            if len(parts) >= 2:
+                # Prüfen, ob es die Kopfzeile ist
+                ignore_terms = ["Amount", "Menge", "Ingredient", "Zutat", "Miktar", "Ilosc", "Shop", "Kaufen", "Buy", "Quantite", "Quantita"]
+                if any(x.lower() in parts[0].lower() or x.lower() in parts[1].lower() for x in ignore_terms):
+                    continue
+                
+                amount = parts[0]
+                # Link aus der Zutat-Spalte entfernen, falls vorhanden
+                ingredient = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', parts[1])
+                
+                clean_entry = f"{amount} {ingredient}".strip()
+                if clean_entry:
+                    shopping_list.append(clean_entry)
+    
     if shopping_list:
         st.code("\n".join(shopping_list), language="text")
+    else:
+        st.info("No ingredients found to copy." if c['iso'] == 'en' else "Keine Zutaten zum Kopieren gefunden.")
 
 st.divider()
 st.subheader(c['fb_header'])
@@ -595,3 +593,4 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
