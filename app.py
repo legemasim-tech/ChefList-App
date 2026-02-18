@@ -243,9 +243,6 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     
     Structure your response EXACTLY like this:
     
-    [Recipe Name] by [Author]
-    (No prefix like 'Title:', no numbering here)
-
     | {h_amount} | {h_ingredient} | {buy_text} |
     |---|---|---|
     [Detailed Ingredients List]
@@ -255,12 +252,11 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     2. [Second detailed step]
     ...
     
-    # CRITICAL INSTRUCTIONS FOR QUALITY:
-    1. The "{instr_header}" section MUST be detailed, comprehensive, and professional. 
-    2. Do not summarize too much. Explain the cooking process step-by-step so a beginner can follow.
-    3. Use the third column of the table for the link: [{buy_text}](https://www.{config['amz']}/s?k=[KEYWORD]&tag={config['tag']}).
-    4. Start numbering only in the {instr_header} section.
-    5. Ensure the instructions reflect the full content of the video transcript.
+    # CRITICAL RULES:
+    1. DO NOT include the recipe title or author in your response. Start directly with the table.
+    2. The "{instr_header}" section MUST be detailed and comprehensive based on the transcript.
+    3. The third column of the table MUST show the text "{buy_text}" as a clickable link.
+    4. Start numbering (1., 2., ...) ONLY in the {instr_header} section.
     """
     try:
         response = client.chat.completions.create(
@@ -587,6 +583,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
