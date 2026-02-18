@@ -222,34 +222,54 @@ def get_full_video_data(video_url):
 def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
-    header_amount = "Amount" if config['iso'] == 'en' else "Menge" if config['iso'] == 'de' else "Cantidad" if config['iso'] == 'es' else "Menge/Amount"
-    header_ingredient = "Ingredient" if config['iso'] == 'en' else "Zutat" if config['iso'] == 'de' else "Ingrediente" if config['iso'] == 'es' else "Zutat/Ingredient"
+    # 1. Begriffe für die Tabelle und Anleitung übersetzen
     buy_text = config['ui_buy'].replace('*', '')
-       
+    instr_header = config.get('pdf_instr', 'Instructions')
+    
+    # Sprache für Tabellen-Header festlegen
+    lang_map = {
+        "de": ("Menge", "Zutat"),
+        "en": ("Amount", "Ingredient"),
+        "es": ("Cantidad", "Ingrediente"),
+        "fr": ("Quantite", "Ingredient"),
+        "it": ("Quantita", "Ingrediente")
+    }
+    h_amount, h_ingredient = lang_map.get(config['iso'], ("Amount", "Ingredient"))
+
     system_prompt = f"""
     You are a professional chef. Respond in {config['ai_lang']}.
     Servings: {portions}. Units: {u_inst}.
     
-    Structure your response exactly like this:
+    Structure your response EXACTLY like this:
     
-    1. "[Recipe Name] by [Author]"
+    [Recipe Name] by [Author]
+    (No numbering here, no prefix like 'Title:')
+
+    | {h_amount} | {h_ingredient} | {buy_text} |
+    |---|---|---|
+    [Ingredients with Amazon Links]
+
+    ### {instr_header}
+    1. [First step]
+    2. [Second step]
+    ...
     
-    2. Create a Markdown Table with these headers:
-       | {header_amount} | {header_ingredient} | {buy_text} |
-       |---|---|---|
-       (In the third column, place the link: [{buy_text}](https://www.{config['amz']}/s?k=[KEYWORD]&tag={config['tag']}))
-       
-    3. "Instructions:" 
-       Write detailed step-by-step cooking instructions after the table.
-    
-    # Rules for the Link:
-    - Replace [KEYWORD] in the URL with the simple English noun of the ingredient (e.g. for "Frische Petersilie" use "Parsley").
+    # RULES:
+    - START the numbering only at the cooking instructions (1., 2., ...).
+    - Use the header "{instr_header}" for the instructions.
+    - DO NOT use any numbering or the word 'Title' for the recipe name.
     """
     try:
-        response = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": f"TITLE: {video_title}\nTRANSCRIPT: {transcript[:12000]}"}])
+        response = client.chat.completions.create(
+            model="gpt-4o-mini", 
+            messages=[
+                {"role": "system", "content": system_prompt}, 
+                {"role": "user", "content": f"VIDEO: {video_title}\nTRANSCRIPT: {transcript[:12000]}"}
+            ]
+        )
         return response.choices[0].message.content
     except: return None
-        
+            
 # --- 4. PDF GENERATOR (FIXED ALIGNMENT & SPACING) ---
 def clean_for_pdf(text):
     if not text: return ""
@@ -564,6 +584,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
