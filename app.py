@@ -222,7 +222,7 @@ def get_full_video_data(video_url):
 def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
-    # 1. Begriffe für die Tabelle und Anleitung übersetzen
+    # Begriffe für die Tabelle und Anleitung vorbereiten
     buy_text = config['ui_buy'].replace('*', '')
     instr_header = config.get('pdf_instr', 'Instructions')
     
@@ -232,7 +232,10 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
         "en": ("Amount", "Ingredient"),
         "es": ("Cantidad", "Ingrediente"),
         "fr": ("Quantite", "Ingredient"),
-        "it": ("Quantita", "Ingrediente")
+        "it": ("Quantita", "Ingrediente"),
+        "pl": ("Ilosc", "Skladnik"),
+        "tr": ("Miktar", "Malzeme"),
+        "nl": ("Hoeveelheid", "Ingredient")
     }
     h_amount, h_ingredient = lang_map.get(config['iso'], ("Amount", "Ingredient"))
 
@@ -243,21 +246,21 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     Structure your response EXACTLY like this:
     
     [Recipe Name] by [Author]
-    (No numbering here, no prefix like 'Title:')
+    (No prefix like 'Title:', no numbering here)
 
     | {h_amount} | {h_ingredient} | {buy_text} |
     |---|---|---|
-    [Ingredients with Amazon Links]
-
+    | [Amount] | [Ingredient] | [{buy_text}](https://www.{config['amz']}/s?k=[KEYWORD]&tag={config['tag']}) |
+    
     ### {instr_header}
     1. [First step]
     2. [Second step]
-    ...
     
-    # RULES:
-    - START the numbering only at the cooking instructions (1., 2., ...).
-    - Use the header "{instr_header}" for the instructions.
-    - DO NOT use any numbering or the word 'Title' for the recipe name.
+    # CRITICAL RULES:
+    1. The third column of the table MUST show the text "{buy_text}" as a clickable link for EVERY row.
+    2. Replace [KEYWORD] with the simple English noun of the ingredient.
+    3. Start numbering (1., 2., ...) ONLY in the {instr_header} section.
+    4. Do not use the word 'Title' or 'Link' as plain text.
     """
     try:
         response = client.chat.completions.create(
@@ -584,6 +587,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
