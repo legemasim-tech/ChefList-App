@@ -7,103 +7,165 @@ from fpdf import FPDF
 import os
 
 # --- 1. INTERNATIONALE KONFIGURATION ---
-# Hier definieren wir alle länderspezifischen Daten zentral
 LANG_CONFIG = {
     "English": {
-        "amz_host": "amazon.com", "tag": "cheflist21-20", "curr": "USD", "code": "en",
-        "ui_title": "ChefList Pro", "ui_sub": "Convert YouTube recipes into printable PDFs",
-        "ui_input": "YouTube Video URL:", "ui_btn": "Create Recipe ✨", "ui_portions": "Servings:",
-        "ui_units": "Unit System:", "ui_dl": "📄 Download PDF Recipe", "ui_fb_header": "Help us improve! 🍲",
-        "ui_fb_btn": "Send Feedback ✨", "ui_admin": "🔑 Admin Access", "ui_counter": "Recipes created:",
-        "ui_ready": "Ready!", "ui_wait": "Calculating recipe...", "ui_buy": "Buy on Amazon"
+        "tag": "cheflist21-20", "amz": "amazon.com", "curr": "USD", "iso": "en",
+        "ui_header": "Convert YouTube recipes into printable PDFs",
+        "ui_input_label": "YouTube Video URL:",
+        "ui_servings": "Servings:", "ui_units": "Units:", 
+        "ui_unit_opts": ["US Units (cups/oz)", "Metric (g/ml)"],
+        "ui_create": "Create Recipe ✨", "ui_wait": "Calculating for {0} servings...", "ui_ready": "Ready!",
+        "ui_dl": "📄 Download PDF Recipe", "ui_buy": "Buy on Amazon*", "ui_btn_pay": "⚡ Support ChefList Pro ($0.90)",
+        "ui_counter_text": "Recipes created:", 
+        "legal_title": "About & Legal", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
+        "legal_total": "Total recipes:", "legal_amz": "✨ As an Amazon Associate, I earn from qualifying purchases.", 
+        "legal_privacy_title": "🛡️ Data Protection", "legal_privacy_body": "We do not store personal data. Encrypted processing.", 
+        "legal_note": "⚠️ AI can make mistakes.",
+        "ai_lang": "ENGLISH", 
+        "fb_header": "Help us improve! 🍲", "fb_btn": "Send ✨", 
+        "fb_place": "What can we do better?", "fb_mail": "Email (optional)", "fb_thx": "Saved! 🙌",
+        "pdf_rec": "Recipe", "pdf_instr": "Instructions", "pdf_enjoy": "Enjoy your meal!"
     },
     "Deutsch": {
-        "amz_host": "amazon.de", "tag": "cheflist21-21", "curr": "EUR", "code": "de",
-        "ui_title": "ChefList Pro", "ui_sub": "Verwandle YouTube-Videos in druckbare PDFs",
-        "ui_input": "YouTube Video URL:", "ui_btn": "Rezept jetzt erstellen ✨", "ui_portions": "Portionen:",
-        "ui_units": "Einheitensystem:", "ui_dl": "📄 PDF Rezept herunterladen", "ui_fb_header": "Hilf uns besser zu werden! 🍲",
-        "ui_fb_btn": "Feedback senden ✨", "ui_admin": "🔑 Admin Login", "ui_counter": "Deine Rezepte:",
-        "ui_ready": "Bereit!", "ui_wait": "Berechne Rezept...", "ui_buy": "Auf Amazon kaufen"
+        "tag": "cheflist21-21", "amz": "amazon.de", "curr": "EUR", "iso": "de",
+        "ui_header": "YouTube-Rezepte in druckbare PDFs verwandeln",
+        "ui_input_label": "YouTube Video URL:",
+        "ui_servings": "Portionen:", "ui_units": "Einheiten:", 
+        "ui_unit_opts": ["Metrisch (g/ml)", "US-Einheiten (cups/oz)"],
+        "ui_create": "Rezept erstellen ✨", "ui_wait": "Berechne für {0} Portionen...", "ui_ready": "Bereit!",
+        "ui_dl": "📄 PDF herunterladen", "ui_buy": "Auf Amazon kaufen*", "ui_btn_pay": "⚡ ChefList Pro unterstützen (0,90€)",
+        "ui_counter_text": "Erstellte Rezepte:", 
+        "legal_title": "Über & Rechtliches", "legal_op": "**Betreiber:** Markus Simmel", "legal_contact": "**Kontakt:** legemasim@gmail.com",
+        "legal_total": "Gesamt Rezepte:", "legal_amz": "✨ Als Amazon-Partner verdiene ich an Käufen.", 
+        "legal_privacy_title": "🛡️ Datenschutz", "legal_privacy_body": "Keine Datenspeicherung. Verschlüsselt.", 
+        "legal_note": "⚠️ KI kann Fehler machen.",
+        "ai_lang": "GERMAN", 
+        "fb_header": "Hilf uns besser zu werden! 🍲", "fb_btn": "Senden ✨",
+        "fb_place": "Was können wir besser machen?", "fb_mail": "E-Mail (optional)", "fb_thx": "Gespeichert! 🙌",
+        "pdf_rec": "Rezept", "pdf_instr": "Zubereitung", "pdf_enjoy": "Guten Appetit!"
     },
     "Español": {
-        "amz_host": "amazon.es", "tag": "cheflist21-20", "curr": "EUR", "code": "es",
-        "ui_title": "ChefList Pro", "ui_sub": "Convierte videos de YouTube en recetas PDF",
-        "ui_input": "URL del video de YouTube:", "ui_btn": "Crear receta ahora ✨", "ui_portions": "Porciones:",
-        "ui_units": "Sistema de unidades:", "ui_dl": "📄 Descargar receta en PDF", "ui_fb_header": "¡Ayúdanos a mejorar! 🍲",
-        "ui_fb_btn": "Enviar comentarios ✨", "ui_admin": "🔑 Acceso Admin", "ui_counter": "Recetas creadas:",
-        "ui_ready": "¡Listo!", "ui_wait": "Calculando receta...", "ui_buy": "Comprar en Amazon"
+        "tag": "cheflist21-20", "amz": "amazon.es", "curr": "EUR", "iso": "es",
+        "ui_header": "YouTube a PDF", "ui_input_label": "URL del video:",
+        "ui_servings": "Porciones:", "ui_units": "Unidades:", "ui_unit_opts": ["Métrico (g/ml)", "EE.UU. (cups/oz)"],
+        "ui_create": "Crear ✨", "ui_wait": "Calculando...", "ui_ready": "¡Listo!",
+        "ui_dl": "📄 Descargar PDF", "ui_buy": "Comprar en Amazon*", "ui_btn_pay": "⚡ Apoyar (0,90€)",
+        "ui_counter_text": "Recetas:", 
+        "legal_title": "Info Legal", "legal_op": "**Operador:** Markus Simmel", "legal_contact": "**Contacto:** legemasim@gmail.com",
+        "legal_total": "Total recetas:", "legal_amz": "✨ Socio de Amazon.", "legal_privacy_title": "🛡️ Privacidad", 
+        "legal_privacy_body": "No guardamos datos.", "legal_note": "⚠️ IA puede fallar.",
+        "ai_lang": "SPANISH", "fb_header": "¡Ayúdanos! 🍲", "fb_btn": "Enviar ✨",
+        "fb_place": "¿Ideas?", "fb_mail": "Correo", "fb_thx": "¡Gracias! 🙌",
+        "pdf_rec": "Receta", "pdf_instr": "Instrucciones", "pdf_enjoy": "¡Buen provecho!"
     },
     "Français": {
-        "amz_host": "amazon.fr", "tag": "cheflist21-20", "curr": "EUR", "code": "fr",
-        "ui_title": "ChefList Pro", "ui_sub": "Transformez vos vidéos YouTube en PDF",
-        "ui_input": "URL de la vidéo YouTube :", "ui_btn": "Créer la recette ✨", "ui_portions": "Portions :",
-        "ui_units": "Système d'unités :", "ui_dl": "📄 Télécharger la recette PDF", "ui_fb_header": "Aidez-nous à nous améliorer ! 🍲",
-        "ui_fb_btn": "Envoyer ✨", "ui_admin": "🔑 Accès Admin", "ui_counter": "Recettes créées :",
-        "ui_ready": "Prêt !", "ui_wait": "Calcul de la recette...", "ui_buy": "Acheter sur Amazon"
+        "tag": "cheflist21-20", "amz": "amazon.fr", "curr": "EUR", "iso": "fr",
+        "ui_header": "YouTube en PDF", "ui_input_label": "URL vidéo:",
+        "ui_servings": "Portions:", "ui_units": "Unités:", "ui_unit_opts": ["Métrique (g/ml)", "US (cups/oz)"],
+        "ui_create": "Créer ✨", "ui_wait": "Calcul...", "ui_ready": "Prêt!",
+        "ui_dl": "📄 Télécharger le PDF", "ui_buy": "Acheter sur Amazon*", "ui_btn_pay": "⚡ Soutenir (0,90€)",
+        "ui_counter_text": "Recettes:", 
+        "legal_title": "Mentions Légales", "legal_op": "**Opérateur:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
+        "legal_total": "Total recettes:", "legal_amz": "✨ Partenaire Amazon.", "legal_privacy_title": "🛡️ Confidentialité", 
+        "legal_privacy_body": "Pas de stockage.", "legal_note": "⚠️ L'IA peut faire des erreurs.",
+        "ai_lang": "FRENCH", "fb_header": "Aidez-nous! 🍲", "fb_btn": "Envoyer ✨",
+        "fb_place": "Idées?", "fb_mail": "Email", "fb_thx": "Merci! 🙌",
+        "pdf_rec": "Recette", "pdf_instr": "Instructions", "pdf_enjoy": "Bon appétit!"
     },
     "Italiano": {
-        "amz_host": "amazon.it", "tag": "cheflist21-20", "curr": "EUR", "code": "it",
-        "ui_title": "ChefList Pro", "ui_sub": "Trasforma i video di YouTube in PDF stampabili",
-        "ui_input": "URL del video YouTube:", "ui_btn": "Crea ricetta ora ✨", "ui_portions": "Porzioni:",
-        "ui_units": "Sistema di unità:", "ui_dl": "📄 Scarica la ricetta in PDF", "ui_fb_header": "Aiutaci a migliorare! 🍲",
-        "ui_fb_btn": "Invia feedback ✨", "ui_admin": "🔑 Accesso Admin", "ui_counter": "Ricette create:",
-        "ui_ready": "Pronto!", "ui_wait": "Calcolo della ricetta...", "ui_buy": "Acquista su Amazon"
+        "tag": "cheflist21-20", "amz": "amazon.it", "curr": "EUR", "iso": "it",
+        "ui_header": "YouTube in PDF", "ui_input_label": "URL video:",
+        "ui_servings": "Porzioni:", "ui_units": "Unità:", "ui_unit_opts": ["Metrico (g/ml)", "US (cups/oz)"],
+        "ui_create": "Crea ✨", "ui_wait": "Calcolo...", "ui_ready": "Pronto!",
+        "ui_dl": "📄 Scarica PDF", "ui_buy": "Acquista su Amazon*", "ui_btn_pay": "⚡ Sostieni (0,90€)",
+        "ui_counter_text": "Ricette:", 
+        "legal_title": "Info Legali", "legal_op": "**Operatore:** Markus Simmel", "legal_contact": "**Contatto:** legemasim@gmail.com",
+        "legal_total": "Totale ricette:", "legal_amz": "✨ Partner Amazon.", "legal_privacy_title": "🛡️ Privacy", 
+        "legal_privacy_body": "Dati protetti.", "legal_note": "⚠️ IA può sbagliare.",
+        "ai_lang": "ITALIAN", "fb_header": "Aiutaci! 🍲", "fb_btn": "Invia ✨",
+        "fb_place": "Idee?", "fb_mail": "Email", "fb_thx": "Grazie! 🙌",
+        "pdf_rec": "Ricetta", "pdf_instr": "Istruzioni", "pdf_enjoy": "Buon appetito!"
     },
     "Português": {
-        "amz_host": "amazon.com.br", "tag": "cheflist21-20", "curr": "BRL", "code": "pt",
-        "ui_title": "ChefList Pro", "ui_sub": "Transforme vídeos do YouTube em PDFs",
-        "ui_input": "URL do vídeo do YouTube:", "ui_btn": "Criar receita agora ✨", "ui_portions": "Porções:",
-        "ui_units": "Sistema de unidades:", "ui_dl": "📄 Baixar receita em PDF", "ui_fb_header": "Ajude-nos a melhorar! 🍲",
-        "ui_fb_btn": "Enviar feedback ✨", "ui_admin": "🔑 Acesso Admin", "ui_counter": "Receitas criadas:",
-        "ui_ready": "Pronto!", "ui_wait": "Calculando receita...", "ui_buy": "Comprar na Amazon"
+        "tag": "cheflist21-20", "amz": "amazon.es", "curr": "EUR", "iso": "pt",
+        "ui_header": "YouTube para PDF", "ui_input_label": "URL do vídeo:",
+        "ui_servings": "Porções:", "ui_units": "Unidades:", "ui_unit_opts": ["Métrico (g/ml)", "US (cups/oz)"],
+        "ui_create": "Criar ✨", "ui_wait": "Calculando...", "ui_ready": "Pronto!",
+        "ui_dl": "📄 Baixar PDF", "ui_buy": "Comprar na Amazon*", "ui_btn_pay": "⚡ Apoiar (0,90€)",
+        "ui_counter_text": "Receitas:", 
+        "legal_title": "Info Legal", "legal_op": "**Operador:** Markus Simmel", "legal_contact": "**Contato:** legemasim@gmail.com",
+        "legal_total": "Total:", "legal_amz": "✨ Associado Amazon.", "legal_privacy_title": "🛡️ Privacidade", 
+        "legal_privacy_body": "Dados seguros.", "legal_note": "⚠️ IA pode errar.",
+        "ai_lang": "PORTUGUESE", "fb_header": "Ajuda! 🍲", "fb_btn": "Enviar ✨",
+        "fb_place": "Ideias?", "fb_mail": "Email", "fb_thx": "Obrigado! 🙌",
+        "pdf_rec": "Receita", "pdf_instr": "Instruções", "pdf_enjoy": "Bom apetite!"
     },
     "Nederlands": {
-        "amz_host": "amazon.nl", "tag": "cheflist21-20", "curr": "EUR", "code": "nl",
-        "ui_title": "ChefList Pro", "ui_sub": "Zet YouTube-video's om in PDF-recepten",
-        "ui_input": "YouTube-video-URL:", "ui_btn": "Recept maken ✨", "ui_portions": "Porties:",
-        "ui_units": "Eenheden:", "ui_dl": "📄 PDF downloaden", "ui_fb_header": "Help ons verbeteren! 🍲",
-        "ui_fb_btn": "Verstuur ✨", "ui_admin": "🔑 Admin toegang", "ui_counter": "Recepten gemaakt:",
-        "ui_ready": "Klaar!", "ui_wait": "Berekenen...", "ui_buy": "Koop op Amazon"
-    },
-    "Türkçe": {
-        "amz_host": "amazon.com.tr", "tag": "cheflist21-20", "curr": "TRY", "code": "tr",
-        "ui_title": "ChefList Pro", "ui_sub": "YouTube videolarını PDF tariflerine dönüştürün",
-        "ui_input": "YouTube Video URL'si:", "ui_btn": "Tarifi oluştur ✨", "ui_portions": "Porsiyon:",
-        "ui_units": "Birim Sistemi:", "ui_dl": "📄 PDF Tarifini İndir", "ui_fb_header": "Gelişmemize yardımcı olun! 🍲",
-        "ui_fb_btn": "Geri bildirim gönder ✨", "ui_admin": "🔑 Admin Girişi", "ui_counter": "Oluşturulan tarifler:",
-        "ui_ready": "Hazır!", "ui_wait": "Tarif hesaplanıyor...", "ui_buy": "Amazon'dan satın al"
-    },
-    "日本語": {
-        "amz_host": "amazon.co.jp", "tag": "cheflist21-20", "curr": "JPY", "code": "ja",
-        "ui_title": "ChefList Pro", "ui_sub": "YouTube動画を印刷可能なPDFに変換",
-        "ui_input": "YouTube動画のURL:", "ui_btn": "レシピを作成 ✨", "ui_portions": "人数:",
-        "ui_units": "単位系:", "ui_dl": "📄 PDFレシピをダウンロード", "ui_fb_header": "改善にご協力ください！ 🍲",
-        "ui_fb_btn": "フィードバックを送信 ✨", "ui_admin": "🔑 管理者アクセス", "ui_counter": "作成済みレシピ数:",
-        "ui_ready": "完了！", "ui_wait": "レシピを計算中...", "ui_buy": "Amazonで購入"
+        "tag": "cheflist21-20", "amz": "amazon.nl", "curr": "EUR", "iso": "nl",
+        "ui_header": "YouTube naar PDF", "ui_input_label": "Video URL:",
+        "ui_servings": "Porties:", "ui_units": "Eenheden:", "ui_unit_opts": ["Metrisch (g/ml)", "US (cups/oz)"],
+        "ui_create": "Maken ✨", "ui_wait": "Berekenen...", "ui_ready": "Klaar!",
+        "ui_dl": "📄 PDF downloaden", "ui_buy": "Koop op Amazon*", "ui_btn_pay": "⚡ Steun (0,90€)",
+        "ui_counter_text": "Recepten:",
+        "legal_title": "Juridisch", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
+        "legal_total": "Totaal:", "legal_amz": "✨ Amazon Partner.", "legal_privacy_title": "🛡️ Privacy", 
+        "legal_privacy_body": "Geen dataopslag.", "legal_note": "⚠️ AI kan fouten maken.",
+        "ai_lang": "DUTCH", "fb_header": "Help ons! 🍲", "fb_btn": "Verzenden ✨",
+        "fb_place": "Ideeën?", "fb_mail": "Email", "fb_thx": "Bedankt! 🙌",
+        "pdf_rec": "Recept", "pdf_instr": "Instructies", "pdf_enjoy": "Eet smakelijk!"
     },
     "Polski": {
-        "amz_host": "amazon.pl", "tag": "cheflist21-20", "curr": "PLN", "code": "pl",
-        "ui_title": "ChefList Pro", "ui_sub": "Zmień filmy z YouTube w przepisy PDF",
-        "ui_input": "URL filmu z YouTube:", "ui_btn": "Utwórz przepis ✨", "ui_portions": "Porcje:",
-        "ui_units": "System jednostek:", "ui_dl": "📄 Pobierz przepis PDF", "ui_fb_header": "Pomóż nam się doskonalić! 🍲",
-        "ui_fb_btn": "Wyślij ✨", "ui_admin": "🔑 Panel Admina", "ui_counter": "Utworzone przepisy:",
-        "ui_ready": "Gotowe!", "ui_wait": "Obliczanie przepisu...", "ui_buy": "Kup na Amazon"
+        "tag": "cheflist21-20", "amz": "amazon.pl", "curr": "PLN", "iso": "pl",
+        "ui_header": "YouTube na PDF", "ui_input_label": "URL filmu:",
+        "ui_servings": "Porcje:", "ui_units": "Jednostki:", "ui_unit_opts": ["Metryczne (g/ml)", "US (cups/oz)"],
+        "ui_create": "Utwórz ✨", "ui_wait": "Obliczanie...", "ui_ready": "Gotowe!",
+        "ui_dl": "📄 Pobierz PDF", "ui_buy": "Kup na Amazon*", "ui_btn_pay": "⚡ Wesprzyj (4 PLN)",
+        "ui_counter_text": "Przepisy:", 
+        "legal_title": "Prawne", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Kontakt:** legemasim@gmail.com",
+        "legal_total": "Suma:", "legal_amz": "✨ Partner Amazon.", "legal_privacy_title": "🛡️ Prywatność", 
+        "legal_privacy_body": "Dane szyfrowane.", "legal_note": "⚠️ AI błędy.",
+        "ai_lang": "POLISH", "fb_header": "Pomoc! 🍲", "fb_btn": "Wyślij ✨",
+        "fb_place": "Pomysły?", "fb_mail": "Email", "fb_thx": "Dzięki! 🙌",
+        "pdf_rec": "Przepis", "pdf_instr": "Instrukcje", "pdf_enjoy": "Smacznego!"
+    },
+    "Türkçe": {
+        "tag": "cheflist21-20", "amz": "amazon.com.tr", "curr": "TRY", "iso": "tr",
+        "ui_header": "YouTube'dan PDF'e", "ui_input_label": "Video URL:",
+        "ui_servings": "Porsiyon:", "ui_units": "Birimler:", "ui_unit_opts": ["Metrik (g/ml)", "ABD (cups/oz)"],
+        "ui_create": "Oluştur ✨", "ui_wait": "Hesaplanıyor...", "ui_ready": "Hazır!",
+        "ui_dl": "📄 PDF İndir", "ui_buy": "Amazon'dan al*", "ui_btn_pay": "⚡ Destek (30 TL)",
+        "ui_counter_text": "Tarifler:", 
+        "legal_title": "Yasal", "legal_op": "**Operatör:** Markus Simmel", "legal_contact": "**İletişim:** legemasim@gmail.com",
+        "legal_total": "Toplam:", "legal_amz": "✨ Amazon Ortağı.", "legal_privacy_title": "🛡️ Veri", 
+        "legal_privacy_body": "Şifreli.", "legal_note": "⚠️ AI hata.",
+        "ai_lang": "TURKISH", "fb_header": "Yardım! 🍲", "fb_btn": "Gönder ✨",
+        "fb_place": "Fikirler?", "fb_mail": "E-posta", "fb_thx": "Teşekkürler! 🙌",
+        "pdf_rec": "Tarif", "pdf_instr": "Talimatlar", "pdf_enjoy": "Afiyet olsun!"
+    },
+    "日本語": {
+        "tag": "cheflist21-20", "amz": "amazon.co.jp", "curr": "JPY", "iso": "ja",
+        "ui_header": "YouTubeをPDFに", "ui_input_label": "動画URL:",
+        "ui_servings": "人数:", "ui_units": "単位:", "ui_unit_opts": ["メートル法 (g/ml)", "US単位 (cups/oz)"],
+        "ui_create": "作成 ✨", "ui_wait": "計算中...", "ui_ready": "完了！",
+        "ui_dl": "📄 PDF保存", "ui_buy": "Amazonで購入*", "ui_btn_pay": "⚡ 支援 (¥140)",
+        "ui_counter_text": "レシピ数:", 
+        "legal_title": "法的情報", "legal_op": "**運営者:** Markus Simmel", "legal_contact": "**連絡先:** legemasim@gmail.com",
+        "legal_total": "累計:", "legal_amz": "✨ Amazonアソシエイト。", "legal_privacy_title": "🛡️ 保護", 
+        "legal_privacy_body": "暗号化済み。", "legal_note": "⚠️ AIミス.",
+        "ai_lang": "JAPANESE", "fb_header": "改善にご協力ください！ 🍲", "fb_btn": "送信 ✨",
+        "fb_place": "ご意見", "fb_mail": "メール", "fb_thx": "感謝! 🙌",
+        "pdf_rec": "Recipe", "pdf_instr": "Instructions", "pdf_enjoy": "Enjoy!"
     }
 }
 
-# --- 2. CONFIGURATION & API ---
-try:
-    api_key = st.secrets["OPENAI_API_KEY"]
-except:
-    api_key = None
-
-if not api_key:
-    st.error("Missing OpenAI API Key in Streamlit Secrets!")
-    st.stop()
-
+# --- 2. KONFIGURATION & API ---
+try: api_key = st.secrets["OPENAI_API_KEY"]
+except: api_key = None
+paypal_email = "legemasim@gmail.com"
+if not api_key: st.error("Please add OpenAI API Key!"); st.stop()
 client = openai.OpenAI(api_key=api_key)
 
-# --- GLOBALER ZÄHLER ---
+# --- 3. HELPER FUNCTIONS ---
 def update_global_counter():
     file_path = "total_recipes_global.txt"
     try:
@@ -120,148 +182,313 @@ def get_total_count():
     base_value = 17 
     if os.path.exists(file_path):
         try:
-            with open(file_path, "r") as f: 
-                return int(f.read()) + base_value
+            with open(file_path, "r") as f: return int(f.read()) + base_value
         except: return base_value
     return base_value
 
-# --- 3. HELPER FUNCTIONS ---
 def get_full_video_data(video_url):
     try:
-        ydl_opts = {
-            'quiet': True, 'skip_download': True, 'writesubtitles': True, 
-            'writeautomaticsub': True, 'subtitleslangs': ['en', 'de', 'es', 'fr', 'it', 'pt', 'ja', 'tr', 'pl', 'nl']
-        }
+        ydl_opts = {'quiet': True, 'skip_download': True, 'writesubtitles': True, 'writeautomaticsub': True}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
         video_title = info.get('title', 'Recipe')
+        channel_name = info.get('uploader', 'Chef')
         description = info.get('description', '') 
         subs = info.get('subtitles') or info.get('automatic_captions')
         transcript = ""
         if subs:
-            target_url = None
-            # Suche nach passenden Untertiteln
-            for lang_code in ['de', 'en', 'es', 'fr', 'it', 'pt', 'ja', 'tr', 'pl', 'nl']:
-                if lang_code in subs:
-                    for f in subs[lang_code]:
+            for lang in ['en', 'de', 'es', 'fr', 'it', 'pt', 'ja', 'tr', 'pl', 'nl']:
+                if lang in subs:
+                    for f in subs[lang]:
                         if f.get('ext') == 'json3':
-                            target_url = f.get('url'); break
-                    if target_url: break
-            if target_url:
-                res = requests.get(target_url)
-                if res.status_code == 200:
-                    data = res.json()
-                    transcript = " ".join([seg.get('utf8', '').strip() for event in data.get('events', []) if 'segs' in event for seg in event['segs'] if seg.get('utf8', '')])
-        return video_title, transcript, description
-    except:
-        return "Recipe", None, None
+                            res = requests.get(f.get('url'))
+                            if res.status_code == 200:
+                                transcript = " ".join([seg.get('utf8', '').strip() for event in res.json().get('events', []) if 'segs' in event for seg in event['segs'] if seg.get('utf8', '')])
+                                break
+                    if transcript: break
+        return video_title, transcript, description, channel_name
+    except: return "Recipe", None, None, "Chef"
 
-def generate_smart_recipe(transcript, description, lang_name, portions, unit_system, config):
-    combined_input = f"TRANSCRIPT:\n{transcript}\n\nDESCRIPTION:\n{description}"
-    unit_instruction = "Metric (g/ml)" if unit_system in ["Metrisch (g/ml)", "Metric (g/ml)"] else "US-Units (cups/oz)"
-    
+def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
+    u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     system_prompt = f"""
-    You are a professional chef.
-    TASK: Translate and convert the recipe from the video for {portions} person(s).
-    LANGUAGE: Respond ENTIRELY in {lang_name}.
-    UNITS: Use {unit_instruction}.
-    AMAZON: Use https://www.{config['amz_host']}/s?k=[INGREDIENT]&tag={config['tag']} for the shop links.
-    STRUCTURE: Title, Key Data, Ingredients Table (Amount | Ingredient | Shop), Instructions.
+    You are a professional chef. Respond in {config['ai_lang']}.
+    Servings: {portions}. Units: {u_inst}.
+    Format: "TITLE: [Recipe Name] by [Author]"
+    Table: Amount | Ingredient | Shop (Link: https://www.{config['amz']}/s?k=[ONLY_THE_MAIN_INGREDIENT_KEYWORD]&tag={config['tag']})
+    # Rule: For the Link [ITEM], use ONLY the main noun (e.g. use "Parsley" instead of "fresh chopped parsley").
     """
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": combined_input[:16000]}]
-        )
+        response = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": f"TITLE: {video_title}\nTRANSCRIPT: {transcript[:12000]}"}])
         return response.choices[0].message.content
     except: return None
 
-# --- 4. PDF GENERATOR ---
+# --- 4. PDF GENERATOR (EXACT COPY OF WORKING LOGIC + EXTENDED MAP) ---
 def clean_for_pdf(text):
-    replacements = {'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss', '€': 'Euro'}
-    for char, replacement in replacements.items():
-        text = text.replace(char, replacement)
-    text = re.sub(r'[^\x00-\x7F]+', '', text) # Entfernt Unicode für Standard-PDF
+    if not text: return ""
+    text = str(text)
+    
+    # Erweiterte Map für internationale Zeichen (damit sie nicht einfach gelöscht werden)
+    replacements = {
+        # Deutsch
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss',
+        # FR/ES/IT
+        'é': 'e', 'è': 'e', 'à': 'a', 'ù': 'u', 'ç': 'c', 'ñ': 'n', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        # PL
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        # TR
+        'ş': 's', 'ğ': 'g', 'ı': 'i', 'İ': 'I', 'ç': 'c', 'ö': 'o', 'ü': 'u',
+        # Symbole
+        '€': 'EUR', '”': '"', '“': '"', '’': "'", '–': '-', '…': '...'
+    }
+    for char, rep in replacements.items():
+        text = text.replace(char, rep)
+    
+    # DIE WICHTIGSTE ZEILE: Löscht alles, was übrig bleibt und kein ASCII ist (Emojis, Japanisch)
+    # Exakt wie im funktionierenden Code.
+    text = re.sub(r'[^\x00-\x7F]+', '', text)
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
-def create_pdf(text_content, recipe_title):
+def create_pdf(text_content, recipe_title, config):
     try:
         pdf = FPDF()
+        pdf.set_left_margin(10)
+        pdf.set_right_margin(10)
         pdf.add_page()
+        pdf.set_fill_color(230, 230, 230)
         pdf.set_font("Arial", style="B", size=14)
-        pdf.cell(190, 15, txt=clean_for_pdf(recipe_title[:40]), ln=True, align='C')
-        pdf.set_font("Arial", size=10)
-        pdf.multi_cell(0, 7, txt=clean_for_pdf(text_content))
-        return bytes(pdf.output())
-    except: return None
+        
+        # Konfig-Texte auch bereinigen!
+        safe_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
+        safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
+        
+        pdf.cell(190, 15, txt=f"{safe_rec}: {safe_title}", ln=True, align='C', fill=True)
+        pdf.ln(5)
+        
+        lines = text_content.split('\n')
+        is_instruction = False
+        
+        for line in lines:
+            line = line.strip()
+            if not line or '---' in line: continue
+            
+            # Zuerst bereinigen, damit der String sicher ist
+            line = clean_for_pdf(line)
+            if not line: continue
+            
+            # Check Keywords (auch bereinigt)
+            safe_instr_key = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
+            check_words = ['Instructions', 'Preparation', 'Directions', 'Zubereitung', 'Instrucciones', 'Istruzioni', safe_instr_key]
+            
+            if any(word in line for word in check_words):
+                is_instruction = True
+                pdf.ln(5)
+                pdf.set_font("Arial", style="B", size=12)
+                pdf.cell(0, 10, txt=safe_instr_key + ":", ln=True)
+                continue
+            
+            headers = ['Time', 'Difficulty', 'Temp', 'Servings', 'Units', 'Zeit', 'Dauer']
+            if any(line.startswith(h) for h in headers):
+                pdf.set_font("Arial", style="B", size=11)
+                pdf.cell(0, 8, txt=line, ln=True)
+                continue
+                
+            pdf.set_x(10)
+            if '|' in line and not is_instruction:
+                parts = [p.strip() for p in line.split('|') if p.strip()]
+                if len(parts) >= 2:
+                    if "Amount" in parts[0] or "Ingredient" in parts[1] or "Menge" in parts[0]:
+                        pdf.set_font("Arial", style="B", size=10)
+                        content = "AMOUNT - INGREDIENT"
+                    else:
+                        pdf.set_font("Arial", style="B", size=11)
+                        content = f"[ ] {parts[0].replace('*','')} {parts[1].replace('*','')}"
+                    
+                    pdf.cell(185, 8, txt=content, ln=True)
+                    pdf.set_draw_color(220, 220, 220)
+                    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+            else:
+                pdf.set_font("Arial", size=10)
+                pdf.multi_cell(185, 7, txt=line.replace('*', ''), align='L')
+                if is_instruction: pdf.ln(2)
+                
+        pdf.ln(10)
+        pdf.set_font("Arial", style="I", size=10)
+        safe_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Enjoy!'))
+        pdf.cell(0, 10, txt=safe_enjoy, ln=True, align='C')
+        
+        # WICHTIG: Die Rückgabe exakt wie im funktionierenden Code
+        return pdf.output()
+    except Exception as e:
+        print(f"PDF Debug: {e}")
+        return None
 
-# --- 5. STREAMLIT INTERFACE ---
-st.set_page_config(page_title="ChefList Pro Global", page_icon="🍲", layout="centered")
+# --- 5. INTERFACE ---
+st.set_page_config(page_title="ChefList Pro Global", page_icon="🍲")
+# --- DESIGN TWEAKS ---
+st.markdown("""
+<style>
+    /* Hauptüberschrift zentrieren und stylen */
+    h1 {
+        text-align: center;
+        color: #FF4B4B;
+    }
+    /* Unterüberschrift zentrieren */
+    h3 {
+        text-align: center;
+        color: #555;
+    }
+    /* Den "Rezept erstellen" Button größer und auffälliger machen */
+    div.stButton > button:first-child {
+        width: 100%;
+        background-color: #FF4B4B;
+        color: white;
+        font-weight: bold;
+        border: none;
+        padding: 15px;
+        font-size: 18px;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #FF2B2B;
+        color: white;
+        border: none;
+    }
+    /* Sidebar Bild schön einrahmen */
+    [data-testid='stSidebar'] img {
+        background-color: white;
+        padding: 15px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-# --- SPRACHAUSWAHL ---
+if "user_lang_selection" not in st.session_state:
+    try:
+        lang_header = st.context.headers.get("Accept-Language", "en")
+        primary = lang_header.split(",")[0].split("-")[0].lower()
+        m = {"de": "Deutsch", "en": "English", "es": "Español", "fr": "Français", "it": "Italiano", "pt": "Português", "nl": "Nederlands", "pl": "Polski", "tr": "Türkçe", "ja": "日本語"}
+        st.session_state.user_lang_selection = m.get(primary, "English")
+    except: st.session_state.user_lang_selection = "English"
+
+if "counter" not in st.session_state: st.session_state.counter = 0
+if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
+if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
+
 with st.sidebar:
-    st.title("🌍 Global Settings")
-    selected_language = st.selectbox("Choose Language:", list(LANG_CONFIG.keys()))
-    c = LANG_CONFIG[selected_language] # c = Aktuelle Konfiguration
+    try: idx = list(LANG_CONFIG.keys()).index(st.session_state.user_lang_selection)
+    except: idx = 0
+    selected_lang = st.selectbox("🌍 Language", list(LANG_CONFIG.keys()), index=idx)
+    c = LANG_CONFIG[selected_lang]
     
-    st.divider()
-    st.info(f"{c['ui_counter']} {st.session_state.get('counter', 0)}")
+    if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
+    else: st.title("🍳 ChefList Pro")
     
-    # Dynamischer Bezahllink
-    paypal_url = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=legemasim@gmail.com&item_name=ChefList_Pro&amount=0.90&currency_code={c['curr']}"
-    st.markdown(f'''<a href="{paypal_url}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">{c['ui_btn']} Support (0.90 {c['curr']})</button></a>''', unsafe_allow_html=True)
-
-    # Feedback Indicator
-    new_fb = " 🔴" if os.path.exists("user_feedback.txt") and os.path.getsize("user_feedback.txt") > 0 else ""
+    st.info(f"{c['ui_counter_text']} {st.session_state.counter}")
+    
+    pay_url = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name=ChefList_Pro_Support&amount=0.90&currency_code={c['curr']}"
+    st.markdown(f'''<a href="{pay_url}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%;">{c['ui_btn_pay']}</button></a>''', unsafe_allow_html=True)
+    
     st.markdown("---")
-    with st.expander(f"ℹ️ Legal & Admin{new_fb}"):
-        st.write(f"📊 Total Global: {get_total_count()}")
-        if st.checkbox(c['ui_admin']):
-            admin_pw = st.text_input("Password", type="password")
-            if admin_pw == "Gemini_Cheflist_pw" and os.path.exists("user_feedback.txt"):
-                with open("user_feedback.txt", "r") as f: st.text_area("Feedback Log:", f.read(), height=200)
-
-# --- HAUPTBEREICH ---
-st.title(f"🍲 {c['ui_title']}")
-st.subheader(c['ui_sub'])
-
-if "res" not in st.session_state: st.session_state.res = None
-if "title" not in st.session_state: st.session_state.title = ""
-
-v_url = st.text_input(c['ui_input'], placeholder="https://www.youtube.com/...")
-col1, col2 = st.columns(2)
-ports = col1.slider(c['ui_portions'], 1, 10, 4)
-units = col2.radio(c['ui_units'], [c['ui_units'].split(':')[0], "US-Units"] if selected_language == "Deutsch" else ["Metric", "US-Units"], horizontal=True)
-
-if st.button(c['ui_btn'], use_container_width=True):
-    if v_url:
-        with st.status(c['ui_wait']) as status:
-            title, trans, desc = get_full_video_data(v_url)
-            if trans or desc:
-                res = generate_smart_recipe(trans, desc, selected_language, ports, units, c)
-                st.session_state.res = res
-                st.session_state.title = title
-                st.session_state.counter = st.session_state.get('counter', 0) + 1
-                update_global_counter()
-                status.update(label=c['ui_ready'], state="complete")
-
-if st.session_state.res:
+    with st.expander(f"ℹ️ {c['legal_title']}"):
+        st.caption(c["legal_op"]); st.caption(c["legal_contact"]); st.divider()
+        st.write(f"📊 {c['legal_total']} {get_total_count()}")
+        st.divider(); st.caption(c["legal_amz"]); st.subheader(c["legal_privacy_title"]); st.caption(c["legal_privacy_body"])
+        st.divider(); st.caption(c["legal_note"])
+        
     st.divider()
-    st.subheader(f"📖 {st.session_state.title}")
-    st.markdown(st.session_state.res.replace("Check on Amazon", c['ui_buy']))
-    
-    pdf_data = create_pdf(st.session_state.res, st.session_state.title)
-    if pdf_data:
-        st.download_button(c['ui_dl'], pdf_data, file_name="Recipe.pdf", mime="application/pdf", use_container_width=True)
+    if st.checkbox("Admin"):
+        pw = st.text_input("PW", type="password")
+        if pw == "Gemini_Cheflist_pw" and os.path.exists("user_feedback.txt"):
+            with open("user_feedback.txt", "r") as f: st.text_area("Log", f.read())
 
-# --- FEEDBACK ---
+st.title("🍲 ChefList Pro")
+st.subheader(c['ui_header'])
+
+v_url = st.text_input(c['ui_input_label'], placeholder="https://...")
+col1, col2 = st.columns(2)
+ports = col1.slider(c['ui_servings'], 1, 10, 4)
+units = col2.radio(c['ui_units'], c['ui_unit_opts'], horizontal=True)
+
+if st.button(c['ui_create'], use_container_width=True):
+    if v_url:
+        with st.status(c['ui_wait'].format(ports)) as status:
+            t_orig, trans, desc, chef = get_full_video_data(v_url)
+            if trans or desc:
+                res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
+                if res:
+                    st.session_state.recipe_result = res
+                    clean_title = t_orig
+                    for l in res.split('\n'):
+                        if "TITLE:" in l: 
+                            clean_title = l.replace("TITLE:", "").strip()
+                            break
+                    st.session_state.recipe_title = clean_title
+                    st.session_state.counter += 1
+                    update_global_counter()
+                    status.update(label=c['ui_ready'], state="complete")
+                else: st.error("AI Error")
+            else: st.error("No Data")
+
+if st.session_state.recipe_result:
+    st.divider()
+    st.subheader(f"📖 {st.session_state.recipe_title}")
+    st.markdown(st.session_state.recipe_result.replace("Check on Amazon", c['ui_buy']))
+    
+    # PDF Aufruf (Exakt wie im funktionierenden Code)
+    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
+    
+    if pdf_output is not None:
+        try:
+            pdf_bytes = bytes(pdf_output)
+        except:
+            pdf_bytes = pdf_output 
+            
+        st.download_button(
+            label=c['ui_dl'],
+            data=pdf_bytes,
+            file_name="Recipe.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+    else:
+        st.error("The PDF could not be generated.")
+        
+    st.divider()
+    st.caption("🛒 " + ("Copy Ingredients" if c['iso'] == 'en' else "Zutaten kopieren"))
+    
+    shopping_list = []
+    # Wir gehen durch jede Zeile des KI-Ergebnisses
+    for line in st.session_state.recipe_result.split('\n'):
+        # Wir suchen Tabellenzeilen (|), ignorieren aber Trennlinien (---) und Überschriften (Amount/Menge)
+        if '|' in line and '---' not in line:
+            if any(x in line for x in ["Amount", "Menge", "Ingredient", "Zutat", "Miktar", "Ilość"]):
+                continue
+            
+            # 1. Pipe-Symbole entfernen
+            clean = line.replace('|', ' ').strip()
+            # 2. Markdown Links entfernen: [Name](URL) wird zu Name
+            clean = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', clean)
+            # 3. Mehrfache Leerzeichen entfernen
+            clean = " ".join(clean.split())
+            
+            if clean:
+                shopping_list.append(clean)
+    
+    # Anzeige als Code-Block (hat oben rechts einen Kopier-Button)
+    if shopping_list:
+        st.code("\n".join(shopping_list), language="text")
+
 st.divider()
-st.subheader(c['ui_fb_header'])
-with st.form("fb_form"):
-    fb_text = st.text_area("...")
-    fb_mail = st.text_input("Email (optional)")
-    if st.form_submit_button(c['ui_fb_btn']):
-        if fb_text:
-            with open("user_feedback.txt", "a") as f: f.write(f"Lang: {selected_language} | Mail: {fb_mail}\n{fb_text}\n---\n")
-            st.success("Thank you! / Danke!")
+st.subheader(c['fb_header'])
+with st.form("fb"):
+    txt = st.text_area(c['fb_place']); mail = st.text_input(c['fb_mail'])
+    if st.form_submit_button(c['fb_btn']):
+        with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
+        st.success(c['fb_thx'])
+
+
+
+
