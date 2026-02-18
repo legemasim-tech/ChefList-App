@@ -378,12 +378,41 @@ if "recipe_result" not in st.session_state: st.session_state.recipe_result = Non
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
-    try: idx = list(LANG_CONFIG.keys()).index(st.session_state.user_lang_selection)
-    except: idx = 0
-    selected_lang = st.radio("🌍 Language", list(LANG_CONFIG.keys()), index=idx)
+    # 1. Flaggen-Mapping für schönere Optik
+    FLAG_LABELS = {
+        "English": "🇺🇸 English", "Deutsch": "🇩🇪 Deutsch", "Español": "🇪🇸 Español",
+        "Français": "🇫🇷 Français", "Italiano": "🇮🇹 Italiano", "Português": "🇧🇷 Português",
+        "Nederlands": "🇳🇱 Nederlands", "Polski": "🇵🇱 Polski", "Türkçe": "🇹🇷 Türkçe",
+        "日本語": "🇯🇵 日本語"
+    }
     
+    # Rückwärts-Suche (Label -> Config Key)
+    label_to_key = {v: k for k, v in FLAG_LABELS.items()}
+
+    # Aktuelle Auswahl ermitteln
+    current_key = st.session_state.get("user_lang_selection", "English")
+    if current_key not in FLAG_LABELS: current_key = "English"
+    default_label = FLAG_LABELS[current_key]
+
+    # 2. Modernes Auswahlmenü (Pills) statt Radio/Selectbox
+    st.markdown("### 🌍 Language")
+    selected_label = st.pills(
+        "Sprache wählen",
+        options=list(FLAG_LABELS.values()),
+        default=default_label,
+        label_visibility="collapsed"
+    )
+
+    # Auswahl verarbeiten
+    if selected_label:
+        selected_lang = label_to_key[selected_label]
+        st.session_state.user_lang_selection = selected_lang
+    else:
+        selected_lang = current_key # Fallback
+
     c = LANG_CONFIG[selected_lang]
     
+    # --- Rest der Sidebar wie gehabt ---
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
     else: st.title("🍳 ChefList Pro")
     
@@ -404,7 +433,7 @@ with st.sidebar:
         pw = st.text_input("PW", type="password")
         if pw == "Gemini_Cheflist_pw" and os.path.exists("user_feedback.txt"):
             with open("user_feedback.txt", "r") as f: st.text_area("Log", f.read())
- 
+                
 st.title("🍲 ChefList Pro")
 st.subheader(c['ui_header'])
 
@@ -489,10 +518,3 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
-
-
-
-
-
-
-
