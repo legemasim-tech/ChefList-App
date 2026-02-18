@@ -222,9 +222,10 @@ def get_full_video_data(video_url):
 def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
-    # Text für den Link (z.B. "Auf Amazon kaufen")
+    header_amount = "Amount" if config['iso'] == 'en' else "Menge" if config['iso'] == 'de' else "Cantidad" if config['iso'] == 'es' else "Menge/Amount"
+    header_ingredient = "Ingredient" if config['iso'] == 'en' else "Zutat" if config['iso'] == 'de' else "Ingrediente" if config['iso'] == 'es' else "Zutat/Ingredient"
     buy_text = config['ui_buy'].replace('*', '')
-    
+       
     system_prompt = f"""
     You are a professional chef. Respond in {config['ai_lang']}.
     Servings: {portions}. Units: {u_inst}.
@@ -563,6 +564,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
