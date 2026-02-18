@@ -330,9 +330,11 @@ def create_pdf(text_content, recipe_title, config):
                         content = f"{parts[0].upper()} - {parts[1].upper()}"
                     else:
                         pdf.set_font("Arial", style="B", size=11)
+                        # Wir entfernen Klammern und Sterne, aber fügen KEINEN Bindestrich hinzu
                         clean_amount = parts[0].replace('*','').replace('[','').replace(']','').strip()
                         clean_ingredient = parts[1].replace('*','').replace('[','').replace(']','').strip()
-                        content = f"- {clean_amount} {clean_ingredient}"
+                        # Direkte Ausgabe: "500g Mehl"
+                        content = f"{clean_amount} {clean_ingredient}"
                     
                     pdf.cell(175, 8, txt=content, ln=True)
                     pdf.set_draw_color(220, 220, 220)
@@ -561,6 +563,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
