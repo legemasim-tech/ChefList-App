@@ -534,7 +534,9 @@ if st.button(c['ui_create'], use_container_width=True):
 
 if st.session_state.recipe_result:
     st.divider()
-    st.subheader(f"📖 {st.session_state.recipe_title}")
+    
+    # VIDEOTITEL VERKLEINERT (h4 statt subheader)
+    st.markdown(f"#### 📖 {st.session_state.recipe_title}")
     
     # 1. Rezept in Teile zerlegen
     parts = st.session_state.recipe_result.split("###")
@@ -544,7 +546,7 @@ if st.session_state.recipe_result:
     # 2. Die Tabelle mit den Amazon-Links anzeigen
     st.markdown(ingredients_table)
     
-    # 3. Einkaufsliste generieren und den Expander GENAU HIER platzieren
+    # 3. Einkaufsliste generieren und den Expander
     shopping_list = []
     for line in ingredients_table.split('\n'):
         if '|' in line and '---' not in line:
@@ -553,7 +555,6 @@ if st.session_state.recipe_result:
                 ignore = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Buy"]
                 if not any(x.lower() in cols[0].lower() or x.lower() in cols[1].lower() for x in ignore):
                     amount = cols[0]
-                    # Link-Syntax entfernen für die reine Textliste
                     ing = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', cols[1])
                     shopping_list.append(f"{amount} {ing}")
     
@@ -586,6 +587,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
