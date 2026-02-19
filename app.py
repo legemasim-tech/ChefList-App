@@ -499,7 +499,8 @@ with st.sidebar:
        if selected_lang != current_lang:
            st.session_state.user_lang_selection = selected_lang
            st.rerun()
-    c = LANG_CONFIG[selected_lang]
+           
+   c = LANG_CONFIG[selected_lang]
     
     # --- REST DER SIDEBAR (LOGO, COUNTER, PAYPAL, RECHT) ---
     st.divider() # Kleiner Abstand nach dem Menü
@@ -603,6 +604,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
