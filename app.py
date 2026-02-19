@@ -483,20 +483,12 @@ if "recipe_result" not in st.session_state: st.session_state.recipe_result = Non
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
-    # --- SPRACHAUSWAHL (EXPANDER TRICK) ---
-    # Ermitteln der aktuellen Sprache für den Titel
-    current_lang = st.session_state.get("user_lang_selection", "English")
-    
-    # Ein Expander dient als "Dropdown", das alle Optionen sofort zeigt
+   current_lang = st.session_state.get("user_lang_selection", "English")
     with st.expander(f"🌍 Language: {current_lang}", expanded=False):
-        # Liste aller Sprachen
         lang_options = list(LANG_CONFIG.keys())
-        try: 
-            curr_index = lang_options.index(current_lang)
-        except: 
-            curr_index = 0
+        try: curr_index = lang_options.index(current_lang)
+        except: curr_index = 0
             
-        # Radio-Button zeigt alle Optionen untereinander an -> Kein Scrollen im Menü nötig
         selected_lang = st.radio(
             "Sprache wählen",
             options=lang_options,
@@ -504,8 +496,6 @@ with st.sidebar:
             label_visibility="collapsed",
             key="lang_radio"
         )
-        
-        # Wenn sich die Auswahl ändert, State updaten und Seite neu laden
         if selected_lang != current_lang:
             st.session_state.user_lang_selection = selected_lang
             st.rerun()
@@ -514,13 +504,14 @@ with st.sidebar:
     
     # --- REST DER SIDEBAR (LOGO, COUNTER, PAYPAL, RECHT) ---
     st.divider() # Kleiner Abstand nach dem Menü
-    
-    if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
-    else: st.title("🍳 ChefList Pro")
-    
+    if os.path.exists("logo.png"): 
+        st.image("logo.png", use_container_width=True)
+    else: 
+        st.markdown(f"### 🍳 ChefList Pro")
+     
     pay_url = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name=ChefList_Pro_Support&amount=0.90&currency_code={c['curr']}"
-    st.markdown(f'''<a href="{pay_url}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%;">{c['ui_btn_pay']}</button></a>''', unsafe_allow_html=True)
-    
+    st.markdown(f'''<a href="{pay_url}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">{c['ui_btn_pay']}</button></a>''', unsafe_allow_html=True)
+
     st.markdown("---")
     with st.expander(f"ℹ️ {c['legal_title']}"):
         st.caption(c["legal_op"]); st.caption(c["legal_contact"]); st.divider()
@@ -529,10 +520,11 @@ with st.sidebar:
         st.divider(); st.caption(c["legal_note"])
         
     st.divider()
-    if st.checkbox("Admin"):
-        pw = st.text_input("PW", type="password")
-        if pw == "Gemini_Cheflist_pw" and os.path.exists("user_feedback.txt"):
-            with open("user_feedback.txt", "r") as f: st.text_area("Log", f.read())
+        if st.checkbox("Admin Mode"):
+            pw = st.text_input("Password", type="password")
+            if pw == "Gemini_Cheflist_pw" and os.path.exists("user_feedback.txt"):
+                with open("user_feedback.txt", "r") as f: 
+                    st.text_area("Feedback Log", f.read(), height=200)
                 
 st.title("🍲 ChefList Pro")
 st.subheader(c['ui_header'])
@@ -612,6 +604,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
