@@ -536,36 +536,29 @@ if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.recipe_title}")
     
-    # --- NEU: EINKAUFSLISTE DIREKT AM ANFANG ---
+    # 1. Einkaufsliste extrahieren für den Kopier-Block
     shopping_list = []
     lines = st.session_state.recipe_result.split('\n')
+    recipe_body = []
     
     for line in lines:
-        line = line.strip()
         if '|' in line and '---' not in line:
             parts = [p.strip() for p in line.split('|') if p.strip()]
             if len(parts) >= 2:
-                ignore_terms = ["Amount", "Menge", "Ingredient", "Zutat", "Miktar", "Ilosc", "Shop", "Kaufen", "Buy", "Quantite", "Quantita"]
-                if any(x.lower() in parts[0].lower() or x.lower() in parts[1].lower() for x in ignore_terms):
-                    continue
-                
-                amount = parts[0]
-                ingredient = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', parts[1])
-                clean_entry = f"{amount} {ingredient}".strip()
-                if clean_entry:
-                    shopping_list.append(clean_entry)
+                ignore_terms = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Buy", "Quantite"]
+                if not any(x.lower() in parts[0].lower() or x.lower() in parts[1].lower() for x in ignore_terms):
+                    shopping_list.append(f"{parts[0]} {re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', parts[1])}")
     
+    # 2. Kopier-Block ANSTELLE der ersten Text-Zutatenliste anzeigen
     if shopping_list:
-        st.caption("🛒 " + ("Copy for your shopping list" if c['iso'] == 'en' else "Für Einkaufsliste kopieren"))
+        st.caption("🛒 " + ("Copy ingredients" if c['iso'] == 'en' else "Zutaten kopieren"))
         st.code("\n".join(shopping_list), language="text")
     
-    st.divider()
-
-    # --- ANZEIGE REZEPT TEXT & PDF BUTTON ---
+    # 3. Das eigentliche Rezept (Tabelle mit Amazon Links & Anleitung) anzeigen
     st.markdown(st.session_state.recipe_result)
     
+    # 4. PDF Download Button
     pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
-    
     if pdf_output is not None:
         st.download_button(
             label=c['ui_dl'],
@@ -573,7 +566,7 @@ if st.session_state.recipe_result:
             file_name=f"{clean_for_pdf(st.session_state.recipe_title)}.pdf",
             mime="application/pdf",
             use_container_width=True
-        )
+        )      
     else:
         st.error("The PDF could not be generated.")
 
@@ -585,3 +578,4 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
