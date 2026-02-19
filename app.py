@@ -436,6 +436,10 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         margin-bottom: 20px;
     }
+    /* Erzwingt volle Breite für Tabellen */
+   .stMarkdown table {
+        width: 100%;
+    }
 </style>
 """, unsafe_allow_html=True)
 if "user_lang_selection" not in st.session_state:
@@ -539,21 +543,21 @@ if st.session_state.recipe_result:
     st.markdown(f"#### 📖 {st.session_state.recipe_title}")
     
     # 1. Rezept in Teile zerlegen
+    # Wir nutzen split("###"), um Tabelle und Anleitung zu trennen
     parts = st.session_state.recipe_result.split("###")
-    ingredients_table = parts[0] # Die Tabelle am Anfang
-    instructions = "###" + parts[1] if len(parts) > 1 else "" # Die Anleitung
+    ingredients_table = parts[0]
+    instructions = "###" + parts[1] if len(parts) > 1 else ""
     
-    # 2. Die Tabelle auf volle Breite bringen (wie den Expander)
-    # Wir nutzen HTML-Container, um Streamlit zu zwingen, die Tabelle zu dehnen
-    st.markdown(f'<div style="width:100%;">{ingredients_table}</div>', unsafe_allow_html=True)
+    # 2. Die Tabelle anzeigen (wird durch das globale CSS jetzt 100% breit)
+    st.markdown(ingredients_table)
     
-    # 3. Einkaufsliste generieren und den Expander (ist bereits 100% breit)
+    # 3. Einkaufsliste generieren und den Expander
     shopping_list = []
     for line in ingredients_table.split('\n'):
         if '|' in line and '---' not in line:
             cols = [p.strip() for p in line.split('|') if p.strip()]
             if len(cols) >= 2:
-                ignore = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Buy"]
+                ignore = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Buy", "Quantite", "Miktar"]
                 if not any(x.lower() in cols[0].lower() or x.lower() in cols[1].lower() for x in ignore):
                     amount = cols[0]
                     ing = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', cols[1])
@@ -588,6 +592,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
