@@ -138,7 +138,7 @@ LANG_CONFIG = {
         "ai_lang": "DUTCH", "fb_header": "Help ons! 🍲", "fb_btn": "Verzenden ✨",
         "fb_place": "Ideeën?", "fb_mail": "Email", "fb_thx": "Bedankt! 🙌",
         "pdf_rec": "Recept", "pdf_instr": "Instructies", 
-        "pdf_enjoy": "Veel succes gewenst door het Cheflist Pro team." Netherlands
+        "pdf_enjoy": "Veel succes gewenst door het Cheflist Pro team."
     },
     "Polski": {
         "tag": "cheflist21-20", "amz": "amazon.pl", "curr": "PLN", "iso": "pl",
@@ -620,6 +620,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
