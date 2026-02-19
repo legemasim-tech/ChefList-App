@@ -535,7 +535,7 @@ if st.button(c['ui_create'], use_container_width=True):
 if st.session_state.recipe_result:
     st.divider()
     
-    # VIDEOTITEL VERKLEINERT (h4 statt subheader)
+    # Videotitel verkleinert
     st.markdown(f"#### 📖 {st.session_state.recipe_title}")
     
     # 1. Rezept in Teile zerlegen
@@ -543,10 +543,11 @@ if st.session_state.recipe_result:
     ingredients_table = parts[0] # Die Tabelle am Anfang
     instructions = "###" + parts[1] if len(parts) > 1 else "" # Die Anleitung
     
-    # 2. Die Tabelle mit den Amazon-Links anzeigen
-    st.markdown(ingredients_table)
+    # 2. Die Tabelle auf volle Breite bringen (wie den Expander)
+    # Wir nutzen HTML-Container, um Streamlit zu zwingen, die Tabelle zu dehnen
+    st.markdown(f'<div style="width:100%;">{ingredients_table}</div>', unsafe_allow_html=True)
     
-    # 3. Einkaufsliste generieren und den Expander
+    # 3. Einkaufsliste generieren und den Expander (ist bereits 100% breit)
     shopping_list = []
     for line in ingredients_table.split('\n'):
         if '|' in line and '---' not in line:
@@ -587,6 +588,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
