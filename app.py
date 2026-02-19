@@ -536,26 +536,36 @@ if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.recipe_title}")
     
-    # 1. Einkaufsliste im Hintergrund generieren
-    shopping_list = []
-    for line in st.session_state.recipe_result.split('\n'):
-        if '|' in line and '---' not in line:
-            parts = [p.strip() for p in line.split('|') if p.strip()]
-            if len(parts) >= 2:
-                ignore_terms = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Buy"]
-                if not any(x.lower() in parts[0].lower() or x.lower() in parts[1].lower() for x in ignore_terms):
-                    shopping_list.append(f"{parts[0]} {re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', parts[1])}")
+    # 1. Rezept in Teile zerlegen
+    parts = st.session_state.recipe_result.split("###")
+    ingredients_table = parts[0] # Die Tabelle am Anfang
+    instructions = "###" + parts[1] if len(parts) > 1 else "" # Die Anleitung
     
-    # 2. Einkaufsliste hinter einem Expander "verstecken"
+    # 2. Die Tabelle mit den Amazon-Links anzeigen
+    st.markdown(ingredients_table)
+    
+    # 3. Einkaufsliste generieren und den Expander GENAU HIER platzieren
+    shopping_list = []
+    for line in ingredients_table.split('\n'):
+        if '|' in line and '---' not in line:
+            cols = [p.strip() for p in line.split('|') if p.strip()]
+            if len(cols) >= 2:
+                ignore = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Buy"]
+                if not any(x.lower() in cols[0].lower() or x.lower() in cols[1].lower() for x in ignore):
+                    amount = cols[0]
+                    # Link-Syntax entfernen für die reine Textliste
+                    ing = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', cols[1])
+                    shopping_list.append(f"{amount} {ing}")
+    
     if shopping_list:
         label = "🛒 " + ("Click to copy ingredients" if c['iso'] == 'en' else "Zutaten zum Kopieren anzeigen")
         with st.expander(label):
             st.code("\n".join(shopping_list), language="text")
+            
+    # 4. Die Zubereitung anzeigen
+    st.markdown(instructions)
     
-    # 3. Das Rezept (Tabelle & Anleitung)
-    st.markdown(st.session_state.recipe_result)
-    
-    # 4. PDF Download
+    # 5. PDF Download Button
     pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
     if pdf_output is not None:
         st.download_button(
@@ -576,5 +586,6 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
