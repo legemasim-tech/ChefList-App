@@ -536,28 +536,26 @@ if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.recipe_title}")
     
-    # 1. Einkaufsliste extrahieren für den Kopier-Block
+    # 1. Einkaufsliste im Hintergrund generieren
     shopping_list = []
-    lines = st.session_state.recipe_result.split('\n')
-    recipe_body = []
-    
-    for line in lines:
+    for line in st.session_state.recipe_result.split('\n'):
         if '|' in line and '---' not in line:
             parts = [p.strip() for p in line.split('|') if p.strip()]
             if len(parts) >= 2:
-                ignore_terms = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Buy", "Quantite"]
+                ignore_terms = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Buy"]
                 if not any(x.lower() in parts[0].lower() or x.lower() in parts[1].lower() for x in ignore_terms):
                     shopping_list.append(f"{parts[0]} {re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', parts[1])}")
     
-    # 2. Kopier-Block ANSTELLE der ersten Text-Zutatenliste anzeigen
+    # 2. Einkaufsliste hinter einem Expander "verstecken"
     if shopping_list:
-        st.caption("🛒 " + ("Copy ingredients" if c['iso'] == 'en' else "Zutaten kopieren"))
-        st.code("\n".join(shopping_list), language="text")
+        label = "🛒 " + ("Click to copy ingredients" if c['iso'] == 'en' else "Zutaten zum Kopieren anzeigen")
+        with st.expander(label):
+            st.code("\n".join(shopping_list), language="text")
     
-    # 3. Das eigentliche Rezept (Tabelle mit Amazon Links & Anleitung) anzeigen
+    # 3. Das Rezept (Tabelle & Anleitung)
     st.markdown(st.session_state.recipe_result)
     
-    # 4. PDF Download Button
+    # 4. PDF Download
     pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
     if pdf_output is not None:
         st.download_button(
@@ -566,7 +564,7 @@ if st.session_state.recipe_result:
             file_name=f"{clean_for_pdf(st.session_state.recipe_title)}.pdf",
             mime="application/pdf",
             use_container_width=True
-        )      
+        )
     else:
         st.error("The PDF could not be generated.")
 
@@ -578,4 +576,5 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
