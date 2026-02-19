@@ -536,10 +536,34 @@ if st.session_state.recipe_result:
     st.divider()
     st.subheader(f"📖 {st.session_state.recipe_title}")
     
-    # Anzeige des Rezepts
+    # --- NEU: EINKAUFSLISTE DIREKT AM ANFANG ---
+    shopping_list = []
+    lines = st.session_state.recipe_result.split('\n')
+    
+    for line in lines:
+        line = line.strip()
+        if '|' in line and '---' not in line:
+            parts = [p.strip() for p in line.split('|') if p.strip()]
+            if len(parts) >= 2:
+                ignore_terms = ["Amount", "Menge", "Ingredient", "Zutat", "Miktar", "Ilosc", "Shop", "Kaufen", "Buy", "Quantite", "Quantita"]
+                if any(x.lower() in parts[0].lower() or x.lower() in parts[1].lower() for x in ignore_terms):
+                    continue
+                
+                amount = parts[0]
+                ingredient = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', parts[1])
+                clean_entry = f"{amount} {ingredient}".strip()
+                if clean_entry:
+                    shopping_list.append(clean_entry)
+    
+    if shopping_list:
+        st.caption("🛒 " + ("Copy for your shopping list" if c['iso'] == 'en' else "Für Einkaufsliste kopieren"))
+        st.code("\n".join(shopping_list), language="text")
+    
+    st.divider()
+
+    # --- ANZEIGE REZEPT TEXT & PDF BUTTON ---
     st.markdown(st.session_state.recipe_result)
     
-    # PDF Aufruf
     pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
     
     if pdf_output is not None:
@@ -553,39 +577,7 @@ if st.session_state.recipe_result:
     else:
         st.error("The PDF could not be generated.")
 
-    # --- EINKAUFSLISTE (FIXED LOGIC) ---
-    st.divider()
-    st.caption("🛒 " + ("Copy Ingredients" if c['iso'] == 'en' else "Zutaten kopieren"))
-    
-    shopping_list = []
-    lines = st.session_state.recipe_result.split('\n')
-    
-    for line in lines:
-        line = line.strip()
-        # Wir suchen Zeilen mit Pipes, die keine Trenner sind
-        if '|' in line and '---' not in line:
-            # Spalten extrahieren und leere Strings (vom Rand der Tabelle) entfernen
-            parts = [p.strip() for p in line.split('|') if p.strip()]
-            
-            if len(parts) >= 2:
-                # Prüfen, ob es die Kopfzeile ist
-                ignore_terms = ["Amount", "Menge", "Ingredient", "Zutat", "Miktar", "Ilosc", "Shop", "Kaufen", "Buy", "Quantite", "Quantita"]
-                if any(x.lower() in parts[0].lower() or x.lower() in parts[1].lower() for x in ignore_terms):
-                    continue
-                
-                amount = parts[0]
-                # Link aus der Zutat-Spalte entfernen, falls vorhanden
-                ingredient = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', parts[1])
-                
-                clean_entry = f"{amount} {ingredient}".strip()
-                if clean_entry:
-                    shopping_list.append(clean_entry)
-    
-    if shopping_list:
-        st.code("\n".join(shopping_list), language="text")
-    else:
-        st.info("No ingredients found to copy." if c['iso'] == 'en' else "Keine Zutaten zum Kopieren gefunden.")
-
+# --- FEEDBACK FORMULAR BLEIBT UNTEN ---
 st.divider()
 st.subheader(c['fb_header'])
 with st.form("fb"):
@@ -593,4 +585,3 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
-
