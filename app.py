@@ -533,6 +533,54 @@ with st.sidebar:
             if pw == "Gemini_Cheflist_pw" and os.path.exists("user_feedback.txt"):
                 with open("user_feedback.txt", "r") as f: 
                     st.text_area("Feedback Log", f.read(), height=200)
+
+    st.title("🍲 ChefList Pro")
+
+st.subheader(c['ui_header'])
+
+
+
+v_url = st.text_input(c['ui_input_label'], placeholder="https://...")
+
+col1, col2 = st.columns(2)
+
+ports = col1.slider(c['ui_servings'], 1, 10, 4)
+
+units = col2.radio(c['ui_units'], c['ui_unit_opts'], horizontal=True)
+
+
+
+if st.button(c['ui_create'], use_container_width=True):
+
+    if v_url:
+
+        with st.status(c['ui_wait'].format(ports)) as status:
+
+            t_orig, trans, desc, chef = get_full_video_data(v_url)
+
+            if trans or desc:
+
+                res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
+
+                if res:
+
+                   st.session_state.recipe_result = res
+
+                   st.session_state.recipe_title = t_orig
+
+                   update_global_counter()
+
+                   status.update(label=c['ui_ready'], state="complete")
+
+                else: st.error("AI Error")
+
+            else: st.error("No Data")
+
+
+
+if st.session_state.recipe_result:
+
+    st.divider()
     
     # Videotitel verkleinert
     st.markdown(f"#### 📖 {st.session_state.recipe_title}")
@@ -587,6 +635,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
