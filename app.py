@@ -484,22 +484,21 @@ if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
    current_lang = st.session_state.get("user_lang_selection", "English")
-    with st.expander(f"🌍 Language: {current_lang}", expanded=False):
-        lang_options = list(LANG_CONFIG.keys())
-        try: curr_index = lang_options.index(current_lang)
-        except: curr_index = 0
+   with st.expander(f"🌍 Language: {current_lang}", expanded=False):
+       lang_options = list(LANG_CONFIG.keys())
+       try: curr_index = lang_options.index(current_lang)
+       except: curr_index = 0
             
-        selected_lang = st.radio(
-            "Sprache wählen",
-            options=lang_options,
-            index=curr_index,
-            label_visibility="collapsed",
-            key="lang_radio"
-        )
-        if selected_lang != current_lang:
-            st.session_state.user_lang_selection = selected_lang
-            st.rerun()
-
+       selected_lang = st.radio(
+           "Sprache wählen",
+           options=lang_options,
+           index=curr_index,
+           label_visibility="collapsed",
+           key="lang_radio"
+       )
+       if selected_lang != current_lang:
+           st.session_state.user_lang_selection = selected_lang
+           st.rerun()
     c = LANG_CONFIG[selected_lang]
     
     # --- REST DER SIDEBAR (LOGO, COUNTER, PAYPAL, RECHT) ---
@@ -604,6 +603,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
