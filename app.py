@@ -518,8 +518,6 @@ with st.sidebar:
     if os.path.exists("logo.png"): st.image("logo.png", use_container_width=True)
     else: st.title("🍳 ChefList Pro")
     
-    st.info(f"{c['ui_counter_text']} {st.session_state.counter}")
-    
     pay_url = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name=ChefList_Pro_Support&amount=0.90&currency_code={c['curr']}"
     st.markdown(f'''<a href="{pay_url}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%;">{c['ui_btn_pay']}</button></a>''', unsafe_allow_html=True)
     
@@ -551,14 +549,8 @@ if st.button(c['ui_create'], use_container_width=True):
             if trans or desc:
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
                 if res:
-                    st.session_state.recipe_result = res
-                    clean_title = t_orig
-                    for l in res.split('\n'):
-                        if "TITLE:" in l: 
-                            clean_title = l.replace("TITLE:", "").strip()
-                            break
-                    st.session_state.recipe_title = clean_title
-                    st.session_state.counter += 1
+                   st.session_state.recipe_result = res
+                    st.session_state.recipe_title = t_orig
                     update_global_counter()
                     status.update(label=c['ui_ready'], state="complete")
                 else: st.error("AI Error")
@@ -620,6 +612,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
