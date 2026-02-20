@@ -253,17 +253,17 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     buy_text = config['ui_buy'].replace('*', '')
     instr_header = config.get('pdf_instr', 'Instructions')
     
-    lang_map = {
-        "de": ("Menge", "Zutat"),
-        "en": ("Amount", "Ingredient"),
-        "es": ("Cantidad", "Ingrediente"),
-        "fr": ("Quantite", "Ingredient"),
-        "it": ("Quantita", "Ingrediente"),
-        "pl": ("Ilosc", "Skladnik"),
-        "tr": ("Miktar", "Malzeme"),
-        "nl": ("Hoeveelheid", "Ingredient")
-    }
-    h_amount, h_ingredient = lang_map.get(config['iso'], ("Amount", "Ingredient"))
+   lang_map = {
+        "de": ("Menge", "Zutat", "Zutaten einkaufen"),
+        "en": ("Amount", "Ingredient", "Shop Ingredients"),
+        "es": ("Cantidad", "Ingrediente", "Comprar ingredientes"),
+        "fr": ("Quantite", "Ingredient", "Acheter les ingrédients"),
+        "it": ("Quantita", "Ingrediente", "Acquista ingredienti"),
+        "pl": ("Ilosc", "Skladnik", "Kup składniki"),
+        "tr": ("Miktar", "Malzeme", "Malzemeleri satın al"),
+        "nl": ("Hoeveelheid", "Ingredient", "Ingrediënten kopen")
+       
+    h_amount, h_ingredient, h_shop = lang_map.get(config['iso'], ("Amount", "Ingredient", "Shop"))
 
     base_url = f"https://www.{config['amz']}/s?k="
     tag_part = f"&tag={config['tag']}"
@@ -614,6 +614,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
