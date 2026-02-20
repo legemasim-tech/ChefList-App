@@ -292,14 +292,17 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     [Ingredients with recalculated amounts]
 
     ### {instr_header}
-    1. [Detailed step]
+    1. [Extremely detailed step 1]
+    2. [Extremely detailed step 2]
     ...
-
-    # RULES:
-    - The amounts in the first column MUST be adjusted for exactly {portions} servings.
-    - Example: If original was 500g for 4 people and user wants 2, you MUST write 250g.
-    - Third column link format: [{buy_text}]({base_url}[KEYWORD]{tag_part})
-    - NO title, NO intro text. Start with the table.
+    
+    # CRITICAL INSTRUCTIONS:
+    1. THE COOKING STEPS MUST BE LONG AND DETAILED. Do not summarize. Explain exactly how to prepare, cook, and serve the dish based on the transcript.
+    2. Write at least 4-8 comprehensive steps if the transcript allows it.
+    3. The third column MUST use this link format: [{buy_text}]({base_url}[KEYWORD]{tag_part})
+    4. Replace [KEYWORD] with the simple English noun of the ingredient.
+    5. NO title, NO author. Start directly with the table.
+    6. Numbering (1., 2., ...) ONLY in the {instr_header} section.
     """
     
     try:
@@ -638,6 +641,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
