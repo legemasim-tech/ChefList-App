@@ -574,17 +574,14 @@ with col_u:
     # Radio Buttons für Einheiten
     units = st.radio(f"⚖️ {c['ui_units']}", c['ui_unit_opts'], horizontal=True)
 
-# Der Button füllt die volle Breite unter den Spalten aus
-if st.button(c['ui_create'], use_container_width=True) or params_changed:
-
-# Abstand vor dem Button
-st.markdown("<br>", unsafe_allow_html=True)
-
-# Prüfen, ob sich Parameter geändert haben, während ein Rezept aktiv ist
+# 1. ZUERST: Parameter definieren
 current_params = {"url": v_url, "ports": ports, "units": units}
 params_changed = current_params != st.session_state.last_params and st.session_state.recipe_result is not None
 
-# Der Button ODER eine Änderung der Portionen löst die Erstellung aus
+# 2. DANACH: Optischer Abstand
+st.markdown("<br>", unsafe_allow_html=True)
+
+# 3. AM ENDE: Die Logik (nur EIN Button-Aufruf)
 if st.button(c['ui_create'], use_container_width=True) or params_changed:
     if v_url:
         with st.status(c['ui_wait'].format(ports)) as status:
@@ -597,9 +594,12 @@ if st.button(c['ui_create'], use_container_width=True) or params_changed:
                     st.session_state.last_params = current_params # Stand speichern
                     update_global_counter()
                     status.update(label=c['ui_ready'], state="complete")
-                    if params_changed: st.rerun() # Seite neu laden für Update
-                else: st.error("AI Error")
-            else: st.error("No Data")
+                    if params_changed: 
+                        st.rerun() # Seite neu laden für Update
+                else: 
+                    st.error("AI Error")
+            else: 
+                st.error("No Data")
 
 if st.session_state.recipe_result:
     st.divider()
@@ -661,6 +661,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
