@@ -261,19 +261,20 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
     buy_text = config['ui_buy'].replace('*', '')
+    table_header = config.get('ui_table_header', 'Shop')
     instr_header = config.get('pdf_instr', 'Instructions')
     
     lang_map = {
-        "de": ("Menge", "Zutat", "Zutaten einkaufen"),
-        "en": ("Amount", "Ingredient", "Shop Ingredients"),
-        "es": ("Cantidad", "Ingrediente", "Comprar ingredientes"),
-        "fr": ("Quantite", "Ingredient", "Acheter les ingrédients"),
-        "it": ("Quantita", "Ingrediente", "Acquista ingredienti"),
-        "pl": ("Ilosc", "Skladnik", "Kup składniki"),
-        "tr": ("Miktar", "Malzeme", "Malzemeleri satın al"),
-        "nl": ("Hoeveelheid", "Ingredient", "Ingrediënten kopen")
-    }   
-    h_amount, h_ingredient, h_shop = lang_map.get(config['iso'], ("Amount", "Ingredient", "Shop"))
+        "de": ("Menge", "Zutat"),
+        "en": ("Amount", "Ingredient"),
+        "es": ("Cantidad", "Ingrediente"),
+        "fr": ("Quantite", "Ingredient"),
+        "it": ("Quantita", "Ingrediente"),
+        "pl": ("Ilosc", "Skladnik"),
+        "tr": ("Miktar", "Malzeme"),
+        "nl": ("Hoeveelheid", "Ingredient")
+    }
+    h_amount, h_ingredient = lang_map.get(config['iso'], ("Amount", "Ingredient"))
 
     base_url = f"https://www.{config['amz']}/s?k="
     tag_part = f"&tag={config['tag']}"
@@ -284,22 +285,22 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     
     Structure your response EXACTLY like this:
     
-    | {h_amount} | {h_ingredient} | {buy_text} |
+    | {h_amount} | {h_ingredient} | {table_header} |
     |---|---|---|
     [Full Ingredients List]
 
     ### {instr_header}
-    1. [Extremely detailed step 1]
-    2. [Extremely detailed step 2]
+    1. [Extremely detailed step]
     ...
     
     # CRITICAL INSTRUCTIONS:
-    1. THE COOKING STEPS MUST BE LONG AND DETAILED. Do not summarize. Explain exactly how to prepare, cook, and serve the dish based on the transcript.
-    2. Write at least 4-8 comprehensive steps if the transcript allows it.
-    3. The third column MUST use this link format: [{buy_text}]({base_url}[KEYWORD]{tag_part})
-    4. Replace [KEYWORD] with the simple English noun of the ingredient.
-    5. NO title, NO author. Start directly with the table.
-    6. Numbering (1., 2., ...) ONLY in the {instr_header} section.
+    1. The third column header MUST be "{table_header}".
+    2. THE COOKING STEPS MUST BE LONG AND DETAILED. Do not summarize. Explain exactly how to prepare, cook, and serve the dish based on the transcript.
+    3. Write at least 4-8 comprehensive steps if the transcript allows it.
+    4. The third column MUST use this link format: [{buy_text}]({base_url}[KEYWORD]{tag_part})
+    5. Replace [KEYWORD] with the simple English noun of the ingredient.
+    6. NO title, NO author. Start directly with the table.
+    7. Numbering (1., 2., ...) ONLY in the {instr_header} section.
     """
     try:
         response = client.chat.completions.create(
@@ -624,25 +625,4 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
