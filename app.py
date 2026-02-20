@@ -262,7 +262,7 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
         "pl": ("Ilosc", "Skladnik", "Kup składniki"),
         "tr": ("Miktar", "Malzeme", "Malzemeleri satın al"),
         "nl": ("Hoeveelheid", "Ingredient", "Ingrediënten kopen")
-       
+    }   
     h_amount, h_ingredient, h_shop = lang_map.get(config['iso'], ("Amount", "Ingredient", "Shop"))
 
     base_url = f"https://www.{config['amz']}/s?k="
@@ -614,6 +614,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
