@@ -253,7 +253,7 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     buy_text = config['ui_buy'].replace('*', '')
     instr_header = config.get('pdf_instr', 'Instructions')
     
-   lang_map = {
+    lang_map = {
         "de": ("Menge", "Zutat", "Zutaten einkaufen"),
         "en": ("Amount", "Ingredient", "Shop Ingredients"),
         "es": ("Cantidad", "Ingrediente", "Comprar ingredientes"),
@@ -614,6 +614,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
