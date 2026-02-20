@@ -556,9 +556,26 @@ st.subheader(c['ui_header'])
 
 v_url = st.text_input(c['ui_input_label'], placeholder="https://...")
 
-col1, col2 = st.columns(2)
-ports = col1.slider(c['ui_servings'], 1, 10, 4)
-units = col2.radio(c['ui_units'], c['ui_unit_opts'], horizontal=True)
+# --- OPTISCH SCHÖNE EINGABE ---
+col_p, col_u = st.columns([1, 1])
+
+with col_p:
+    # Number Input statt Slider für 1-100
+    ports = st.number_input(
+        f"👥 {c['ui_servings']}", 
+        min_value=1, 
+        max_value=100, 
+        value=4, 
+        step=1,
+        help="Wähle die gewünschte Anzahl der Portionen (1-100)"
+    )
+
+with col_u:
+    # Radio Buttons für Einheiten
+    units = st.radio(f"⚖️ {c['ui_units']}", c['ui_unit_opts'], horizontal=True)
+
+# Abstand vor dem Button
+st.markdown("<br>", unsafe_allow_html=True)
 
 # Prüfen, ob sich Parameter geändert haben, während ein Rezept aktiv ist
 current_params = {"url": v_url, "ports": ports, "units": units}
@@ -641,6 +658,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
