@@ -429,6 +429,7 @@ def create_pdf(text_content, recipe_title, config):
     except Exception as e:
         print(f"PDF Debug: {e}")
         return None        
+        
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="🍲")
 st.markdown("""
@@ -557,22 +558,24 @@ st.subheader(c['ui_header'])
 v_url = st.text_input(c['ui_input_label'], placeholder="https://...")
 
 # --- OPTISCH SCHÖNE EINGABE ---
-col_p, col_u = st.columns([1, 1])
+col_p, col_u, col_spacer = st.columns([0.5, 1, 1])
 
 with col_p:
-    # Number Input statt Slider für 1-100
+    # Number Input begrenzt auf 99 (2 Stellen)
     ports = st.number_input(
         f"👥 {c['ui_servings']}", 
         min_value=1, 
-        max_value=100, 
+        max_value=99, 
         value=4, 
-        step=1,
-        help="Wähle die gewünschte Anzahl der Portionen (1-100)"
+        step=1
     )
 
 with col_u:
     # Radio Buttons für Einheiten
     units = st.radio(f"⚖️ {c['ui_units']}", c['ui_unit_opts'], horizontal=True)
+
+# Der Button füllt die volle Breite unter den Spalten aus
+if st.button(c['ui_create'], use_container_width=True) or params_changed:
 
 # Abstand vor dem Button
 st.markdown("<br>", unsafe_allow_html=True)
@@ -658,6 +661,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
