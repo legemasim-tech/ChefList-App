@@ -586,9 +586,6 @@ if st.session_state.recipe_result:
     
     st.markdown(web_table)
     
-    # 2. Die Tabelle anzeigen (wird durch das globale CSS jetzt 100% breit)
-    st.markdown(ingredients_table)
-    
     # 3. Einkaufsliste generieren und den Expander
     shopping_list = []
     for line in ingredients_table.split('\n'):
@@ -630,5 +627,6 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
