@@ -489,6 +489,7 @@ if "user_lang_selection" not in st.session_state:
         st.session_state.user_lang_selection = m.get(primary, "English")
     except: st.session_state.user_lang_selection = "English"
 
+if "last_params" not in st.session_state: st.session_state.last_params = {}
 if "counter" not in st.session_state: st.session_state.counter = 0
 if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
@@ -555,17 +556,24 @@ col1, col2 = st.columns(2)
 ports = col1.slider(c['ui_servings'], 1, 10, 4)
 units = col2.radio(c['ui_units'], c['ui_unit_opts'], horizontal=True)
 
-if st.button(c['ui_create'], use_container_width=True):
+# Prüfen, ob sich Parameter geändert haben, während ein Rezept aktiv ist
+current_params = {"url": v_url, "ports": ports, "units": units}
+params_changed = current_params != st.session_state.last_params and st.session_state.recipe_result is not None
+
+# Der Button ODER eine Änderung der Portionen löst die Erstellung aus
+if st.button(c['ui_create'], use_container_width=True) or params_changed:
     if v_url:
         with st.status(c['ui_wait'].format(ports)) as status:
             t_orig, trans, desc, chef = get_full_video_data(v_url)
             if trans or desc:
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
                 if res:
-                   st.session_state.recipe_result = res
-                   st.session_state.recipe_title = t_orig
-                   update_global_counter()
-                   status.update(label=c['ui_ready'], state="complete")
+                    st.session_state.recipe_result = res
+                    st.session_state.recipe_title = t_orig
+                    st.session_state.last_params = current_params # Stand speichern
+                    update_global_counter()
+                    status.update(label=c['ui_ready'], state="complete")
+                    if params_changed: st.rerun() # Seite neu laden für Update
                 else: st.error("AI Error")
             else: st.error("No Data")
 
@@ -629,6 +637,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
