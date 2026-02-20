@@ -261,7 +261,7 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
     buy_text = config['ui_buy'].replace('*', '')
-    table_header = config.get('ui_table_header', 'Shop')
+    table_header = config.get('ui_table_header', 'Shop Ingredients')
     instr_header = config.get('pdf_instr', 'Instructions')
     
     lang_map = {
@@ -582,8 +582,10 @@ if st.session_state.recipe_result:
     instructions = "###" + parts[1] if len(parts) > 1 else ""
     
     clean_buy_text = c['ui_buy'].replace('*', '')
+    # Fügt das Emoji vor dem Link in jeder Zeile der Tabelle ein
     web_table = ingredients_table.replace(f"[{clean_buy_text}]", f"🛒 [{clean_buy_text}]")
     
+    # Zeigt die Tabelle an (Header kommt automatisch korrekt von der KI)
     st.markdown(web_table)
     
     # 3. Einkaufsliste generieren und den Expander
@@ -627,6 +629,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
