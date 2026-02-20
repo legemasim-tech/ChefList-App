@@ -558,10 +558,9 @@ st.subheader(c['ui_header'])
 v_url = st.text_input(c['ui_input_label'], placeholder="https://...")
 
 # --- OPTISCH SCHÖNE EINGABE ---
-col_p, col_u, col_spacer = st.columns([0.5, 1, 1])
+col_p, col_u = st.columns([0.5, 2.0])
 
 with col_p:
-    # Number Input begrenzt auf 99 (2 Stellen)
     ports = st.number_input(
         f"👥 {c['ui_servings']}", 
         min_value=1, 
@@ -571,21 +570,19 @@ with col_p:
     )
 
 with col_u:
-    # Radio Buttons für Einheiten
+    # Wir rücken die Einheiten horizontal zusammen
     units = st.radio(
         f"⚖️ {c['ui_units']}", 
         c['ui_unit_opts'], 
         horizontal=True
     )
 
-# 1. ZUERST: Parameter definieren
+# Parameter-Logik
 current_params = {"url": v_url, "ports": ports, "units": units}
 params_changed = current_params != st.session_state.last_params and st.session_state.recipe_result is not None
 
-# 2. DANACH: Optischer Abstand
 st.markdown("<br>", unsafe_allow_html=True)
 
-# 3. AM ENDE: Die Logik (nur EIN Button-Aufruf)
 if st.button(c['ui_create'], use_container_width=True) or params_changed:
     if v_url:
         with st.status(c['ui_wait'].format(ports)) as status:
@@ -665,6 +662,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
