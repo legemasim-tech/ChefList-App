@@ -264,51 +264,52 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     table_header = config.get('ui_table_header', 'Shop Ingredients')
     instr_header = config.get('pdf_instr', 'Instructions')
     
+    # Sprach-Mapping für Tabellenköpfe
     lang_map = {
-        "de": ("Menge", "Zutat"),
-        "en": ("Amount", "Ingredient"),
-        "es": ("Cantidad", "Ingrediente"),
-        "fr": ("Quantite", "Ingredient"),
-        "it": ("Quantita", "Ingrediente"),
-        "pl": ("Ilosc", "Skladnik"),
-        "tr": ("Miktar", "Malzeme"),
-        "nl": ("Hoeveelheid", "Ingredient")
+        "de": ("Menge", "Zutat"), "en": ("Amount", "Ingredient"), "es": ("Cantidad", "Ingrediente"),
+        "fr": ("Quantite", "Ingredient"), "it": ("Quantita", "Ingrediente"), "pl": ("Ilosc", "Skladnik"),
+        "tr": ("Miktar", "Malzeme"), "nl": ("Hoeveelheid", "Ingredient")
     }
     h_amount, h_ingredient = lang_map.get(config['iso'], ("Amount", "Ingredient"))
-
     base_url = f"https://www.{config['amz']}/s?k="
     tag_part = f"&tag={config['tag']}"
 
+    # VERBESSERTER SYSTEM PROMPT MIT FOKUS AUF MATHEMATIK
     system_prompt = f"""
-    You are a professional chef. Respond in {config['ai_lang']}.
-    Servings: {portions}. Units: {u_inst}.
+    You are a professional chef and a precise mathematician. Respond in {config['ai_lang']}.
     
-    Structure your response EXACTLY like this:
+    TARGET SERVINGS: {portions}
+    TARGET UNITS: {u_inst}
+
+    ### CORE TASK:
+    1. ANALYZE: Identify the original serving size from the transcript (usually 1, 2, or 4). If not mentioned, assume 4 servings.
+    2. CALCULATE: Divide original amounts by original servings, then multiply by {portions}. 
+    3. VERIFY: The amounts in your table MUST be different if {portions} is not the original serving size. 
     
+    ### STRUCTURE:
     | {h_amount} | {h_ingredient} | {table_header} |
     |---|---|---|
-    [Full Ingredients List]
+    [Ingredients with recalculated amounts]
 
     ### {instr_header}
-    1. [Extremely detailed step]
+    1. [Detailed step]
     ...
-    
-    # CRITICAL INSTRUCTIONS:
-    1. The third column header MUST be "{table_header}".
-    2. THE COOKING STEPS MUST BE LONG AND DETAILED. Do not summarize. Explain exactly how to prepare, cook, and serve the dish based on the transcript.
-    3. Write at least 4-8 comprehensive steps if the transcript allows it.
-    4. The third column MUST use this link format: [{buy_text}]({base_url}[KEYWORD]{tag_part})
-    5. Replace [KEYWORD] with the simple English noun of the ingredient.
-    6. NO title, NO author. Start directly with the table.
-    7. Numbering (1., 2., ...) ONLY in the {instr_header} section.
+
+    # RULES:
+    - The amounts in the first column MUST be adjusted for exactly {portions} servings.
+    - Example: If original was 500g for 4 people and user wants 2, you MUST write 250g.
+    - Third column link format: [{buy_text}]({base_url}[KEYWORD]{tag_part})
+    - NO title, NO intro text. Start with the table.
     """
+    
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini", 
             messages=[
                 {"role": "system", "content": system_prompt}, 
-                {"role": "user", "content": f"VIDEO: {video_title}\nTRANSCRIPT: {transcript[:12000]}"}
-            ]
+                {"role": "user", "content": f"VIDEO: {video_title}\nTRANSCRIPT: {transcript[:12000]}\nDESCRIPTION: {description[:2000]}"}
+            ],
+            temperature=0.1 # Niedrige Temperatur für präzisere Rechnungen
         )
         return response.choices[0].message.content
     except: return None
@@ -637,6 +638,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
