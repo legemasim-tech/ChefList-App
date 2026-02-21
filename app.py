@@ -334,10 +334,12 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     4. NO SCALING: Keep the recipe exactly as intended by the chef (original servings).
     
     ### STRUCTURE:
-    [Catchy Recipe Title in {config['ai_lang']}]
+    [Catchy Recipe Title]
+
+    ### Ingredients
     | {h_amount} | {h_ingredient} | {table_header} |
     |---|---|---|
-    [Ingredients]
+    ...
 
     ### {instr_header}
     1. [Extremely detailed step 1]
@@ -466,23 +468,24 @@ def create_pdf(text_content, recipe_title, video_url, channel_name, config):
                 continue
                 
             # 3. Tabelle (Zutaten)
-            if '|' in line and not is_instruction:
+if '|' in line and not is_instruction:
                 parts = [p.strip() for p in line.split('|') if p.strip()]
                 if len(parts) >= 2:
-                    if any(x in parts[0] for x in ["Amount", "Menge", "Ingredient", "Zutat"]):
+                    # Header erkennen
+                    if any(x in parts[0] for x in ["Amount", "Menge", "Ingredient", "Zutat", "Quantite"]):
                         pdf.set_font("Arial", style="B", size=10)
+                        pdf.set_fill_color(240, 240, 240)
                         content = f"{parts[0].upper()} - {parts[1].upper()}"
                     else:
-                        pdf.set_font("Arial", style="B", size=11)
-                        # Wir entfernen Klammern und Sterne, aber fügen KEINEN Bindestrich hinzu
-                        clean_amount = parts[0].replace('*','').replace('[','').replace(']','').strip()
-                        clean_ingredient = parts[1].replace('*','').replace('[','').replace(']','').strip()
-                        # Direkte Ausgabe: "500g Mehl"
-                        content = f"{clean_amount} {clean_ingredient}"
+                        pdf.set_font("Arial", size=11)
+                        # Säubern von Markdown-Links für das PDF
+                        clean_amount = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', parts[0]).replace('*','')
+                        clean_ingred = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', parts[1]).replace('*','')
+                        content = f"{clean_amount} {clean_ingred}"
                     
-                    pdf.cell(175, 8, txt=content, ln=True)
-                    pdf.set_draw_color(220, 220, 220)
-                    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+                    pdf.cell(0, 8, txt=clean_for_pdf(content), ln=True)
+                    pdf.set_draw_color(200, 200, 200)
+                    pdf.line(pdf.get_x(), pdf.get_y(), 200, pdf.get_y())
             
             # 4. Kochtext / Instruktionen (Der Teil der verschoben war)
             else:
@@ -693,20 +696,26 @@ if st.button(c['ui_create'], use_container_width=True):
 if st.session_state.recipe_result:
     st.divider()
     
-    # Videotitel verkleinert
+    # Videotitel anzeigen
     st.markdown(f"#### 📖 {st.session_state.recipe_title}")
     
-    # 1. Rezept in Teile zerlegen
-    # Wir nutzen split("###"), um Tabelle und Anleitung zu trennen
-    parts = st.session_state.recipe_result.split("###")
-    ingredients_table = parts[0]
-    instructions = "###" + parts[1] if len(parts) > 1 else ""
+    # Rezept zerlegen:
+    # parts[0] ist leer (da der Text mit ### beginnt) ODER enthält Text vor dem ersten ###
+    # Wir haben den Titel bereits in st.session_state.recipe_title, 
+    # daher interessieren uns nur die Sektionen nach dem Splitten.
     
+    all_sections = st.session_state.recipe_result.split("###")
+    # Wir filtern leere Einträge raus
+    sections = [s.strip() for s in all_sections if s.strip()]
+    
+    # Die erste Sektion nach dem Splitten ist immer die Tabelle
+    ingredients_table = sections[0] if len(sections) > 0 else ""
+    # Alle weiteren Sektionen sind die Anleitung
+    instructions = "### " + " ### ".join(sections[1:]) if len(sections) > 1 else ""
+    
+    # Web-Anzeige der Tabelle
     clean_buy_text = c['ui_buy'].replace('*', '')
-    # Fügt das Emoji vor dem Link in jeder Zeile der Tabelle ein
     web_table = ingredients_table.replace(f"[{clean_buy_text}]", f"🛒 [{clean_buy_text}]")
-    
-    # Zeigt die Tabelle an (Header kommt automatisch korrekt von der KI)
     st.markdown(web_table)
     
     # 3. Einkaufsliste generieren und den Expander
@@ -750,6 +759,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
