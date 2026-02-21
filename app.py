@@ -599,7 +599,7 @@ if st.button(c['ui_create'], use_container_width=True):
                     status.update(label=c['ui_ready'], state="complete")
                     st.rerun()
                 else: st.error("AI Error")
-            else: st.error("No Data")error("No Data")
+            else: st.error("No Data")
 
 if st.session_state.recipe_result:
     st.divider()
@@ -661,6 +661,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
