@@ -561,7 +561,7 @@ st.subheader(c['ui_header'])
 v_url = st.text_input(c['ui_input_label'], placeholder="https://...")
 
 # --- OPTISCH SCHÖNE EINGABE ---
-col_p, col_u = st.columns([1.5, 1.0])
+col_left, col_mid, col_right = st.columns([1, 2, 1])
 
 with col_u:
     # Wir rücken die Einheiten horizontal zusammen
@@ -655,6 +655,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
