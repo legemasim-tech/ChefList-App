@@ -587,10 +587,10 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 if st.button(c['ui_create'], use_container_width=True):
     if v_url:
-        with st.status(c['ui_wait'].split('...')[0] + "...") as status:
+        wait_msg = c['ui_wait'].split('{0}')[0].strip(" .") + "..."
+        with st.status(wait_msg) as status:
             t_orig, trans, desc, chef = get_full_video_data(v_url)
             if trans or desc:
-                # Wir geben nur noch die Einheiten (units) an die KI weiter
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, units)
                 if res:
                     st.session_state.recipe_result = res
@@ -598,10 +598,8 @@ if st.button(c['ui_create'], use_container_width=True):
                     update_global_counter()
                     status.update(label=c['ui_ready'], state="complete")
                     st.rerun()
-                else: 
-                    st.error("AI Error")
-            else: 
-                st.error("No Data")
+                else: st.error("AI Error")
+            else: st.error("No Data")error("No Data")
 
 if st.session_state.recipe_result:
     st.divider()
@@ -663,6 +661,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
