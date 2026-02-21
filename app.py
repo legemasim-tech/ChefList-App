@@ -327,12 +327,14 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     TARGET UNITS: {u_inst}
 
     ### CORE TASK:
-    1. EXTRACT: Get the exact recipe from the transcript/description.
-    2. CONVERT: Keep original proportions but convert all measurements to {u_inst}. 
+    1. TITLE: Create a catchy, professional recipe title in {config['ai_lang']} based on the video.
+    2. EXTRACT: Get the exact recipe from the transcript/description.
+    3. CONVERT: Keep original proportions but convert all measurements to {u_inst}. 
        IMPORTANT: Convert oven temperatures (Celsius to Fahrenheit for US, or vice-versa).
-    3. NO SCALING: Keep the recipe exactly as intended by the chef (original servings).
+    4. NO SCALING: Keep the recipe exactly as intended by the chef (original servings).
     
     ### STRUCTURE:
+    LINE 1: [Your translated recipe title]
     | {h_amount} | {h_ingredient} | {table_header} |
     |---|---|---|
     [Ingredients with recalculated amounts]
@@ -667,9 +669,14 @@ if st.button(c['ui_create'], use_container_width=True):
             t_orig, trans, desc, chef = get_full_video_data(v_url)
             if trans or desc:
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, units)
-                if res:
-                    st.session_state.recipe_result = res
-                    st.session_state.recipe_title = t_orig
+            if res:
+                    # Trenne den von der KI generierten Titel vom Rest des Rezepts
+                    parts = res.split('\n', 1)
+                    translated_title = parts[0].strip()
+                    recipe_body = parts[1].replace('---', '').strip() # Entfernt die Trennlinie falls vorhanden
+
+                    st.session_state.recipe_result = recipe_body
+                    st.session_state.recipe_title = translated_title # Hier wird der übersetzte Titel gespeichert
                     st.session_state.recipe_chef = chef
                     update_global_counter()
                     status.update(label=c['ui_ready'], state="complete")
@@ -737,6 +744,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
