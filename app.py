@@ -369,6 +369,11 @@ def create_pdf(text_content, recipe_title, video_url, config):
         safe_title = clean_for_pdf(recipe_title[:45])
         pdf.cell(150, 15, txt=f"{safe_title}", ln=True, align='L', fill=True)
         
+        # --- NEU: KANALNAME / KOCH ---
+        pdf.set_font("Arial", style="I", size=11)
+        pdf.set_text_color(100, 100, 100) # Grau für eine edle Optik
+        pdf.cell(0, 8, txt=f"by {clean_for_pdf(channel_name)}", ln=True)
+        
         # --- NEU: YOUTUBE LINK MIT ICON ---
         pdf.ln(2)
         pdf.set_font("Arial", style="B", size=10)
@@ -531,6 +536,7 @@ if "user_lang_selection" not in st.session_state:
 if "last_params" not in st.session_state: st.session_state.last_params = {}
 if "counter" not in st.session_state: st.session_state.counter = 0
 if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
+if "recipe_chef" not in st.session_state: st.session_state.recipe_chef = ""
 if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
 
 with st.sidebar:
@@ -618,6 +624,7 @@ if st.button(c['ui_create'], use_container_width=True):
                 if res:
                     st.session_state.recipe_result = res
                     st.session_state.recipe_title = t_orig
+                    st.session_state.recipe_chef = chef
                     update_global_counter()
                     status.update(label=c['ui_ready'], state="complete")
                     st.rerun()
@@ -664,7 +671,7 @@ if st.session_state.recipe_result:
     st.markdown(instructions)
     
     # 5. PDF Download Button
-    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, v_url, c)
+    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, v_url, st.session_state.recipe_chef, c)
     if pdf_output is not None:
         st.download_button(
             label=c['ui_dl'],
@@ -684,6 +691,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
