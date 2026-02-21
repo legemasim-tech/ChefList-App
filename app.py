@@ -26,7 +26,6 @@ LANG_CONFIG = {
         "legal_privacy_title": "🛡️ Data Protection", 
         "legal_privacy_body": "We do not store personal data. Processing is encrypted.", 
         "legal_note": "⚠️ **Note:** This app uses AI. AI can make mistakes – please check details before cooking.",
-        "ai_lang": "ENGLISH", 
         "fb_header": "Help us improve! 🍲", "fb_btn": "Send ✨", 
         "fb_place": "What can we do better?", "fb_mail": "Email (optional)", "fb_thx": "Saved! 🙌",
         "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
@@ -45,6 +44,15 @@ LANG_CONFIG = {
         "ui_dl": "📄 Download PDF Recipe", "ui_buy": "Buy on Amazon*", "ui_table_header": "Shop Ingredients",
         "ui_btn_pay": "⚡ Support ChefList Pro (£0.80)",
         "ai_lang": "BRITISH ENGLISH",
+        "ui_counter_text": "Recipes created:", 
+        "legal_title": "About & Legal", 
+        "legal_op": "**Operator:** Markus Simmel", 
+        "legal_contact": "**Contact:** legemasim@gmail.com",
+        "legal_total": "Total recipes:", 
+        "legal_amz": "✨ As an Amazon Associate, I earn from qualifying purchases.", 
+        "legal_privacy_title": "🛡️ Data Protection", 
+        "legal_privacy_body": "We do not store personal data. Processing is encrypted.", 
+        "legal_note": "⚠️ **Note:** This app uses AI. AI can make mistakes – please check details before cooking."
         "fb_header": "Help us improve! 🍲", "fb_btn": "Send ✨", 
         "fb_place": "What can we do better?", "fb_mail": "Email (optional)", "fb_thx": "Saved! 🙌",
         "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
@@ -729,6 +737,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
