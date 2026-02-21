@@ -561,16 +561,7 @@ st.subheader(c['ui_header'])
 v_url = st.text_input(c['ui_input_label'], placeholder="https://...")
 
 # --- OPTISCH SCHÖNE EINGABE ---
-col_p, col_u = st.columns([0.5, 2.0])
-
-with col_p:
-    ports = st.number_input(
-        f"👥 {c['ui_servings']}", 
-        min_value=1, 
-        max_value=99, 
-        value=4, 
-        step=1
-    )
+col_p, col_u = st.columns([1.5, 1.0])
 
 with col_u:
     # Wir rücken die Einheiten horizontal zusammen
@@ -581,25 +572,24 @@ with col_u:
     )
 
 # Parameter-Logik
-current_params = {"url": v_url, "ports": ports, "units": units}
+current_params = {"url": v_url, "units": units}
 params_changed = current_params != st.session_state.last_params and st.session_state.recipe_result is not None
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-if st.button(c['ui_create'], use_container_width=True) or params_changed:
+if st.button(c['ui_create'], use_container_width=True):
     if v_url:
-        with st.status(c['ui_wait'].format(ports)) as status:
+        with st.status(c['ui_wait'].split('...')[0] + "...") as status:
             t_orig, trans, desc, chef = get_full_video_data(v_url)
             if trans or desc:
-                res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
+                # Wir geben nur noch die Einheiten (units) an die KI weiter
+                res = generate_smart_recipe(t_orig, chef, trans, desc, c, units)
                 if res:
                     st.session_state.recipe_result = res
                     st.session_state.recipe_title = t_orig
-                    st.session_state.last_params = current_params # Stand speichern
                     update_global_counter()
                     status.update(label=c['ui_ready'], state="complete")
-                    if params_changed: 
-                        st.rerun() # Seite neu laden für Update
+                    st.rerun()
                 else: 
                     st.error("AI Error")
             else: 
@@ -665,6 +655,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
