@@ -504,14 +504,17 @@ def create_pdf(text_content, recipe_title, video_url, channel_name, config):
         pdf.cell(0, 10, txt=safe_enjoy, ln=True, align='C')
         
         # 'S' steht für 'String', wird aber von Streamlit als Byte-Stream benötigt
-        # In manchen FPDF-Versionen gibt dest='S' einen Byte-String zurück
         pdf_bytes = pdf.output(dest='S') 
         
-        # Falls es noch ein String ist (Python 3 Kompatibilität), in Bytes umwandeln
+        # Falls es noch ein String ist, in Bytes umwandeln
         if isinstance(pdf_bytes, str):
             pdf_bytes = pdf_bytes.encode('latin1')
             
         return pdf_bytes
+
+    except Exception as e:
+        print(f"PDF Debug: {e}")
+        return None
         
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="👨‍🍳")
@@ -789,6 +792,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
