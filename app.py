@@ -592,7 +592,7 @@ with st.sidebar:
 
 # --- AB HIER: HAUPTFENSTER (Nicht mehr eingerückt!) ---
 
-st.title("🍲 ChefList Pro")
+st.title("👨‍🍳 ChefList Pro")
 st.subheader(c['ui_header'])
 
 v_url = st.text_input(c['ui_input_label'], placeholder="https://...")
@@ -691,6 +691,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
