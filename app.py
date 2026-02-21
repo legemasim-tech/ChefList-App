@@ -550,6 +550,17 @@ st.markdown("""
    .stMarkdown table {
         width: 100%;
     }
+
+    [data-testid="stSidebar"] .stExpander summary p {
+        font-size: 0.85rem !important;
+    }
+    [data-testid="stSidebar"] .stExpander .stRadio label p {
+        font-size: 0.8rem !important;
+        line-height: 1.2 !important;
+    }
+    [data-testid="stSidebar"] .stExpander div[role="radiogroup"] {
+        gap: 5px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 if "user_lang_selection" not in st.session_state:
@@ -718,6 +729,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
