@@ -351,7 +351,7 @@ def clean_for_pdf(text):
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
-def create_pdf(text_content, recipe_title, video_url, config):
+def create_pdf(text_content, recipe_title, video_url, channel_name, config):
     try:
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
@@ -691,6 +691,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
