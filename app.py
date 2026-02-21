@@ -334,10 +334,10 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     4. NO SCALING: Keep the recipe exactly as intended by the chef (original servings).
     
     ### STRUCTURE:
-    LINE 1: [Your translated recipe title]
+    [Catchy Recipe Title in {config['ai_lang']}]
     | {h_amount} | {h_ingredient} | {table_header} |
     |---|---|---|
-    [Ingredients with recalculated amounts]
+    [Ingredients]
 
     ### {instr_header}
     1. [Extremely detailed step 1]
@@ -671,14 +671,20 @@ if st.button(c['ui_create'], use_container_width=True):
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, units)
                 if res:
                     # Trenne den von der KI generierten Titel vom Rest des Rezepts
-                    parts = res.split('\n', 1)
-                    translated_title = parts[0].strip()
-                    recipe_body = parts[1].replace('---', '').strip() # Entfernt die Trennlinie falls vorhanden
-
+                    raw_parts = res.split('###')
+                   # 1. Titel extrahieren
+                    st.session_state.recipe_title = raw_parts[0].strip().replace('#', '')
+                    
+                    # 2. Den Rest des Rezepts (Tabelle + Anleitung) wieder zusammenfügen
+                    # Wir behalten die '###' bei, damit das Interface sie später zum Splitten findet
+                    recipe_body = ""
+                    if len(raw_parts) > 1:
+                        recipe_body = "###" + "###".join(raw_parts[1:])
+                    
                     st.session_state.recipe_result = recipe_body
-                    st.session_state.recipe_title = translated_title # Hier wird der übersetzte Titel gespeichert
                     st.session_state.recipe_chef = chef
                     update_global_counter()
+                    
                     status.update(label=c['ui_ready'], state="complete")
                     st.rerun()
                 else: st.error("AI Error")
@@ -744,6 +750,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
