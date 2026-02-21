@@ -361,6 +361,11 @@ def create_pdf(text_content, recipe_title, config):
         safe_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
         safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
         pdf.cell(150, 15, txt=f"{safe_title}", ln=True, align='L', fill=True)
+        pdf.set_font("Arial", size=10)
+        pdf.set_text_color(0, 0, 255) # Blau für den Link-Look
+        link_label = "Video: " + video_url
+        pdf.cell(0, 8, txt=link_label, ln=True, link=video_url)
+        pdf.set_text_color(0, 0, 0) # Zurück auf Schwarz für den Rest
         pdf.ln(5)
         
         lines = text_content.split('\n')
@@ -638,7 +643,7 @@ if st.session_state.recipe_result:
     st.markdown(instructions)
     
     # 5. PDF Download Button
-    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
+    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, v_url, c)
     if pdf_output is not None:
         st.download_button(
             label=c['ui_dl'],
@@ -658,6 +663,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
