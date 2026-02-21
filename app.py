@@ -280,9 +280,8 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
 
     # VERBESSERTER SYSTEM PROMPT MIT FOKUS AUF MATHEMATIK
     system_prompt = f"""
-    You are a professional chef and a precise mathematician. Respond in {config['ai_lang']}.
+    You are a professional chef. Respond in {config['ai_lang']}.
     
-    TARGET SERVINGS: {portions}
     TARGET UNITS: {u_inst}
 
     ### CORE TASK:
@@ -666,6 +665,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
