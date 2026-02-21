@@ -261,7 +261,7 @@ def get_full_video_data(video_url):
         return video_title, transcript, description, channel_name
     except: return "Recipe", None, None, "Chef"
 
-def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
+def generate_smart_recipe(video_title, channel_name, transcript, description, config, unit_system):
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
     buy_text = config['ui_buy'].replace('*', '')
@@ -285,9 +285,10 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     TARGET UNITS: {u_inst}
 
     ### CORE TASK:
-    1. ANALYZE: Identify the original serving size from the transcript (usually 1, 2, or 4). If not mentioned, assume 4 servings.
-    2. CALCULATE: Divide original amounts by original servings, then multiply by {portions}. 
-    3. VERIFY: The amounts in your table MUST be different if {portions} is not the original serving size. 
+    1. EXTRACT: Get the exact recipe from the transcript/description.
+    2. CONVERT: Keep original proportions but convert all measurements to {u_inst}. 
+       IMPORTANT: Convert oven temperatures (Celsius to Fahrenheit for US, or vice-versa).
+    3. NO SCALING: Keep the recipe exactly as intended by the chef (original servings).
     
     ### STRUCTURE:
     | {h_amount} | {h_ingredient} | {table_header} |
@@ -343,7 +344,7 @@ def clean_for_pdf(text):
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
-def create_pdf(text_content, recipe_title, config):
+def create_pdf(text_content, recipe_title, video_url, config):
     try:
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
@@ -358,15 +359,15 @@ def create_pdf(text_content, recipe_title, config):
 
         # Titel
         pdf.set_font("Arial", style="B", size=14)
-        safe_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
         safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
         pdf.cell(150, 15, txt=f"{safe_title}", ln=True, align='L', fill=True)
+        
+        # --- NEU: YOUTUBE LINK UNTER DEM TITEL ---
         pdf.set_font("Arial", size=10)
-        pdf.set_text_color(0, 0, 255) # Blau für den Link-Look
-        link_label = "Video: " + video_url
-        pdf.cell(0, 8, txt=link_label, ln=True, link=video_url)
-        pdf.set_text_color(0, 0, 0) # Zurück auf Schwarz für den Rest
-        pdf.ln(5)
+        pdf.set_text_color(0, 0, 255) # Blau für Link
+        pdf.cell(0, 10, txt="Video: " + video_url, ln=True, link=video_url)
+        pdf.set_text_color(0, 0, 0) # Zurück auf Schwarz
+        pdf.ln(2)
         
         lines = text_content.split('\n')
         is_instruction = False
@@ -661,6 +662,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
