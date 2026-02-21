@@ -669,7 +669,7 @@ if st.button(c['ui_create'], use_container_width=True):
             t_orig, trans, desc, chef = get_full_video_data(v_url)
             if trans or desc:
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, units)
-            if res:
+                if res:
                     # Trenne den von der KI generierten Titel vom Rest des Rezepts
                     parts = res.split('\n', 1)
                     translated_title = parts[0].strip()
@@ -744,6 +744,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
