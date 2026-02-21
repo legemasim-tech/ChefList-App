@@ -503,10 +503,15 @@ def create_pdf(text_content, recipe_title, video_url, channel_name, config):
         safe_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Enjoy!'))
         pdf.cell(0, 10, txt=safe_enjoy, ln=True, align='C')
         
-        return pdf.output()
-    except Exception as e:
-        print(f"PDF Debug: {e}")
-        return None        
+        # 'S' steht für 'String', wird aber von Streamlit als Byte-Stream benötigt
+        # In manchen FPDF-Versionen gibt dest='S' einen Byte-String zurück
+        pdf_bytes = pdf.output(dest='S') 
+        
+        # Falls es noch ein String ist (Python 3 Kompatibilität), in Bytes umwandeln
+        if isinstance(pdf_bytes, str):
+            pdf_bytes = pdf_bytes.encode('latin1')
+            
+        return pdf_bytes
         
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="👨‍🍳")
@@ -749,13 +754,32 @@ if st.session_state.recipe_result:
 
     st.divider()
     # 5. PDF Download
-    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, v_url, st.session_state.recipe_chef, c)
-    if pdf_output:
-        st.download_button(label=c['ui_dl'], data=pdf_output, 
-                          file_name=f"{clean_for_pdf(st.session_state.recipe_title)}.pdf", 
-                          mime="application/pdf", use_container_width=True)
-    else:
-        st.error("The PDF could not be generated.")
+# 5. PDF Download Button
+    try:
+        pdf_output = create_pdf(
+            st.session_state.recipe_result, 
+            st.session_state.recipe_title, 
+            v_url, 
+            st.session_state.recipe_chef, 
+            c
+        )
+        
+        if pdf_output:
+            # Wir stellen sicher, dass die Daten wirklich Bytes sind
+            data_to_download = pdf_output
+            
+            st.download_button(
+                label=c['ui_dl'],
+                data=data_to_download,
+                file_name=f"{clean_for_pdf(st.session_state.recipe_title)}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                key="pdf_download_btn" # Eindeutiger Key verhindert Refresh-Fehler
+            )
+        else:
+            st.error("PDF-Inhalt leer.")
+    except Exception as e:
+        st.error(f"Fehler beim Bereitstellen des PDFs: {e}")
 
 # --- FEEDBACK FORMULAR BLEIBT UNTEN ---
 st.divider()
@@ -765,6 +789,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
