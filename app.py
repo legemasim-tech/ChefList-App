@@ -694,49 +694,51 @@ if st.button(c['ui_create'], use_container_width=True):
             else: st.error("No Data")
 
 if st.session_state.recipe_result:
-    st.divider()
+st.divider()
     
-    # Videotitel anzeigen
-    st.markdown(f"#### 📖 {st.session_state.recipe_title}")
+    # 1. Titel anzeigen (kommt aus dem session_state)
+    st.markdown(f"#### 👨‍🍳 {st.session_state.recipe_title}")
     
-    # Rezept zerlegen:
-    # parts[0] ist leer (da der Text mit ### beginnt) ODER enthält Text vor dem ersten ###
-    # Wir haben den Titel bereits in st.session_state.recipe_title, 
-    # daher interessieren uns nur die Sektionen nach dem Splitten.
+    # 2. Rezept in Sektionen zerlegen
+    # Wir filtern leere Sektionen und säubern den Text
+    sections = [s.strip() for s in st.session_state.recipe_result.split("###") if s.strip()]
     
-    all_sections = st.session_state.recipe_result.split("###")
-    # Wir filtern leere Einträge raus
-    sections = [s.strip() for s in all_sections if s.strip()]
+    # Logik: 
+    # Wenn die KI den Titel ganz oben ohne ### geschickt hat, 
+    # dann ist die erste Sektion MIT ### die Tabelle.
+    ingredients_table = ""
+    instructions = ""
     
-    # Die erste Sektion nach dem Splitten ist immer die Tabelle
-    ingredients_table = sections[0] if len(sections) > 0 else ""
-    # Alle weiteren Sektionen sind die Anleitung
-    instructions = "### " + " ### ".join(sections[1:]) if len(sections) > 1 else ""
-    
+    for section in sections:
+        if '|' in section and '| --- |' in section:
+            ingredients_table = section
+        elif section[0:1].isdigit() or "1." in section[:10]:
+            instructions = "### " + section
+
     # Web-Anzeige der Tabelle
-    clean_buy_text = c['ui_buy'].replace('*', '')
-    web_table = ingredients_table.replace(f"[{clean_buy_text}]", f"🛒 [{clean_buy_text}]")
-    st.markdown(web_table)
+    if ingredients_table:
+        clean_buy_text = c['ui_buy'].replace('*', '')
+        web_table = ingredients_table.replace(f"[{clean_buy_text}]", f"🛒 [{clean_buy_text}]")
+        st.markdown(web_table)
     
-    # 3. Einkaufsliste generieren und den Expander
-    shopping_list = []
-    for line in ingredients_table.split('\n'):
-        if '|' in line and '---' not in line:
-            cols = [p.strip() for p in line.split('|') if p.strip()]
-            if len(cols) >= 2:
-                ignore = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Buy", "Quantite", "Miktar"]
-                if not any(x.lower() in cols[0].lower() or x.lower() in cols[1].lower() for x in ignore):
-                    amount = cols[0]
+    # 3. Einkaufsliste (Expander)
+    if ingredients_table:
+        shopping_list = []
+        for line in ingredients_table.split('\n'):
+            if '|' in line and '---' not in line:
+                cols = [p.strip() for p in line.split('|') if p.strip()]
+                if len(cols) >= 2 and not any(x in cols[0] for x in ["Amount", "Menge", "Quantite"]):
                     ing = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', cols[1])
-                    shopping_list.append(f"{amount} {ing}")
-    
-    if shopping_list:
-        label = "🛒 " + ("Click to copy ingredients" if c['iso'] == 'en' else "Zutaten zum Kopieren anzeigen")
-        with st.expander(label):
-            st.code("\n".join(shopping_list), language="text")
-            
-    # 4. Die Zubereitung anzeigen
-    st.markdown(instructions)
+                    shopping_list.append(f"{cols[0]} {ing}")
+        
+        if shopping_list:
+            label = "🛒 " + ("Click to copy ingredients" if c['iso'] == 'en' else "Zutaten kopieren")
+            with st.expander(label):
+                st.code("\n".join(shopping_list), language="text")
+
+    # 4. Zubereitung
+    if instructions:
+        st.markdown(instructions)
     
     # 5. PDF Download Button
     pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, v_url, st.session_state.recipe_chef, c)
@@ -759,6 +761,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
