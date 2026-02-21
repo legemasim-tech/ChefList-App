@@ -320,10 +320,9 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     else:
         temp_instruction = "For US units, always convert Celsius to Fahrenheit."
 
-    # VERBESSERTER SYSTEM PROMPT MIT FOKUS AUF MATHEMATIK
+    # VERBESSERTER SYSTEM PROMPT
     system_prompt = f"""
     You are a professional chef. Respond in {config['ai_lang']}.
-    
     TARGET UNITS: {u_inst}
 
     ### CORE TASK:
@@ -334,13 +333,13 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     4. NO SCALING: Keep the recipe exactly as intended by the chef (original servings).
     
     ### STRUCTURE:
-    [Catchy Recipe Title]
+    # [Catchy Recipe Title]
 
     ### Ingredients
     | {h_amount} | {h_ingredient} | {table_header} |
     |---|---|---|
     ...
-
+    
     ### {instr_header}
     1. [Extremely detailed step 1]
     2. [Extremely detailed step 2]
@@ -696,60 +695,65 @@ if st.button(c['ui_create'], use_container_width=True):
 if st.session_state.recipe_result:
     st.divider()
     
-    # 1. Titel anzeigen (kommt aus dem session_state)
-    st.markdown(f"#### 👨‍🍳 {st.session_state.recipe_title}")
+    # 1. Titel anzeigen
+    st.markdown(f"## 👨‍🍳 {st.session_state.recipe_title}")
     
-    # 2. Rezept in Sektionen zerlegen
-    # Wir filtern leere Sektionen und säubern den Text
-    sections = [s.strip() for s in st.session_state.recipe_result.split("###") if s.strip()]
+    # 2. Sektionen trennen
+    # Wir splitten bei ### und säubern
+    raw_sections = st.session_state.recipe_result.split("###")
+    sections = [s.strip() for s in raw_sections if s.strip()]
     
-    # Logik: 
-    # Wenn die KI den Titel ganz oben ohne ### geschickt hat, 
-    # dann ist die erste Sektion MIT ### die Tabelle.
     ingredients_table = ""
     instructions = ""
     
     for section in sections:
-        if '|' in section and '| --- |' in section:
+        # Eine Tabelle erkennen wir an den Pipes | und mindestens zwei Zeilen
+        if section.count('|') > 5: 
             ingredients_table = section
-        elif section[0:1].isdigit() or "1." in section[:10]:
-            instructions = "### " + section
+        # Eine Anleitung erkennen wir an Zahlen oder wenn sie nicht die Tabelle ist
+        elif len(section) > 10 and not ingredients_table:
+            # Falls die KI 'Ingredients' als Text schickt, ignorieren wir das hier
+            pass
+        elif len(section) > 10:
+            instructions += "\n\n### " + section
 
-    # Web-Anzeige der Tabelle
+    # 3. Anzeige Tabelle
     if ingredients_table:
         clean_buy_text = c['ui_buy'].replace('*', '')
+        # Wir stellen sicher, dass die Trennzeile |---| existiert, falls die KI sie vergisst
+        if "|---|---|" not in ingredients_table and ingredients_table.count('|') > 4:
+            lines = ingredients_table.split('\n')
+            if len(lines) > 1:
+                lines.insert(1, "|---|---|---|")
+                ingredients_table = "\n".join(lines)
+        
         web_table = ingredients_table.replace(f"[{clean_buy_text}]", f"🛒 [{clean_buy_text}]")
         st.markdown(web_table)
-    
-    # 3. Einkaufsliste (Expander)
-    if ingredients_table:
+        
+        # Einkaufsliste (Expander)
         shopping_list = []
         for line in ingredients_table.split('\n'):
-            if '|' in line and '---' not in line:
+            if '|' in line and not any(x in line for x in ['---', 'Amount', 'Menge', 'Quantite']):
                 cols = [p.strip() for p in line.split('|') if p.strip()]
-                if len(cols) >= 2 and not any(x in cols[0] for x in ["Amount", "Menge", "Quantite"]):
+                if len(cols) >= 2:
                     ing = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', cols[1])
                     shopping_list.append(f"{cols[0]} {ing}")
         
         if shopping_list:
-            label = "🛒 " + ("Click to copy ingredients" if c['iso'] == 'en' else "Zutaten kopieren")
-            with st.expander(label):
+            with st.expander("🛒 " + (c.get('ui_table_header', 'Ingredients'))):
                 st.code("\n".join(shopping_list), language="text")
 
-    # 4. Zubereitung
+    # 4. Anzeige Anleitung
     if instructions:
         st.markdown(instructions)
-    
-    # 5. PDF Download Button
+
+    st.divider()
+    # 5. PDF Download
     pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, v_url, st.session_state.recipe_chef, c)
-    if pdf_output is not None:
-        st.download_button(
-            label=c['ui_dl'],
-            data=bytes(pdf_output) if not isinstance(pdf_output, bytes) else pdf_output,
-            file_name=f"{clean_for_pdf(st.session_state.recipe_title)}.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
+    if pdf_output:
+        st.download_button(label=c['ui_dl'], data=pdf_output, 
+                          file_name=f"{clean_for_pdf(st.session_state.recipe_title)}.pdf", 
+                          mime="application/pdf", use_container_width=True)
     else:
         st.error("The PDF could not be generated.")
 
@@ -761,6 +765,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
