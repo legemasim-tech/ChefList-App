@@ -468,7 +468,7 @@ def create_pdf(text_content, recipe_title, video_url, channel_name, config):
                 continue
                 
             # 3. Tabelle (Zutaten)
-if '|' in line and not is_instruction:
+            if '|' in line and not is_instruction:
                 parts = [p.strip() for p in line.split('|') if p.strip()]
                 if len(parts) >= 2:
                     # Header erkennen
@@ -759,6 +759,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
