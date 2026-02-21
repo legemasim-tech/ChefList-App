@@ -470,7 +470,7 @@ def create_pdf(text_content, recipe_title, video_url, channel_name, config):
         return None        
         
 # --- 5. INTERFACE ---
-st.set_page_config(page_title="ChefList Pro Global", page_icon="🍲")
+st.set_page_config(page_title="ChefList Pro Global", page_icon="👨‍🍳")
 st.markdown("""
 <style>
     /* Hauptüberschrift zentrieren */
@@ -691,6 +691,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
