@@ -8,15 +8,17 @@ import os
 
 # --- 1. INTERNATIONALE KONFIGURATION ---
 LANG_CONFIG = {
-    "English": {
+
+    "English (US)": {
         "tag": "cheflist21-20", "amz": "amazon.com", "curr": "USD", "iso": "en",
         "ui_header": "Convert YouTube recipes into printable PDFs",
         "ui_input_label": "YouTube Video URL:",
         "ui_servings": "Servings:", "ui_units": "Units:", 
-        "ui_unit_opts": ["US Units (cups/oz)", "Metric (g/ml)"],
+        "ui_unit_opts": ["US (cups/oz/°F)", "Metric (g/ml/°C)"],
         "ui_create": "Create Recipe ✨", "ui_wait": "Calculated by the chef... just a moment! 👨‍🍳", "ui_ready": "Ready!",
         "ui_dl": "📄 Download PDF Recipe", "ui_buy": "Buy on Amazon*", "ui_table_header": "Shop Ingredients",
         "ui_btn_pay": "⚡ Support ChefList Pro ($0.90)",
+        "ai_lang": "AMERICAN ENGLISH", 
         "ui_counter_text": "Recipes created:", 
         "legal_title": "About & Legal", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
         "legal_total": "Total recipes:", 
@@ -25,6 +27,24 @@ LANG_CONFIG = {
         "legal_privacy_body": "We do not store personal data. Processing is encrypted.", 
         "legal_note": "⚠️ **Note:** This app uses AI. AI can make mistakes – please check details before cooking.",
         "ai_lang": "ENGLISH", 
+        "fb_header": "Help us improve! 🍲", "fb_btn": "Send ✨", 
+        "fb_place": "What can we do better?", "fb_mail": "Email (optional)", "fb_thx": "Saved! 🙌",
+        "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
+        "pdf_enjoy": "Happy cooking from the Cheflist Pro Team!",
+        "pdf_video_link": "Recipe from the video:"
+    },
+    "English (UK)": {
+        "tag": "cheflist-uk-21", "amz": "amazon.co.uk", "curr": "GBP", "iso": "en-GB",
+        "ui_header": "Convert YouTube recipes into printable PDFs",
+        "ui_input_label": "YouTube Video URL:",
+        "ui_servings": "Servings:", "ui_units": "Units:", 
+        "ui_unit_opts": ["Metric (g/ml/°C)", "US (cups/oz/°F)"],
+        "ui_create": "Create Recipe ✨", 
+        "ui_wait": "Calculated by the chef... just a moment! 👨‍🍳", 
+        "ui_ready": "Ready!",
+        "ui_dl": "📄 Download PDF Recipe", "ui_buy": "Buy on Amazon*", "ui_table_header": "Shop Ingredients",
+        "ui_btn_pay": "⚡ Support ChefList Pro (£0.80)",
+        "ai_lang": "BRITISH ENGLISH",
         "fb_header": "Help us improve! 🍲", "fb_btn": "Send ✨", 
         "fb_place": "What can we do better?", "fb_mail": "Email (optional)", "fb_thx": "Saved! 🙌",
         "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
@@ -284,6 +304,13 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     h_amount, h_ingredient = lang_map.get(config['iso'], ("Amount", "Ingredient"))
     base_url = f"https://www.{config['amz']}/s?k="
     tag_part = f"&tag={config['tag']}"
+    
+    # Spezifische Anweisung für UK vs US
+    temp_instruction = ""
+    if "UK" in config['ai_lang'] or "BRITISH" in config['ai_lang']:
+        temp_instruction = "For oven temperatures, provide Celsius and mention Gas Mark if applicable."
+    else:
+        temp_instruction = "For US units, always convert Celsius to Fahrenheit."
 
     # VERBESSERTER SYSTEM PROMPT MIT FOKUS AUF MATHEMATIK
     system_prompt = f"""
@@ -691,6 +718,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
