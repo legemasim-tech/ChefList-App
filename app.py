@@ -27,6 +27,7 @@ LANG_CONFIG = {
         "ai_lang": "ENGLISH", 
         "fb_header": "Help us improve! 🍲", "fb_btn": "Send ✨", 
         "fb_place": "What can we do better?", "fb_mail": "Email (optional)", "fb_thx": "Saved! 🙌",
+        "pdf_video_link": "Rezept aus dem Video:",
         "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
         "pdf_enjoy": "Happy cooking from the Cheflist Pro Team!"
     },
@@ -357,17 +358,32 @@ def create_pdf(text_content, recipe_title, video_url, config):
             try: pdf.image("logo.png", x=165, y=10, w=25)
             except: pass
 
-        # Titel
+       # Titel
         pdf.set_font("Arial", style="B", size=14)
-        safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
+        safe_title = clean_for_pdf(recipe_title[:45])
         pdf.cell(150, 15, txt=f"{safe_title}", ln=True, align='L', fill=True)
         
-        # --- NEU: YOUTUBE LINK UNTER DEM TITEL ---
-        pdf.set_font("Arial", size=10)
-        pdf.set_text_color(0, 0, 255) # Blau für Link
-        pdf.cell(0, 10, txt="Video: " + video_url, ln=True, link=video_url)
-        pdf.set_text_color(0, 0, 0) # Zurück auf Schwarz
+        # --- NEU: YOUTUBE LINK MIT ICON ---
         pdf.ln(2)
+        pdf.set_font("Arial", style="B", size=10)
+        
+        # Rotes Icon simulieren (oder Bild einfügen)
+        pdf.set_fill_color(255, 0, 0) # YouTube Rot
+        pdf.set_text_color(255, 255, 255) # Weißer Text für das "Play" Symbol
+        pdf.cell(10, 6, txt=" > ", ln=0, align='C', fill=True) 
+        
+        # Label und Link
+        pdf.set_text_color(0, 0, 0) # Zurück zu Schwarz
+        pdf.set_font("Arial", size=10)
+        link_label = f" {config.get('pdf_video_link', 'Video:')} "
+        pdf.cell(pdf.get_string_width(link_label), 6, txt=link_label, ln=0)
+        
+        # Der eigentliche Link in Blau
+        pdf.set_text_color(0, 0, 255)
+        pdf.cell(0, 6, txt=video_url, ln=True, link=video_url)
+        
+        pdf.set_text_color(0, 0, 0) # Reset
+        pdf.ln(5)
         
         lines = text_content.split('\n')
         is_instruction = False
@@ -662,26 +678,5 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
