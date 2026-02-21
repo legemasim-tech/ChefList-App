@@ -694,7 +694,7 @@ if st.button(c['ui_create'], use_container_width=True):
             else: st.error("No Data")
 
 if st.session_state.recipe_result:
-st.divider()
+    st.divider()
     
     # 1. Titel anzeigen (kommt aus dem session_state)
     st.markdown(f"#### 👨‍🍳 {st.session_state.recipe_title}")
@@ -761,6 +761,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
