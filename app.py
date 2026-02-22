@@ -658,6 +658,9 @@ if st.button(c['ui_create'], use_container_width=True) or params_changed:
             if trans or desc:
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
                 if res:
+                    st.session_state.recipe_result = res
+                    # NEU: Wir speichern den Koch im State!
+                    st.session_state.recipe_chef = chef
                     # Titel-Extraktion
                     if "RECIPE_TITLE:" in res:
                         parts = res.split("###", 1)
@@ -720,7 +723,8 @@ if st.session_state.recipe_result:
     st.markdown(instructions)
     
     # 5. PDF Download Button
-    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, chef, c)
+    current_chef = st.session_state.get("recipe_chef", "Chef")
+    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, current_chef, c)
     if pdf_output is not None:
         st.download_button(
             label=c['ui_dl'],
@@ -740,6 +744,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
