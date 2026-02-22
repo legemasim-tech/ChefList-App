@@ -315,11 +315,15 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     TARGET UNITS: {u_inst}
 
     ### CORE TASK:
-    1. ANALYZE: Identify the original serving size from the transcript (usually 1, 2, or 4). If not mentioned, assume 4 servings.
-    2. CALCULATE: Divide original amounts by original servings, then multiply by {portions}. 
-    3. VERIFY: The amounts in your table MUST be different if {portions} is not the original serving size. 
+    1. START your response with the line: "RECIPE_TITLE: [Translated catchy name of the dish]"
+    2. Then write "###" as a separator.
+    3. ANALYZE: Identify the original serving size from the transcript (usually 1, 2, or 4). If not mentioned, assume 4 servings.
+    4. CALCULATE: Divide original amounts by original servings, then multiply by {portions}. 
+    5. VERIFY: The amounts in your table MUST be different if {portions} is not the original serving size. 
     
     ### STRUCTURE:
+    RECIPE_TITLE: ...
+    ###
     | {h_amount} | {h_ingredient} | {table_header} |
     |---|---|---|
     [Ingredients with recalculated amounts]
@@ -709,6 +713,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
