@@ -471,7 +471,15 @@ def create_pdf(text_content, recipe_title, chef, video_url, config):
                 pdf.set_font("Arial", size=10)
                 pdf.set_x(15)
                 pdf.multi_cell(180, 6, txt=clean_line.replace('*', ''), align='L')
-                pdf.ln(2)
+        pdf.ln(10)
+        pdf.set_font("Arial", style="I", size=10)
+        pdf.set_text_color(100, 100, 100) # Dezent grau
+        
+        # Den Enjoy-Text aus der Config holen und säubern
+        safe_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Happy cooking!'))
+        
+        # Zentriert am Ende des Dokuments ausgeben
+        pdf.cell(0, 10, txt=safe_enjoy, ln=True, align='C')
         
         return pdf.output()
     except Exception as e:
@@ -742,6 +750,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
