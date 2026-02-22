@@ -380,36 +380,36 @@ def create_pdf(text_content, recipe_title, chef, video_url, config):
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         
-        # --- LOGO ---
+        # --- LOGO (Fixiert oben rechts) ---
         if os.path.exists("logo.png"):
             try: pdf.image("logo.png", x=160, y=10, w=30)
             except: pass
 
-        # --- TITEL ---
+        # --- TITEL (Grauer Balken) ---
         pdf.set_fill_color(230, 230, 230)
         pdf.set_font("Arial", style="B", size=14)
         display_title = recipe_title.split(" (by")[0] 
         pdf.set_xy(10, 12)
         pdf.multi_cell(140, 10, txt=clean_for_pdf(display_title), align='L', fill=True)
         
-        # --- KOCH & LINK IN EINER ZEILE ---
+        # --- KOCH & LINK (In einer Zeile) ---
         pdf.set_x(10)
         pdf.set_font("Arial", style="I", size=10)
-        pdf.set_text_color(100, 100, 100) # Grau für den Koch
+        pdf.set_text_color(100, 100, 100)
         
         by_label = config.get("ui_by", "by") 
-        chef_text = clean_for_pdf(f"{by_label} {chef}")
+        chef_text = clean_for_pdf(f"{by_label} {chef}  |  ") # Trenner hinzugefügt
+        chef_width = pdf.get_string_width(chef_text)
         
-        # Berechne Breite des Namens, um den Link präzise daneben zu setzen
-        chef_width = pdf.get_string_width(chef_text) + 5
-        pdf.cell(chef_width, 8, txt=chef_text, ln=0, align='L')
+        # Schreibe Koch
+        pdf.cell(chef_width, 8, txt=chef_text, ln=0)
         
-        # Der Link direkt daneben
-        pdf.set_font("Arial", size=9)
-        pdf.set_text_color(0, 0, 255) # Blau
-        pdf.cell(0, 8, txt="(YouTube Video)", ln=True, align='L', link=video_url)
+        # Schreibe Link direkt daneben
+        pdf.set_font("Arial", size=8)
+        pdf.set_text_color(0, 0, 255) # Link-Blau
+        pdf.cell(0, 8, txt=video_url, ln=True, align='L', link=video_url)
         
-        # Zurück auf Schwarz
+        # Zurück auf Schwarz für den Inhalt
         pdf.set_text_color(0, 0, 0)
         pdf.ln(5)
         
@@ -749,6 +749,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
