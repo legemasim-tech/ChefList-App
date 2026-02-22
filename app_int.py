@@ -388,10 +388,10 @@ def create_pdf(text_content, recipe_title, config):
             except: pass
 
         # Titel
-        pdf.set_font("Arial", style="B", size=14)
+        pdf.set_font("Arial", style="B", size=12)
         safe_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
         safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
-        pdf.cell(150, 15, txt=f"{safe_title}", ln=True, align='L', fill=True)
+        pdf.multi_cell(180, 10, txt=f"{safe_title}", ln=True, align='L', fill=True)
         pdf.ln(5)
         
         lines = text_content.split('\n')
@@ -650,11 +650,13 @@ if st.button(c['ui_create'], use_container_width=True) or params_changed:
                         # Wir nehmen den übersetzten Titel und entfernen das Label
                         translated_title = parts[0].replace("RECIPE_TITLE:", "").strip()
                         st.session_state.recipe_title = translated_title
+                        # Hier fügen wir den Koch hinzu: "Titel (by Kanalname)"
+                        st.session_state.recipe_title = f"{translated_title} (by {chef})"
                         # Der Rest ist das Rezept
                         st.session_state.recipe_result = parts[1].strip() if len(parts) > 1 else res
                     else:
                         # Fallback falls die KI das Label vergisst
-                        st.session_state.recipe_title = t_orig
+                        st.session_state.recipe_title = f"{t_orig} (by {chef})"
                         st.session_state.recipe_result = res
 
                     st.session_state.last_params = current_params 
