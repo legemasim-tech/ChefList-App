@@ -109,24 +109,24 @@ LANG_CONFIG = {
         "pdf_rec": "Ricetta", "pdf_instr": "Istruzioni", 
         "pdf_enjoy": "Buona fortuna dal team di Cheflist Pro!"
     },
-    "Português": {
-        "tag": "cheflist21-20", "amz": "amazon.com.br", "curr": "BRL", "iso": "pt",
-        "ui_header": "YouTube para PDF", "ui_input_label": "URL do vídeo:",
-        "ui_servings": "Porções:", "ui_units": "Unidades:", "ui_unit_opts": ["Métrico (g/ml)", "US (cups/oz)"],
-        "ui_create": "Criar ✨", "ui_wait": "Calculando...", "ui_ready": "Pronto!",
-        "ui_dl": "📄 Baixar PDF", "ui_buy": "Comprar na Amazon*", "ui_table_header": "Comprar ingredientes",
+"Português": {
+        "tag": "cheflist21-20", "amz": "amazon.es", "curr": "EUR", "iso": "pt",
+        "ui_header": "Converter YouTube em PDF", "ui_input_label": "URL do vídeo:",
+        "ui_servings": "Doses:", "ui_units": "Unidades:", "ui_unit_opts": ["Métrico (g/ml)", "Imperial (cups/oz)"],
+        "ui_create": "Criar Receita ✨", "ui_wait": "O chef está a calcular... um momento! 👨‍🍳", "ui_ready": "Pronto!",
+        "ui_dl": "📄 Descarregar PDF", "ui_buy": "Comprar na Amazon*", "ui_table_header": "Comprar ingredientes",
         "ui_btn_pay": "⚡ Apoiar ChefList Pro (0,90€)",
-        "ui_counter_text": "Receitas:", 
-        "legal_title": "Info Legal", "legal_op": "**Operador:** Markus Simmel", "legal_contact": "**Contacto:** legemasim@gmail.com",
-        "legal_total": "Total:", 
+        "ui_counter_text": "Receitas criadas:", 
+        "legal_title": "Sobre & Legal", "legal_op": "**Operador:** Markus Simmel", "legal_contact": "**Contacto:** legemasim@gmail.com",
+        "legal_total": "Total de receitas:", 
         "legal_amz": "✨ Como associado da Amazon, ganho com compras qualificadas.", 
-        "legal_privacy_title": "🛡️ Privacidade", 
-        "legal_privacy_body": "Não armazenamos dados pessoais. O processamento é criptografado.", 
-        "legal_note": "⚠️ **Nota:** Este aplicativo usa IA. A IA pode cometer erros – verifique os detalhes (ex: tempos de cozimento) antes de cozinhar.",
-        "ai_lang": "PORTUGUESE", "fb_header": "Ajuda! 🍲", "fb_btn": "Enviar ✨",
-        "fb_place": "Ideias?", "fb_mail": "Email", "fb_thx": "Obrigado! 🙌",
+        "legal_privacy_title": "🛡️ Proteção de Dados", 
+        "legal_privacy_body": "Não guardamos dados pessoais. O processamento é encriptado.", 
+        "legal_note": "⚠️ **Nota:** Esta aplicação usa IA. A IA pode cometer erros – verifique os detalhes antes de cozinhar.",
+        "ai_lang": "PORTUGUESE", "fb_header": "Ajude-nos a melhorar! 🍲", "fb_btn": "Enviar ✨",
+        "fb_place": "O que podemos melhorar?", "fb_mail": "Email (opcional)", "fb_thx": "Guardado! 🙌",
         "pdf_rec": "Receita", "pdf_instr": "Instruções", 
-        "pdf_enjoy": "Boa sorte da equipa Cheflist Pro!"
+        "pdf_enjoy": "Bom proveito da equipa ChefList Pro!"
     },
     "Nederlands": {
         "tag": "cheflist21-20", "amz": "amazon.nl", "curr": "EUR", "iso": "nl",
@@ -641,6 +641,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
