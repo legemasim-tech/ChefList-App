@@ -374,24 +374,43 @@ def clean_for_pdf(text):
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
-def create_pdf(text_content, recipe_title, config):
+def create_pdf(text_content, recipe_title, chef, video_url, config): 
     try:
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.set_left_margin(15); pdf.set_right_margin(10)
         pdf.add_page()
-        pdf.set_fill_color(230, 230, 230)
         
-        # Logo
+        # --- LOGO (Fixiert oben rechts) ---
         if os.path.exists("logo.png"):
-            try: pdf.image("logo.png", x=165, y=10, w=25)
+            try: pdf.image("logo.png", x=160, y=10, w=30)
             except: pass
 
-        # Titel
+        # --- TITEL (Grauer Balken) ---
+        pdf.set_fill_color(230, 230, 230)
         pdf.set_font("Arial", style="B", size=14)
-        safe_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
-        safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
-        pdf.cell(150, 15, txt=f"{safe_title}", ln=True, align='L', fill=True)
+        display_title = recipe_title.split(" (by")[0] 
+        pdf.set_xy(10, 12)
+        pdf.multi_cell(140, 10, txt=clean_for_pdf(display_title), align='L', fill=True)
+        
+        # --- KOCH & LINK (In einer Zeile) ---
+        pdf.set_x(10)
+        pdf.set_font("Arial", style="I", size=10)
+        pdf.set_text_color(100, 100, 100)
+        
+        by_label = config.get("ui_by", "by") 
+        chef_text = clean_for_pdf(f"{by_label} {chef}  |  ") # Trenner hinzugefügt
+        chef_width = pdf.get_string_width(chef_text)
+        
+        # Schreibe Koch
+        pdf.cell(chef_width, 8, txt=chef_text, ln=0)
+        
+        # Schreibe Link direkt daneben
+        pdf.set_font("Arial", size=8)
+        pdf.set_text_color(0, 0, 255) # Link-Blau
+        pdf.cell(0, 8, txt=video_url, ln=True, align='L', link=video_url)
+        
+        # Zurück auf Schwarz für den Inhalt
+        pdf.set_text_color(0, 0, 0)
         pdf.ln(5)
         
         lines = text_content.split('\n')
@@ -644,17 +663,22 @@ if st.button(c['ui_create'], use_container_width=True) or params_changed:
             if trans or desc:
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
                 if res:
+                    st.session_state.recipe_result = res
+                    # NEU: Wir speichern den Koch im State!
+                    st.session_state.recipe_chef = chef
                     # Titel-Extraktion
                     if "RECIPE_TITLE:" in res:
                         parts = res.split("###", 1)
                         # Wir nehmen den übersetzten Titel und entfernen das Label
                         translated_title = parts[0].replace("RECIPE_TITLE:", "").strip()
                         st.session_state.recipe_title = translated_title
+                        # Hier fügen wir den Koch hinzu: "Titel (by Kanalname)"
+                        st.session_state.recipe_title = f"{translated_title} (by {chef})"
                         # Der Rest ist das Rezept
                         st.session_state.recipe_result = parts[1].strip() if len(parts) > 1 else res
                     else:
                         # Fallback falls die KI das Label vergisst
-                        st.session_state.recipe_title = t_orig
+                        st.session_state.recipe_title = f"{t_orig} (by {chef})"
                         st.session_state.recipe_result = res
 
                     st.session_state.last_params = current_params 
@@ -704,7 +728,8 @@ if st.session_state.recipe_result:
     st.markdown(instructions)
     
     # 5. PDF Download Button
-    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
+    current_chef = st.session_state.get("recipe_chef", "Chef")
+    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, current_chef, v_url, c)
     if pdf_output is not None:
         st.download_button(
             label=c['ui_dl'],
@@ -724,15 +749,6 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
-
-
-
-
-
-
-
-
-
 
 
 
