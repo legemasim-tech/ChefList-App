@@ -607,48 +607,57 @@ if st.button(c['ui_create'], use_container_width=True) or params_changed:
 if st.session_state.recipe_result:
     st.divider()
     
-    # Videotitel anzeigen
+    # 1. Titel groß anzeigen
     st.markdown(f"## 👨‍🍳 {st.session_state.recipe_title}")
     
-    # Sektionen trennen
+    # 2. Sektionen trennen
     sections = [s.strip() for s in st.session_state.recipe_result.split("###") if s.strip()]
     
-    # Wir suchen die Tabelle: Die Sektion, die am meisten "|" enthält
     ingredients_table = ""
     instructions_list = []
     
+    # Wir suchen die Tabelle anhand der Pipes |
     for s in sections:
-        if s.count('|') > 4:
+        if s.count('|') > 4:  # Eine Tabelle hat viele Pipes
             ingredients_table = s
         else:
             instructions_list.append(s)
     
-    instructions = "### " + "\n\n### ".join(instructions_list) if instructions_list else ""
-    
-    # Zeigt die Tabelle an
-    clean_buy_text = c['ui_buy'].replace('*', '')
-    web_table = ingredients_table.replace(f"[{clean_buy_text}]", f"🛒 [{clean_buy_text}]")
-    st.markdown(web_table)
-    
-    # 3. Einkaufsliste generieren und den Expander
-    shopping_list = []
-    for line in ingredients_table.split('\n'):
-        if '|' in line and '---' not in line:
-            cols = [p.strip() for p in line.split('|') if p.strip()]
-            if len(cols) >= 2:
-                ignore = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Buy", "Quantite", "Miktar"]
-                if not any(x.lower() in cols[0].lower() or x.lower() in cols[1].lower() for x in ignore):
-                    amount = cols[0]
+    # 3. Tabelle anzeigen (mit Reparatur-Logik)
+    if ingredients_table:
+        # Falls die KI die Markdown-Trennlinie vergessen hat, fügen wir sie ein
+        lines = ingredients_table.split('\n')
+        if len(lines) > 1 and "|---" not in ingredients_table:
+            # Wir nehmen an, der Header ist die erste Zeile
+            header_pipes = lines[0].count('|')
+            if header_pipes >= 2:
+                separator = "|" + "---| " * (header_pipes - 1) + "|"
+                lines.insert(1, separator)
+                ingredients_table = "\n".join(lines)
+
+        clean_buy_text = c['ui_buy'].replace('*', '')
+        web_table = ingredients_table.replace(f"[{clean_buy_text}]", f"🛒 [{clean_buy_text}]")
+        
+        # WICHTIG: Tabelle anzeigen
+        st.markdown(web_table)
+        
+        # 4. Einkaufsliste zum Kopieren (Expander)
+        shopping_list = []
+        for line in ingredients_table.split('\n'):
+            if '|' in line and not any(x in line for x in ['---', 'Amount', 'Menge', 'Ingredient']):
+                cols = [p.strip() for p in line.split('|') if p.strip()]
+                if len(cols) >= 2:
                     ing = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', cols[1])
-                    shopping_list.append(f"{amount} {ing}")
-    
-    if shopping_list:
-        label = "🛒 " + ("Click to copy ingredients" if c['iso'] == 'en' else "Zutaten zum Kopieren anzeigen")
-        with st.expander(label):
-            st.code("\n".join(shopping_list), language="text")
-            
-    # 4. Die Zubereitung anzeigen
-    st.markdown(instructions)
+                    shopping_list.append(f"{cols[0]} {ing}")
+        
+        if shopping_list:
+            with st.expander("📋 " + (c.get('ui_table_header', 'Ingredients'))):
+                st.code("\n".join(shopping_list), language="text")
+
+    # 5. Zubereitung anzeigen
+    if instructions_list:
+        instructions_text = "### " + "\n\n### ".join(instructions_list)
+        st.markdown(instructions_text)
     
     # 5. PDF Download Button
     pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
@@ -671,6 +680,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
