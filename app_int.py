@@ -8,12 +8,12 @@ import os
 
 # --- 1. INTERNATIONALE KONFIGURATION ---
 LANG_CONFIG = {
-    "English": {
+    "🇺🇸 English (US)": {
         "tag": "cheflist21-20", "amz": "amazon.com", "curr": "USD", "iso": "en",
         "ui_header": "Convert YouTube recipes into printable PDFs",
         "ui_input_label": "YouTube Video URL:",
         "ui_servings": "Servings:", "ui_units": "Units:", 
-        "ui_unit_opts": ["US Units (cups/oz)", "Metric (g/ml)"],
+        "ui_unit_opts": ["US Units (cups/oz/°F)", "Metric (g/ml/°C)"],
         "ui_create": "Create Recipe ✨", "ui_wait": "Calculating for {0} servings...", "ui_ready": "Ready!",
         "ui_dl": "📄 Download PDF Recipe", "ui_buy": "Buy on Amazon*", "ui_table_header": "Shop Ingredients",
         "ui_btn_pay": "⚡ Support ChefList Pro ($0.90)",
@@ -23,8 +23,30 @@ LANG_CONFIG = {
         "legal_amz": "✨ As an Amazon Associate, I earn from qualifying purchases.", 
         "legal_privacy_title": "🛡️ Data Protection", 
         "legal_privacy_body": "We do not store personal data. Processing is encrypted.", 
-        "legal_note": "⚠️ **Note:** This app uses AI. AI can make mistakes – please check details (e.g., baking times) before cooking.",
-        "ai_lang": "ENGLISH", 
+        "legal_note": "⚠️ **Note:** This app uses AI. AI can make mistakes – please check details before cooking.",
+        "ai_lang": "AMERICAN ENGLISH", 
+        "fb_header": "Help us improve! 🍲", "fb_btn": "Send ✨", 
+        "fb_place": "What can we do better?", "fb_mail": "Email (optional)", "fb_thx": "Saved! 🙌",
+        "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
+        "pdf_enjoy": "Happy cooking from the Cheflist Pro Team!"
+    },
+    "🇬🇧 English (UK)": {
+        "tag": "cheflist-uk-21", "amz": "amazon.co.uk", "curr": "GBP", "iso": "en-GB",
+        "ui_header": "Convert YouTube recipes into printable PDFs",
+        "ui_input_label": "YouTube Video URL:",
+        "ui_servings": "Servings:", "ui_units": "Units:", 
+        "ui_unit_opts": ["Metric (g/ml/°C)", "US Units (cups/oz/°F)"],
+        "ui_create": "Create Recipe ✨", "ui_wait": "Calculating for {0} servings...", "ui_ready": "Ready!",
+        "ui_dl": "📄 Download PDF Recipe", "ui_buy": "Buy on Amazon*", "ui_table_header": "Shop Ingredients",
+        "ui_btn_pay": "⚡ Support ChefList Pro (£0.80)",
+        "ui_counter_text": "Recipes created:", 
+        "legal_title": "About & Legal", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
+        "legal_total": "Total recipes:", 
+        "legal_amz": "✨ As an Amazon Associate, I earn from qualifying purchases.", 
+        "legal_privacy_title": "🛡️ Data Protection", 
+        "legal_privacy_body": "We do not store personal data. Processing is encrypted.", 
+        "legal_note": "⚠️ **Note:** This app uses AI. AI can make mistakes – please check details before cooking.",
+        "ai_lang": "BRITISH ENGLISH", 
         "fb_header": "Help us improve! 🍲", "fb_btn": "Send ✨", 
         "fb_place": "What can we do better?", "fb_mail": "Email (optional)", "fb_thx": "Saved! 🙌",
         "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
