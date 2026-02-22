@@ -545,20 +545,19 @@ with st.sidebar:
     lang_options = list(LANG_CONFIG.keys())
     
     # Sicherstellen, dass die aktuelle Sprache in den Optionen existiert
-    try:
-        curr_index = lang_options.index(current_lang)
-    except ValueError:
+try:
+        curr_index = lang_options.index(st.session_state.user_lang_selection)
+    except:
         curr_index = 0
 
     selected_lang = st.selectbox(
         "🌍 Language",
         options=lang_options,
-        index=curr_index,
-        key="lang_selector_widget"
+        index=curr_index
     )
 
     # Falls der User manuell umschaltet
-    if selected_lang != current_lang:
+    if selected_lang != st.session_state.user_lang_selection:
         st.session_state.user_lang_selection = selected_lang
         st.rerun()
 
@@ -687,6 +686,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
