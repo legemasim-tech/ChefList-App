@@ -287,6 +287,9 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     3. VERIFY: The amounts in your table MUST be different if {portions} is not the original serving size. 
     
     ### STRUCTURE:
+    # [Catchy Recipe Title]
+    
+    ### Ingredients
     | {h_amount} | {h_ingredient} | {table_header} |
     |---|---|---|
     [Ingredients with recalculated amounts]
@@ -572,43 +575,55 @@ if st.button(c['ui_create'], use_container_width=True) or params_changed:
             if trans or desc:
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
                 if res:
-                    # --- FIX 1: Titel von der KI extrahieren ---
-                    raw_parts = res.split('###')
-                    
-                    # Der Text vor dem ersten '###' ist der von der KI übersetzte Titel
-                    translated_title = raw_parts[0].replace('#', '').strip()
-                    if not translated_title: 
-                        translated_title = t_orig # Fallback, falls was schiefgeht
+                    # Wir suchen den Titel: Entweder vor dem ersten ### oder in der ersten Zeile
+                    if "###" in res:
+                        parts = res.split('###', 1)
+                        title_part = parts[0].strip()
+                        body_part = "###" + parts[1]
                         
-                    st.session_state.recipe_title = translated_title
-                    
-                    # Den Titel aus dem Text entfernen, damit die Tabelle nicht kaputtgeht
-                    if len(raw_parts) > 1:
-                        st.session_state.recipe_result = "###" + "###".join(raw_parts[1:])
+                        # Falls vor dem ersten ### nichts stand (KI-Fehler), 
+                        # nehmen wir die erste Zeile vom Body
+                        if not title_part or len(title_part) < 3:
+                            lines = res.split('\n')
+                            title_part = lines[0].strip()
+                            body_part = "\n".join(lines[1:])
                     else:
-                        st.session_state.recipe_result = res
+                        # Fallback falls gar kein ### vorhanden ist
+                        lines = res.split('\n')
+                        title_part = lines[0].strip()
+                        body_part = res
 
+                    # Titel säubern (Hashtags entfernen)
+                    st.session_state.recipe_title = title_part.replace('#', '').strip()
+                    st.session_state.recipe_result = body_part
+                    
                     st.session_state.last_params = current_params 
                     update_global_counter()
                     status.update(label=c['ui_ready'], state="complete")
-                    if params_changed: st.rerun() 
+                    if params_changed: st.rerun()                        
                 else: st.error("AI Error")
             else: st.error("No Data")
 
 if st.session_state.recipe_result:
     st.divider()
     
-    # Videotitel in der gewählten Sprache anzeigen
-    st.markdown(f"#### 📖 {st.session_state.recipe_title}")
+    # Videotitel anzeigen
+    st.markdown(f"## 👨‍🍳 {st.session_state.recipe_title}")
     
-    # --- FIX 2: Tabelle und Anleitung sauber trennen ---
-    # Da wir den Titel oben entfernt haben, beginnt der Text jetzt SICHER mit ###
+    # Sektionen trennen
     sections = [s.strip() for s in st.session_state.recipe_result.split("###") if s.strip()]
     
-    # Die erste Sektion ist nun garantiert die Tabelle
-    ingredients_table = sections[0] if len(sections) > 0 else ""
-    # Alles danach ist die Anleitung
-    instructions = "### " + "\n\n### ".join(sections[1:]) if len(sections) > 1 else ""
+    # Wir suchen die Tabelle: Die Sektion, die am meisten "|" enthält
+    ingredients_table = ""
+    instructions_list = []
+    
+    for s in sections:
+        if s.count('|') > 4:
+            ingredients_table = s
+        else:
+            instructions_list.append(s)
+    
+    instructions = "### " + "\n\n### ".join(instructions_list) if instructions_list else ""
     
     # Zeigt die Tabelle an
     clean_buy_text = c['ui_buy'].replace('*', '')
@@ -656,6 +671,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
