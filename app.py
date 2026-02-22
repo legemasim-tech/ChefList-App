@@ -545,7 +545,7 @@ with st.sidebar:
     lang_options = list(LANG_CONFIG.keys())
     
     # Sicherstellen, dass die aktuelle Sprache in den Optionen existiert
-try:
+    try:
         curr_index = lang_options.index(st.session_state.user_lang_selection)
     except:
         curr_index = 0
@@ -686,6 +686,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
