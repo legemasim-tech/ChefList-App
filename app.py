@@ -8,7 +8,7 @@ import os
 
 # --- 1. INTERNATIONALE KONFIGURATION ---
 LANG_CONFIG = {
-    "🇺🇸 English (US)": {
+    "🇺🇸 English": {
         "tag": "cheflist21-20", "amz": "amazon.com", "curr": "USD", "iso": "en",
         "ui_header": "Convert YouTube recipes into printable PDFs",
         "ui_input_label": "YouTube Video URL:",
@@ -30,7 +30,7 @@ LANG_CONFIG = {
         "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
         "pdf_enjoy": "Happy cooking from the Cheflist Pro Team!"
     },
-    "🇬🇧 English (UK)": {
+    "🇬🇧 English": {
         "tag": "cheflist-uk-21", "amz": "amazon.co.uk", "curr": "GBP", "iso": "en-GB",
         "ui_header": "Convert YouTube recipes into printable PDFs",
         "ui_input_label": "YouTube Video URL:",
@@ -525,7 +525,7 @@ if "user_lang_selection" not in st.session_state:
         # Map für die Erkennung inklusive deiner neuen Flaggen-Keys
         m = {
             "de": "🇩🇪 Deutsch",
-            "en": "🇺🇸 English (US)",
+            "en": "🇺🇸 English",
             "es": "🇪🇸 Español",
             "fr": "🇫🇷 Français",
             "it": "🇮🇹 Italiano",
@@ -690,6 +690,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
