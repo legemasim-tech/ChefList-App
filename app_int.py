@@ -8,7 +8,7 @@ import os
 
 # --- 1. INTERNATIONALE KONFIGURATION ---
 LANG_CONFIG = {
-    "🇺🇸 English (US)": {
+    "🇺🇸 English": {
         "tag": "cheflist21-20", "amz": "amazon.com", "curr": "USD", "iso": "en",
         "ui_header": "Convert YouTube recipes into printable PDFs",
         "ui_input_label": "YouTube Video URL:",
@@ -30,7 +30,7 @@ LANG_CONFIG = {
         "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
         "pdf_enjoy": "Happy cooking from the Cheflist Pro Team!"
     },
-    "🇬🇧 English (UK)": {
+    "🇬🇧 English": {
         "tag": "cheflist-uk-21", "amz": "amazon.co.uk", "curr": "GBP", "iso": "en-GB",
         "ui_header": "Convert YouTube recipes into printable PDFs",
         "ui_input_label": "YouTube Video URL:",
@@ -52,7 +52,7 @@ LANG_CONFIG = {
         "pdf_rec": "Recipe", "pdf_instr": "Instructions", 
         "pdf_enjoy": "Happy cooking from the Cheflist Pro Team!"
     },
-    "Deutsch": {
+    "🇩🇪 Deutsch": {
         "tag": "cheflist21-21", "amz": "amazon.de", "curr": "EUR", "iso": "de",
         "ui_header": "YouTube-Rezepte in druckbare PDFs verwandeln",
         "ui_input_label": "YouTube Video URL:",
@@ -74,7 +74,7 @@ LANG_CONFIG = {
         "pdf_rec": "Rezept", "pdf_instr": "Zubereitung", 
         "pdf_enjoy": "Gutes Gelingen wünscht das Team von Cheflist Pro."
     },
-    "Español": {
+    "🇪🇸 Español": {
         "tag": "cheflist21-20", "amz": "amazon.es", "curr": "EUR", "iso": "es",
         "ui_header": "YouTube a PDF", "ui_input_label": "URL del video:",
         "ui_servings": "Porciones:", "ui_units": "Unidades:", "ui_unit_opts": ["Métrico (g/ml)", "EE.UU. (cups/oz)"],
@@ -93,7 +93,7 @@ LANG_CONFIG = {
         "pdf_rec": "Receta", "pdf_instr": "Instrucciones", 
         "pdf_enjoy": "¡El equipo de Cheflist Pro le desea mucho éxito!"
     },
-    "Français": {
+    "🇫🇷 Français": {
         "tag": "cheflist21-20", "amz": "amazon.fr", "curr": "EUR", "iso": "fr",
         "ui_header": "YouTube en PDF", "ui_input_label": "URL vidéo:",
         "ui_servings": "Portions:", "ui_units": "Unités:", "ui_unit_opts": ["Métrique (g/ml)", "US (cups/oz)"],
@@ -112,7 +112,7 @@ LANG_CONFIG = {
         "pdf_rec": "Recette", "pdf_instr": "Instructions", 
         "pdf_enjoy": "L'équipe de Cheflist Pro vous souhaite une bonne réussite !"
     },
-    "Italiano": {
+    "🇮🇹 Italiano": {
         "tag": "cheflist21-20", "amz": "amazon.it", "curr": "EUR", "iso": "it",
         "ui_header": "YouTube in PDF", "ui_input_label": "URL video:",
         "ui_servings": "Porzioni:", "ui_units": "Unità:", "ui_unit_opts": ["Metrico (g/ml)", "US (cups/oz)"],
@@ -131,7 +131,7 @@ LANG_CONFIG = {
         "pdf_rec": "Ricetta", "pdf_instr": "Istruzioni", 
         "pdf_enjoy": "Buona fortuna dal team di Cheflist Pro!"
     },
-"Português": {
+    "🇵🇹 Português": {
         "tag": "cheflist21-20", "amz": "amazon.es", "curr": "EUR", "iso": "pt",
         "ui_header": "Converter YouTube em PDF", "ui_input_label": "URL do vídeo:",
         "ui_servings": "Doses:", "ui_units": "Unidades:", "ui_unit_opts": ["Métrico (g/ml)", "Imperial (cups/oz)"],
@@ -150,7 +150,7 @@ LANG_CONFIG = {
         "pdf_rec": "Receita", "pdf_instr": "Instruções", 
         "pdf_enjoy": "Bom proveito da equipa ChefList Pro!"
     },
-    "Nederlands": {
+    "🇳🇱 Nederlands": {
         "tag": "cheflist21-20", "amz": "amazon.nl", "curr": "EUR", "iso": "nl",
         "ui_header": "YouTube naar PDF", "ui_input_label": "Video URL:",
         "ui_servings": "Porties:", "ui_units": "Eenheden:", "ui_unit_opts": ["Metrisch (g/ml)", "US (cups/oz)"],
@@ -169,7 +169,7 @@ LANG_CONFIG = {
         "pdf_rec": "Recept", "pdf_instr": "Instructies", 
         "pdf_enjoy": "Veel succes gewenst door het Cheflist Pro team."
     },
-    "Polski": {
+    "🇵🇱 Polski": {
         "tag": "cheflist21-20", "amz": "amazon.pl", "curr": "PLN", "iso": "pl",
         "ui_header": "YouTube na PDF", "ui_input_label": "URL filmu:",
         "ui_servings": "Porcje:", "ui_units": "Jednostki:", "ui_unit_opts": ["Metryczne (g/ml)", "US (cups/oz)"],
@@ -188,7 +188,7 @@ LANG_CONFIG = {
         "pdf_rec": "Przepis", "pdf_instr": "Instrukcje", 
         "pdf_enjoy": "Powodzenia życzy zespół Cheflist Pro."
     },
-    "Türkçe": {
+    "🇹🇷 Türkçe": {
         "tag": "cheflist21-20", "amz": "amazon.com.tr", "curr": "TRY", "iso": "tr",
         "ui_header": "YouTube'dan PDF'e", "ui_input_label": "Video URL:",
         "ui_servings": "Porsiyon:", "ui_units": "Birimler:", "ui_unit_opts": ["Metrik (g/ml)", "ABD (cups/oz)"],
@@ -207,7 +207,7 @@ LANG_CONFIG = {
         "pdf_rec": "Tarif", "pdf_instr": "Talimatlar", 
         "pdf_enjoy": "Cheflist Pro ekibi başarılar diler."
     },
-    "日本語": {
+    "🇯🇵 日本語": {
         "tag": "cheflist21-20", "amz": "amazon.co.jp", "curr": "JPY", "iso": "ja",
         "ui_header": "YouTubeをPDFに", "ui_input_label": "動画URL:",
         "ui_servings": "人数:", "ui_units": "単位:", "ui_unit_opts": ["メートル法 (g/ml)", "US単位 (cups/oz)"],
@@ -453,6 +453,14 @@ def create_pdf(text_content, recipe_title, config):
         return None        
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="👨‍🍳")
+if "last_params" not in st.session_state:
+    st.session_state.last_params = {"url": "", "ports": 4, "units": ""}
+
+if "recipe_result" not in st.session_state:
+    st.session_state.recipe_result = None
+
+if "recipe_title" not in st.session_state:
+    st.session_state.recipe_title = ""
 st.markdown("""
 <style>
     /* Hauptüberschrift zentrieren */
@@ -507,27 +515,44 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
 if "user_lang_selection" not in st.session_state:
     try:
+        # Browser-Sprache erkennen
         lang_header = st.context.headers.get("Accept-Language", "en")
         primary = lang_header.split(",")[0].split("-")[0].lower()
-        m = {"de": "Deutsch", "en": "English", "es": "Español", "fr": "Français", "it": "Italiano", "pt": "Português", "nl": "Nederlands", "pl": "Polski", "tr": "Türkçe", "ja": "日本語"}
-        st.session_state.user_lang_selection = m.get(primary, "English")
-    except: st.session_state.user_lang_selection = "English"
-
-if "last_params" not in st.session_state: st.session_state.last_params = {}
-if "counter" not in st.session_state: st.session_state.counter = 0
-if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
-if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
+        
+        # Map für die Erkennung inklusive deiner neuen Flaggen-Keys
+        m = {
+            "de": "🇩🇪 Deutsch",
+            "en": "🇺🇸 English",
+            "es": "🇪🇸 Español",
+            "fr": "🇫🇷 Français",
+            "it": "🇮🇹 Italiano",
+            "pt": "🇵🇹 Português",
+            "nl": "🇳🇱 Nederlands",
+            "pl": "🇵🇱 Polski",
+            "tr": "🇹🇷 Türkçe",
+            "ja": "🇯🇵 日本語"
+        }
+        st.session_state.user_lang_selection = m.get(primary, "🇺🇸 English (US)")
+    except: 
+        st.session_state.user_lang_selection = "🇺🇸 English (US)"
 
 with st.sidebar:
-    # 1. Sprachauswahl
-    current_lang = st.session_state.get("user_lang_selection", "English")
+    # 1. Sprachauswahl (Expander mit Radio-Buttons für die "Punkt-Optik")
+    current_lang = st.session_state.get("user_lang_selection", "🇺🇸 English (US)")
+    
     with st.expander(f"🌍 Language: {current_lang}", expanded=False):
         lang_options = list(LANG_CONFIG.keys())
-        try: curr_index = lang_options.index(current_lang)
-        except: curr_index = 0
-            
+        
+        # Sicherstellen, dass der Index stimmt
+        try:
+            curr_index = lang_options.index(current_lang)
+        except:
+            curr_index = 0
+
+        # Radio-Button statt Selectbox für die Auswahl mit "Punkten"
         selected_lang = st.radio(
             "Sprache wählen",
             options=lang_options,
@@ -535,17 +560,19 @@ with st.sidebar:
             label_visibility="collapsed",
             key="lang_radio"
         )
+        
         if selected_lang != current_lang:
             st.session_state.user_lang_selection = selected_lang
             st.rerun()
 
+    # Aktuelle Konfiguration laden
     c = LANG_CONFIG[selected_lang]
-    
+        
     # 2. Logo & Support
     if os.path.exists("logo.png"): 
         st.image("logo.png", use_container_width=True)
     else: 
-        st.markdown(f"### 🍳 ChefList Pro")
+        st.markdown(f"### 👨‍🍳 ChefList Pro")
      
     pay_url = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name=ChefList_Pro_Support&amount=0.90&currency_code={c['curr']}"
     st.markdown(f'''<a href="{pay_url}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; width:100%;">{c['ui_btn_pay']}</button></a>''', unsafe_allow_html=True)
@@ -663,9 +690,4 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
-
-
-
-
-
 
