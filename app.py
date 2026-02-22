@@ -524,12 +524,16 @@ if "user_lang_selection" not in st.session_state:
         
         # Map für die Erkennung inklusive deiner neuen Flaggen-Keys
         m = {
-            "de": "🇩🇪 Deutsch", 
-            "en": "🇺🇸 English (US)", 
-            "es": "🇪🇸 Español", 
-            "fr": "🇫🇷 Français", 
-            "it": "🇮🇹 Italiano", 
-            "pt": "🇵🇹 Português"
+            "de": "🇩🇪 Deutsch",
+            "en": "🇺🇸 English (US)",
+            "es": "🇪🇸 Español",
+            "fr": "🇫🇷 Français",
+            "it": "🇮🇹 Italiano",
+            "pt": "🇵🇹 Português",
+            "nl": "🇳🇱 Nederlands",
+            "pl": "🇵🇱 Polski",
+            "tr": "🇹🇷 Türkçe",
+            "ja": "🇯🇵 日本語"
         }
         st.session_state.user_lang_selection = m.get(primary, "🇺🇸 English (US)")
     except: 
@@ -683,6 +687,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
