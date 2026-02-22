@@ -18,6 +18,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 Download PDF Recipe", "ui_buy": "Buy on Amazon*", "ui_table_header": "Shop Ingredients",
         "ui_btn_pay": "⚡ Support ChefList Pro ($0.90)",
         "ui_counter_text": "Recipes created:", 
+        "ui_lang_label": "Language",
         "legal_title": "About & Legal", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
         "legal_total": "Total recipes:", 
         "legal_amz": "✨ As an Amazon Associate, I earn from qualifying purchases.", 
@@ -40,6 +41,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 Download PDF Recipe", "ui_buy": "Buy on Amazon*", "ui_table_header": "Shop Ingredients",
         "ui_btn_pay": "⚡ Support ChefList Pro (£0.80)",
         "ui_counter_text": "Recipes created:", 
+        "ui_lang_label": "Language",
         "legal_title": "About & Legal", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
         "legal_total": "Total recipes:", 
         "legal_amz": "✨ As an Amazon Associate, I earn from qualifying purchases.", 
@@ -62,6 +64,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 PDF herunterladen", "ui_buy": "Auf Amazon kaufen*", "ui_table_header": "Zutaten einkaufen",
         "ui_btn_pay": "⚡ ChefList Pro unterstützen (0,90€)",
         "ui_counter_text": "Erstellte Rezepte:", 
+        "ui_lang_label": "Sprache",
         "legal_title": "Über & Rechtliches", "legal_op": "**Betreiber:** Markus Simmel", "legal_contact": "**Kontakt:** legemasim@gmail.com",
         "legal_total": "Gesamt Rezepte:", 
         "legal_amz": "✨ Als Amazon-Partner verdiene ich an qualifizierten Verkäufen.", 
@@ -82,6 +85,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 Descargar PDF", "ui_buy": "Comprar en Amazon*", "ui_table_header": "Comprar ingredientes",
         "ui_btn_pay": "⚡ Apoyar ChefList Pro (0,90€)",
         "ui_counter_text": "Recetas:", 
+        "ui_lang_label": "Idioma",
         "legal_title": "Info Legal", "legal_op": "**Operador:** Markus Simmel", "legal_contact": "**Contacto:** legemasim@gmail.com",
         "legal_total": "Total recetas:", 
         "legal_amz": "✨ Como asociado de Amazon, gano por las compras calificadas.", 
@@ -101,6 +105,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 Télécharger le PDF", "ui_buy": "Acheter sur Amazon*", "ui_table_header": "Acheter les ingrédients",
         "ui_btn_pay": "⚡ Soutenir ChefList Pro (0,90€)",
         "ui_counter_text": "Recettes:", 
+        "ui_lang_label": "Langue",
         "legal_title": "Mentions Légales", "legal_op": "**Opérateur:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
         "legal_total": "Total recettes:", 
         "legal_amz": "✨ En tant que partenaire Amazon, je réalise un bénéfice sur les achats remplissant les conditions requises.", 
@@ -120,6 +125,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 Scarica PDF", "ui_buy": "Acquista su Amazon*", "ui_table_header": "Acquista ingredienti",
         "ui_btn_pay": "⚡ Sostieni ChefList Pro (0,90€)",
         "ui_counter_text": "Ricette:", 
+        "ui_lang_label": "Lingua",
         "legal_title": "Info Legali", "legal_op": "**Operatore:** Markus Simmel", "legal_contact": "**Contatto:** legemasim@gmail.com",
         "legal_total": "Totale ricette:", 
         "legal_amz": "✨ In qualità di Affiliato Amazon, ricevo un guadagno dagli acquisti idonei.", 
@@ -139,6 +145,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 Descarregar PDF", "ui_buy": "Comprar na Amazon*", "ui_table_header": "Comprar ingredientes",
         "ui_btn_pay": "⚡ Apoiar ChefList Pro (0,90€)",
         "ui_counter_text": "Receitas criadas:", 
+        "ui_lang_label": "Idioma",
         "legal_title": "Sobre & Legal", "legal_op": "**Operador:** Markus Simmel", "legal_contact": "**Contacto:** legemasim@gmail.com",
         "legal_total": "Total de receitas:", 
         "legal_amz": "✨ Como associado da Amazon, ganho com compras qualificadas.", 
@@ -158,6 +165,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 PDF downloaden", "ui_buy": "Koop op Amazon*", "ui_table_header": "Ingrediënten kopen",
         "ui_btn_pay": "⚡ ChefList Pro steunen (0,90€)",
         "ui_counter_text": "Recepten:",
+        "ui_lang_label": "Taal",
         "legal_title": "Juridisch", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Contact:** legemasim@gmail.com",
         "legal_total": "Totaal:", 
         "legal_amz": "✨ Als Amazon-partner verdien ik aan gekwalificeerde aankopen.", 
@@ -177,6 +185,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 Pobierz PDF", "ui_buy": "Kup na Amazon*", "ui_table_header": "Kup składniki",
         "ui_btn_pay": "⚡ Wesprzyj ChefList Pro (4 PLN)",
         "ui_counter_text": "Przepisy:", 
+        "ui_lang_label": "Język",
         "legal_title": "Prawne", "legal_op": "**Operator:** Markus Simmel", "legal_contact": "**Kontakt:** legemasim@gmail.com",
         "legal_total": "Suma:", 
         "legal_amz": "✨ Jako partner Amazon zarabiam na kwalifikujących się zakupach.", 
@@ -196,6 +205,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 PDF İndir", "ui_buy": "Amazon'dan al*", "ui_table_header": "Malzemeleri satın al",
         "ui_btn_pay": "⚡ ChefList Pro'yu Destekle (30 TL)",
         "ui_counter_text": "Tarifler:", 
+        "ui_lang_label": "Dil",
         "legal_title": "Yasal", "legal_op": "**Operatör:** Markus Simmel", "legal_contact": "**İletişim:** legemasim@gmail.com",
         "legal_total": "Toplam:", 
         "legal_amz": "✨ Bir Amazon ortağı olarak kalifiye satışlardan kazanç sağlıyorum.", 
@@ -215,6 +225,7 @@ LANG_CONFIG = {
         "ui_dl": "📄 PDF保存", "ui_buy": "Amazonで購入*", "ui_table_header": "材料を購入する",
         "ui_btn_pay": "⚡ ChefList Proを支援 (¥140)",
         "ui_counter_text": "レシピ数:", 
+        "ui_lang_label": "言語",
         "legal_title": "法的情報", "legal_op": "**運営者:** Markus Simmel", "legal_contact": "**連絡先:** legemasim@gmail.com",
         "legal_total": "累計:", 
         "legal_amz": "✨ Amazonアソシエイトとして、適格販売により収入を得ています。", 
@@ -546,19 +557,21 @@ if "user_lang_selection" not in st.session_state:
         st.session_state.user_lang_selection = "🇺🇸 English (US)"
 
 with st.sidebar:
-    # 1. Sprachauswahl (Expander mit Radio-Buttons für die "Punkt-Optik")
-    current_lang = st.session_state.get("user_lang_selection", "🇺🇸 English (US)")
+    # Zuerst laden wir die aktuelle Auswahl, um auf das Label zuzugreifen
+    temp_lang = st.session_state.get("user_lang_selection", "🇺🇸 English")
+    temp_c = LANG_CONFIG[temp_lang]
     
-    with st.expander(f"🌍 Language: {current_lang}", expanded=False):
+    # Das Label zieht sich jetzt das übersetzte Wort aus dem Dictionary
+    lang_label = temp_c.get("ui_lang_label", "Language")
+    
+    with st.expander(f"🌍 {lang_label}: {temp_lang}", expanded=False):
         lang_options = list(LANG_CONFIG.keys())
         
-        # Sicherstellen, dass der Index stimmt
         try:
-            curr_index = lang_options.index(current_lang)
+            curr_index = lang_options.index(temp_lang)
         except:
             curr_index = 0
 
-        # Radio-Button statt Selectbox für die Auswahl mit "Punkten"
         selected_lang = st.radio(
             "Sprache wählen",
             options=lang_options,
@@ -567,7 +580,7 @@ with st.sidebar:
             key="lang_radio"
         )
         
-        if selected_lang != current_lang:
+        if selected_lang != temp_lang:
             st.session_state.user_lang_selection = selected_lang
             st.rerun()
 
@@ -696,6 +709,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
