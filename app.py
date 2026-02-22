@@ -540,35 +540,39 @@ if "user_lang_selection" not in st.session_state:
         st.session_state.user_lang_selection = "🇺🇸 English (US)"
 
 with st.sidebar:
-    # Aktuelle Auswahl aus dem State
-    current_lang = st.session_state.get("user_lang_selection")
-    lang_options = list(LANG_CONFIG.keys())
+    # 1. Sprachauswahl (Expander mit Radio-Buttons für die "Punkt-Optik")
+    current_lang = st.session_state.get("user_lang_selection", "🇺🇸 English (US)")
     
-    # Sicherstellen, dass die aktuelle Sprache in den Optionen existiert
-    try:
-        curr_index = lang_options.index(st.session_state.user_lang_selection)
-    except:
-        curr_index = 0
+    with st.expander(f"🌍 Language: {current_lang}", expanded=False):
+        lang_options = list(LANG_CONFIG.keys())
+        
+        # Sicherstellen, dass der Index stimmt
+        try:
+            curr_index = lang_options.index(current_lang)
+        except:
+            curr_index = 0
 
-    selected_lang = st.selectbox(
-        "🌍 Language",
-        options=lang_options,
-        index=curr_index
-    )
+        # Radio-Button statt Selectbox für die Auswahl mit "Punkten"
+        selected_lang = st.radio(
+            "Sprache wählen",
+            options=lang_options,
+            index=curr_index,
+            label_visibility="collapsed",
+            key="lang_radio"
+        )
+        
+        if selected_lang != current_lang:
+            st.session_state.user_lang_selection = selected_lang
+            st.rerun()
 
-    # Falls der User manuell umschaltet
-    if selected_lang != st.session_state.user_lang_selection:
-        st.session_state.user_lang_selection = selected_lang
-        st.rerun()
-
-    # Konfiguration für die gewählte Sprache laden
+    # Aktuelle Konfiguration laden
     c = LANG_CONFIG[selected_lang]
-       
+        
     # 2. Logo & Support
     if os.path.exists("logo.png"): 
         st.image("logo.png", use_container_width=True)
     else: 
-        st.markdown(f"### 🍳 ChefList Pro")
+        st.markdown(f"### 👨‍🍳 ChefList Pro")
      
     pay_url = f"https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business={paypal_email}&item_name=ChefList_Pro_Support&amount=0.90&currency_code={c['curr']}"
     st.markdown(f'''<a href="{pay_url}" target="_blank"><button style="width: 100%; background-color: #0070ba; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; width:100%;">{c['ui_btn_pay']}</button></a>''', unsafe_allow_html=True)
@@ -686,6 +690,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
