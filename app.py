@@ -359,20 +359,38 @@ def clean_for_pdf(text):
     if not text: return ""
     text = str(text)
     
+    # Erweiterte Mapping-Tabelle für ALLE 10 Sprachen
     replacements = {
-        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 
-        'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 
-        'ß': 'ss',
-        'é': 'e', 'è': 'e', 'à': 'a', 'ù': 'u', 'ç': 'c', 
-        'ñ': 'n', 'í': 'i', 'ó': 'o', 'ú': 'u',
-        '€': 'EUR', '„': '"', '“': '"', '”': '"', '’': "'", '–': '-'
+        # Deutsch
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss',
+        # Französisch, Spanisch, Italienisch, Portugiesisch
+        'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e', 'à': 'a', 'â': 'a', 'î': 'i', 'ï': 'i',
+        'ô': 'o', 'û': 'u', 'ù': 'u', 'ç': 'c', 'ñ': 'n', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        'ì': 'i', 'ò': 'o', 'É': 'E', 'À': 'A', 'È': 'E', 'Ç': 'C',
+        # Polnisch
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z',
+        # Türkisch
+        'ğ': 'g', 'ü': 'u', 'ş': 's', 'ı': 'i', 'ö': 'o', 'ç': 'c',
+        'Ğ': 'G', 'Ü': 'U', 'Ş': 'S', 'İ': 'I', 'Ö': 'O', 'Ç': 'C',
+        # Sonderzeichen & Symbole
+        '€': 'EUR', '„': '"', '“': '"', '”': '"', '’': "'", '–': '-', '—': '-',
+        ' ✨': '', ' 👨‍🍳': '', ' 📄': '', ' 🛒': '', ' 🌍': '', ' 📖': '' 
     }
     
     for char, rep in replacements.items():
         text = text.replace(char, rep)
-    text = re.sub(r'[^\x00-\x7F]+', '', text)
+        
+    # Sicherheitsnetz für Japanisch & Emojis:
+    # Da Japanisch (Kanji/Kana) nicht in ASCII umgewandelt werden kann, 
+    # sorgt "ignore" dafür, dass diese Zeichen im PDF einfach weggelassen werden, 
+    # anstatt dass die PDF-Erstellung abstürzt.
+    text = text.encode("ascii", "ignore").decode("ascii")
+    
+    # Entfernt Markdown-Links [Text](URL) -> Text
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
-    return text
+    
+    return text.strip()
 
 def create_pdf(text_content, recipe_title, chef, video_url, config): 
     try:
@@ -749,6 +767,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
