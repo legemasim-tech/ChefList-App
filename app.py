@@ -374,39 +374,42 @@ def clean_for_pdf(text):
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
-def create_pdf(text_content, recipe_title, chef, config): 
+def create_pdf(text_content, recipe_title, chef, video_url, config): 
     try:
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         
-        # --- LOGO (Oben rechts fixiert) ---
+        # --- LOGO ---
         if os.path.exists("logo.png"):
             try: pdf.image("logo.png", x=160, y=10, w=30)
             except: pass
 
-        # --- TITEL (Rezeptname) ---
+        # --- TITEL ---
         pdf.set_fill_color(230, 230, 230)
         pdf.set_font("Arial", style="B", size=14)
-        
-        # LOGIK: Wir entfernen den "(by ...)" Teil nur für den grauen Balken im PDF
         display_title = recipe_title.split(" (by")[0] 
-        safe_title = clean_for_pdf(display_title)
-        
         pdf.set_xy(10, 12)
-        pdf.multi_cell(140, 10, txt=safe_title, align='L', fill=True)
+        pdf.multi_cell(140, 10, txt=clean_for_pdf(display_title), align='L', fill=True)
         
-        # --- KOCH / CHANNEL (Eigene Zeile darunter) ---
+        # --- KOCH & LINK IN EINER ZEILE ---
         pdf.set_x(10)
-        pdf.set_font("Arial", style="I", size=10) # Kursiv und kleiner
-        pdf.set_text_color(100, 100, 100) # Dunkelgrau
+        pdf.set_font("Arial", style="I", size=10)
+        pdf.set_text_color(100, 100, 100) # Grau für den Koch
         
-        # "by" übersetzen falls vorhanden, sonst Fallback
         by_label = config.get("ui_by", "by") 
-        safe_chef = clean_for_pdf(f"{by_label} {chef}")
-        pdf.cell(0, 8, txt=safe_chef, ln=True, align='L')
+        chef_text = clean_for_pdf(f"{by_label} {chef}")
         
-        # Zurück zur Standardschrift für den Rest
+        # Berechne Breite des Namens, um den Link präzise daneben zu setzen
+        chef_width = pdf.get_string_width(chef_text) + 5
+        pdf.cell(chef_width, 8, txt=chef_text, ln=0, align='L')
+        
+        # Der Link direkt daneben
+        pdf.set_font("Arial", size=9)
+        pdf.set_text_color(0, 0, 255) # Blau
+        pdf.cell(0, 8, txt="(YouTube Video)", ln=True, align='L', link=video_url)
+        
+        # Zurück auf Schwarz
         pdf.set_text_color(0, 0, 0)
         pdf.ln(5)
         
@@ -726,7 +729,7 @@ if st.session_state.recipe_result:
     
     # 5. PDF Download Button
     current_chef = st.session_state.get("recipe_chef", "Chef")
-    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, current_chef, c)
+    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, current_chef, v_url, c)
     if pdf_output is not None:
         st.download_button(
             label=c['ui_dl'],
@@ -746,6 +749,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
