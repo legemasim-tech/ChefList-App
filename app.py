@@ -374,32 +374,38 @@ def clean_for_pdf(text):
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
-def create_pdf(text_content, recipe_title, config):
+def create_pdf(text_content, recipe_title, chef_name, config): # chef_name als neuen Parameter hinzugefügt
     try:
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.set_left_margin(15); pdf.set_right_margin(10)
         pdf.add_page()
-        pdf.set_fill_color(230, 230, 230)
         
-        # Logo
+        # --- LOGO (Oben rechts fixiert) ---
         if os.path.exists("logo.png"):
-            try: pdf.image("logo.png", x=165, y=10, w=25)
+            try: pdf.image("logo.png", x=160, y=10, w=30)
             except: pass
 
-        # Titel
-        pdf.set_font("Arial", style="B", size=12)
-        safe_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
-        safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
-        pdf.set_xy(15, 12) # Startposition
-        pdf.multi_cell(140, 8, txt=safe_title, align='L', fill=True)
-        if os.path.exists("logo.png"):
-            try:
-                pdf.image("logo.png", x=160, y=10, w=30)
-            except:
-                pass
+        # --- TITEL (Rezeptname) ---
+        pdf.set_fill_color(230, 230, 230)
+        pdf.set_font("Arial", style="B", size=14)
         
-        pdf.set_y(pdf.get_y() + 5)
+        # Wir lassen rechts Platz für das Logo (Breite 140 statt 190)
+        safe_title = clean_for_pdf(recipe_title)
+        pdf.set_xy(10, 12)
+        pdf.multi_cell(140, 10, txt=safe_title, align='L', fill=True)
+        
+        # --- KOCH / CHANNEL (Eigene Zeile darunter) ---
+        pdf.set_x(10)
+        pdf.set_font("Arial", style="I", size=10) # Kursiv und kleiner
+        pdf.set_text_color(100, 100, 100) # Dunkelgrau
+        
+        # "by" übersetzen falls vorhanden, sonst Fallback
+        by_label = config.get("ui_by", "by") 
+        safe_chef = clean_for_pdf(f"{by_label} {chef_name}")
+        pdf.cell(0, 8, txt=safe_chef, ln=True, align='L')
+        
+        # Zurück zur Standardschrift für den Rest
+        pdf.set_text_color(0, 0, 0)
         pdf.ln(5)
         
         lines = text_content.split('\n')
@@ -714,7 +720,7 @@ if st.session_state.recipe_result:
     st.markdown(instructions)
     
     # 5. PDF Download Button
-    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
+    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, chef, c)
     if pdf_output is not None:
         st.download_button(
             label=c['ui_dl'],
@@ -734,5 +740,6 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
