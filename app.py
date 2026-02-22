@@ -389,9 +389,10 @@ def create_pdf(text_content, recipe_title, chef, config):
         pdf.set_fill_color(230, 230, 230)
         pdf.set_font("Arial", style="B", size=14)
         
-        # Wir lassen rechts Platz für das Logo (Breite 140 statt 190)
-        display_title = recipe_title.split(" (by")[0]
-        safe_title = clean_for_pdf(recipe_title)
+        # LOGIK: Wir entfernen den "(by ...)" Teil nur für den grauen Balken im PDF
+        display_title = recipe_title.split(" (by")[0] 
+        safe_title = clean_for_pdf(display_title)
+        
         pdf.set_xy(10, 12)
         pdf.multi_cell(140, 10, txt=safe_title, align='L', fill=True)
         
@@ -745,6 +746,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
