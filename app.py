@@ -374,7 +374,7 @@ def clean_for_pdf(text):
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
-def create_pdf(text_content, recipe_title, chef_name, config): # chef_name als neuen Parameter hinzugefügt
+def create_pdf(text_content, recipe_title, chef, config): 
     try:
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
@@ -401,7 +401,7 @@ def create_pdf(text_content, recipe_title, chef_name, config): # chef_name als n
         
         # "by" übersetzen falls vorhanden, sonst Fallback
         by_label = config.get("ui_by", "by") 
-        safe_chef = clean_for_pdf(f"{by_label} {chef_name}")
+        safe_chef = clean_for_pdf(f"{by_label} {chef}")
         pdf.cell(0, 8, txt=safe_chef, ln=True, align='L')
         
         # Zurück zur Standardschrift für den Rest
@@ -740,6 +740,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
