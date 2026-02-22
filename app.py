@@ -467,6 +467,12 @@ st.markdown("""
     h1 { text-align: center; color: #FF4B4B; }
     h3 { text-align: center; color: #555; }
 
+    /* Verkleinert den Text im Expander-Kopf (Language: ...) */
+    .stExpander p {
+        font-size: 0.85rem !important;
+        font-weight: normal !important;
+    }
+
     /* 1. Der "Rezept erstellen" Button (Standard) -> BLAU */
     div.stButton > button {
         width: 100%;
@@ -690,6 +696,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
