@@ -572,32 +572,47 @@ if st.button(c['ui_create'], use_container_width=True) or params_changed:
             if trans or desc:
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
                 if res:
-                    st.session_state.recipe_result = res
-                    st.session_state.recipe_title = t_orig
-                    st.session_state.last_params = current_params # Stand speichern
+                    # --- FIX 1: Titel von der KI extrahieren ---
+                    raw_parts = res.split('###')
+                    
+                    # Der Text vor dem ersten '###' ist der von der KI übersetzte Titel
+                    translated_title = raw_parts[0].replace('#', '').strip()
+                    if not translated_title: 
+                        translated_title = t_orig # Fallback, falls was schiefgeht
+                        
+                    st.session_state.recipe_title = translated_title
+                    
+                    # Den Titel aus dem Text entfernen, damit die Tabelle nicht kaputtgeht
+                    if len(raw_parts) > 1:
+                        st.session_state.recipe_result = "###" + "###".join(raw_parts[1:])
+                    else:
+                        st.session_state.recipe_result = res
+
+                    st.session_state.last_params = current_params 
                     update_global_counter()
                     status.update(label=c['ui_ready'], state="complete")
-                    if params_changed: st.rerun() # Seite neu laden für Update
+                    if params_changed: st.rerun() 
                 else: st.error("AI Error")
             else: st.error("No Data")
 
 if st.session_state.recipe_result:
     st.divider()
     
-    # Videotitel verkleinert
+    # Videotitel in der gewählten Sprache anzeigen
     st.markdown(f"#### 📖 {st.session_state.recipe_title}")
     
-    # 1. Rezept in Teile zerlegen
-    # Wir nutzen split("###"), um Tabelle und Anleitung zu trennen
-    parts = st.session_state.recipe_result.split("###")
-    ingredients_table = parts[0]
-    instructions = "###" + parts[1] if len(parts) > 1 else ""
+    # --- FIX 2: Tabelle und Anleitung sauber trennen ---
+    # Da wir den Titel oben entfernt haben, beginnt der Text jetzt SICHER mit ###
+    sections = [s.strip() for s in st.session_state.recipe_result.split("###") if s.strip()]
     
+    # Die erste Sektion ist nun garantiert die Tabelle
+    ingredients_table = sections[0] if len(sections) > 0 else ""
+    # Alles danach ist die Anleitung
+    instructions = "### " + "\n\n### ".join(sections[1:]) if len(sections) > 1 else ""
+    
+    # Zeigt die Tabelle an
     clean_buy_text = c['ui_buy'].replace('*', '')
-    # Fügt das Emoji vor dem Link in jeder Zeile der Tabelle ein
     web_table = ingredients_table.replace(f"[{clean_buy_text}]", f"🛒 [{clean_buy_text}]")
-    
-    # Zeigt die Tabelle an (Header kommt automatisch korrekt von der KI)
     st.markdown(web_table)
     
     # 3. Einkaufsliste generieren und den Expander
@@ -632,7 +647,7 @@ if st.session_state.recipe_result:
         )
     else:
         st.error("The PDF could not be generated.")
-
+        
 # --- FEEDBACK FORMULAR BLEIBT UNTEN ---
 st.divider()
 st.subheader(c['fb_header'])
@@ -641,6 +656,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
