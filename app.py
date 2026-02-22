@@ -306,6 +306,7 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     4. Replace [KEYWORD] with the simple English noun of the ingredient.
     5. NO title, NO author. Start directly with the table.
     6. Numbering (1., 2., ...) ONLY in the {instr_header} section.
+    7. Always include the markdown separator line (e.g., |---|---|---|) below the table header.
     """
     
     try:
@@ -680,6 +681,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
