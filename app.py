@@ -507,40 +507,46 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
 if "user_lang_selection" not in st.session_state:
     try:
+        # Browser-Sprache erkennen (z.B. 'de')
         lang_header = st.context.headers.get("Accept-Language", "en")
         primary = lang_header.split(",")[0].split("-")[0].lower()
-        m = {"de": "Deutsch", "en": "English", "es": "Español", "fr": "Français", "it": "Italiano", "pt": "Português", "nl": "Nederlands", "pl": "Polski", "tr": "Türkçe", "ja": "日本語"}
-        st.session_state.user_lang_selection = m.get(primary, "English")
-    except: st.session_state.user_lang_selection = "English"
-
-if "last_params" not in st.session_state: st.session_state.last_params = {}
-if "counter" not in st.session_state: st.session_state.counter = 0
-if "recipe_result" not in st.session_state: st.session_state.recipe_result = None
-if "recipe_title" not in st.session_state: st.session_state.recipe_title = ""
+        
+        # Map für die Erkennung (ohne Flaggen)
+        m = {"de": "🇩🇪 Deutsch", "en": "🇺🇸 English (US)", "es": "🇪🇸 Español", 
+             "fr": "🇫🇷 Français", "it": "🇮🇹 Italiano", "pt": "🇵🇹 Português"}
+        st.session_state.user_lang_selection = m.get(primary, "🇺🇸 English (US)")
+    except: 
+        st.session_state.user_lang_selection = "🇺🇸 English (US)"
 
 with st.sidebar:
-    # 1. Sprachauswahl
-    current_lang = st.session_state.get("user_lang_selection", "English")
-    with st.expander(f"🌍 Language: {current_lang}", expanded=False):
-        lang_options = list(LANG_CONFIG.keys())
-        try: curr_index = lang_options.index(current_lang)
-        except: curr_index = 0
-            
-        selected_lang = st.radio(
-            "Sprache wählen",
-            options=lang_options,
-            index=curr_index,
-            label_visibility="collapsed",
-            key="lang_radio"
-        )
-        if selected_lang != current_lang:
-            st.session_state.user_lang_selection = selected_lang
-            st.rerun()
-
-    c = LANG_CONFIG[selected_lang]
+    # Aktuelle Auswahl aus dem State
+    current_lang = st.session_state.get("user_lang_selection")
+    lang_options = list(LANG_CONFIG.keys())
     
+    # Sicherstellen, dass die aktuelle Sprache in den Optionen existiert
+    try:
+        curr_index = lang_options.index(current_lang)
+    except ValueError:
+        curr_index = 0
+
+    selected_lang = st.selectbox(
+        "🌍 Language",
+        options=lang_options,
+        index=curr_index,
+        key="lang_selector_widget"
+    )
+
+    # Falls der User manuell umschaltet
+    if selected_lang != current_lang:
+        st.session_state.user_lang_selection = selected_lang
+        st.rerun()
+
+    # Konfiguration für die gewählte Sprache laden
+    c = LANG_CONFIG[selected_lang]
+       
     # 2. Logo & Support
     if os.path.exists("logo.png"): 
         st.image("logo.png", use_container_width=True)
@@ -663,6 +669,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
