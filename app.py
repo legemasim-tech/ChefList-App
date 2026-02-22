@@ -518,13 +518,19 @@ st.markdown("""
 
 if "user_lang_selection" not in st.session_state:
     try:
-        # Browser-Sprache erkennen (z.B. 'de')
+        # Browser-Sprache erkennen
         lang_header = st.context.headers.get("Accept-Language", "en")
         primary = lang_header.split(",")[0].split("-")[0].lower()
         
-        # Map für die Erkennung (ohne Flaggen)
-        m = {"de": "🇩🇪 Deutsch", "en": "🇺🇸 English (US)", "es": "🇪🇸 Español", 
-             "fr": "🇫🇷 Français", "it": "🇮🇹 Italiano", "pt": "🇵🇹 Português"}
+        # Map für die Erkennung inklusive deiner neuen Flaggen-Keys
+        m = {
+            "de": "🇩🇪 Deutsch", 
+            "en": "🇺🇸 English (US)", 
+            "es": "🇪🇸 Español", 
+            "fr": "🇫🇷 Français", 
+            "it": "🇮🇹 Italiano", 
+            "pt": "🇵🇹 Português"
+        }
         st.session_state.user_lang_selection = m.get(primary, "🇺🇸 English (US)")
     except: 
         st.session_state.user_lang_selection = "🇺🇸 English (US)"
@@ -677,6 +683,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
