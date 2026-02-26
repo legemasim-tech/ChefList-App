@@ -290,7 +290,7 @@ def get_full_video_data(video_url):
         return video_title, transcript, description, channel_name
     except: return "Recipe", None, None, "Chef"
 
-def generate_smart_recipe(video_title, channel_name, transcript, description, config, portions, unit_system):
+def generate_smart_recipe(video_title, channel_name, transcript, description, config, unit_system):
     u_inst = "US UNITS (cups, oz)" if "US" in str(unit_system) or "EE.UU." in str(unit_system) else "METRIC (g, ml)"
     
     buy_text = config['ui_buy'].replace('*', '')
@@ -751,6 +751,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
