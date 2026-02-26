@@ -359,57 +359,93 @@ def clean_for_pdf(text):
     if not text: return ""
     text = str(text)
     
+    # Erweiterte Mapping-Tabelle für ALLE 10 Sprachen
     replacements = {
-        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 
-        'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 
-        'ß': 'ss',
-        'é': 'e', 'è': 'e', 'à': 'a', 'ù': 'u', 'ç': 'c', 
-        'ñ': 'n', 'í': 'i', 'ó': 'o', 'ú': 'u',
-        '€': 'EUR', '„': '"', '“': '"', '”': '"', '’': "'", '–': '-'
+        # Deutsch
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue', 'ß': 'ss',
+        # Französisch, Spanisch, Italienisch, Portugiesisch
+        'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e', 'à': 'a', 'â': 'a', 'î': 'i', 'ï': 'i',
+        'ô': 'o', 'û': 'u', 'ù': 'u', 'ç': 'c', 'ñ': 'n', 'í': 'i', 'ó': 'o', 'ú': 'u',
+        'ì': 'i', 'ò': 'o', 'É': 'E', 'À': 'A', 'È': 'E', 'Ç': 'C',
+        # Polnisch
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z',
+        # Türkisch
+        'ğ': 'g', 'ü': 'u', 'ş': 's', 'ı': 'i', 'ö': 'o', 'ç': 'c',
+        'Ğ': 'G', 'Ü': 'U', 'Ş': 'S', 'İ': 'I', 'Ö': 'O', 'Ç': 'C',
+        # Sonderzeichen & Symbole
+        '€': 'EUR', '„': '"', '“': '"', '”': '"', '’': "'", '–': '-', '—': '-',
+        ' ✨': '', ' 👨‍🍳': '', ' 📄': '', ' 🛒': '', ' 🌍': '', ' 📖': '' 
     }
     
     for char, rep in replacements.items():
         text = text.replace(char, rep)
-    text = re.sub(r'[^\x00-\x7F]+', '', text)
+        
+    # Sicherheitsnetz für Japanisch & Emojis:
+    # Da Japanisch (Kanji/Kana) nicht in ASCII umgewandelt werden kann, 
+    # sorgt "ignore" dafür, dass diese Zeichen im PDF einfach weggelassen werden, 
+    # anstatt dass die PDF-Erstellung abstürzt.
+    text = text.encode("ascii", "ignore").decode("ascii")
+    
+    # Entfernt Markdown-Links [Text](URL) -> Text
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
-    return text
+    
+    return text.strip()
 
-def create_pdf(text_content, recipe_title, config):
+def create_pdf(text_content, recipe_title, chef, video_url, config): 
     try:
+        if not text_content: return None
+        
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.set_left_margin(15); pdf.set_right_margin(10)
         pdf.add_page()
-        pdf.set_fill_color(230, 230, 230)
         
-        # Logo
+        # --- LOGO ---
         if os.path.exists("logo.png"):
-            try: pdf.image("logo.png", x=165, y=10, w=25)
+            try: pdf.image("logo.png", x=160, y=10, w=30)
             except: pass
 
-        # Titel
-        pdf.set_font("Arial", style="B", size=12)
-        safe_rec = clean_for_pdf(config.get('pdf_rec', 'Recipe'))
-        safe_title = clean_for_pdf(recipe_title if len(recipe_title) <= 40 else recipe_title[:37] + "...")
-        pdf.multi_cell(180, 10, txt=f"{safe_title}", ln=True, align='L', fill=True)
+        # --- TITEL (Grauer Balken) ---
+        pdf.set_fill_color(230, 230, 230)
+        pdf.set_font("Arial", style="B", size=14)
+        display_title = recipe_title.split(" (by")[0] if recipe_title else "Recipe"
+        pdf.set_xy(10, 12)
+        pdf.multi_cell(140, 10, txt=clean_for_pdf(display_title), align='L', fill=True)
+        
+        # --- KOCH & LINK ---
+        pdf.set_x(10)
+        pdf.set_font("Arial", style="I", size=10)
+        pdf.set_text_color(100, 100, 100)
+        
+        by_label = config.get("ui_by", "by") 
+        chef_text = clean_for_pdf(f"{by_label} {chef}  |  ")
+        chef_width = pdf.get_string_width(chef_text)
+        pdf.cell(chef_width, 8, txt=chef_text, ln=0)
+        
+        # Link in Blau
+        pdf.set_font("Arial", size=8)
+        pdf.set_text_color(0, 0, 255)
+        pdf.cell(0, 8, txt=str(video_url), ln=True, align='L', link=video_url)
+        
+        pdf.set_text_color(0, 0, 0)
         pdf.ln(5)
         
+        # --- INHALT ---
         lines = text_content.split('\n')
         is_instruction = False
         
         for line in lines:
             line = line.strip()
-            if not line or '---' in line: continue
+            if not line or '---' in line or '|---|' in line: continue
             
             clean_line = clean_for_pdf(line)
-            if not clean_line: continue
+            if not clean_line: continue # Sicherheitscheck
             
-            # Reset X-Position am Anfang jeder Zeile, um Verschiebung zu verhindern
             pdf.set_x(15)
             
-            # 1. Überschriften (Instructions, Zubereitung...)
+            # Überschriften
             safe_instr_key = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
-            check_words = ['Instructions', 'Preparation', 'Directions', 'Zubereitung', 'Instrucciones', 'Istruzioni', safe_instr_key]
+            check_words = ['Instructions', 'Preparation', 'Zubereitung', 'Ingredients', 'Zutaten', safe_instr_key]
             
             if any(word.lower() in clean_line.lower() for word in check_words) and len(clean_line) < 50:
                 is_instruction = True
@@ -419,53 +455,37 @@ def create_pdf(text_content, recipe_title, config):
                 pdf.ln(2)
                 continue
 
-            # 2. Metadaten (Zeit, Portionen...)
-            headers = ['Time', 'Difficulty', 'Temp', 'Servings', 'Units', 'Zeit', 'Dauer']
-            if any(clean_line.startswith(h) for h in headers):
-                pdf.set_font("Arial", style="B", size=11)
-                pdf.cell(0, 8, txt=clean_line, ln=True)
-                continue
-                
-            # 3. Tabelle (Zutaten)
             if '|' in line and not is_instruction:
                 parts = [p.strip() for p in line.split('|') if p.strip()]
                 if len(parts) >= 2:
-                    if any(x in parts[0] for x in ["Amount", "Menge", "Ingredient", "Zutat"]):
-                        pdf.set_font("Arial", style="B", size=10)
-                        content = f"{parts[0].upper()} - {parts[1].upper()}"
-                    else:
-                        pdf.set_font("Arial", style="B", size=11)
-                        # Wir entfernen Klammern und Sterne, aber fügen KEINEN Bindestrich hinzu
-                        clean_amount = parts[0].replace('*','').replace('[','').replace(']','').strip()
-                        clean_ingredient = parts[1].replace('*','').replace('[','').replace(']','').strip()
-                        # Direkte Ausgabe: "500g Mehl"
-                        content = f"{clean_amount} {clean_ingredient}"
+                    # Header der Tabelle ignorieren
+                    if any(x in parts[0] for x in ["Amount", "Menge", "Ingredient", "Zutat"]): continue
                     
-                    pdf.cell(175, 8, txt=content, ln=True)
+                    pdf.set_font("Arial", style="B", size=11)
+                    c_amount = parts[0].replace('*','').strip()
+                    c_ing = parts[1].replace('*','').strip()
+                    pdf.cell(175, 8, txt=clean_for_pdf(f"{c_amount} {c_ing}"), ln=True)
                     pdf.set_draw_color(220, 220, 220)
                     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-            
-            # 4. Kochtext / Instruktionen (Der Teil der verschoben war)
             else:
                 pdf.set_font("Arial", size=10)
-                # multi_cell braucht eine feste Breite. 0 bedeutet bis zum rechten Rand.
-                # Wir setzen die X-Position vor multi_cell explizit.
                 pdf.set_x(15)
                 pdf.multi_cell(180, 6, txt=clean_line.replace('*', ''), align='L')
-                # Kleiner Abstand nach jedem Absatz/Schritt
-                pdf.ln(2)
-                
-        # Footer am Ende
         pdf.ln(10)
         pdf.set_font("Arial", style="I", size=10)
-        pdf.set_x(10)
-        safe_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Enjoy!'))
+        pdf.set_text_color(100, 100, 100) # Dezent grau
+        
+        # Den Enjoy-Text aus der Config holen und säubern
+        safe_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Happy cooking!'))
+        
+        # Zentriert am Ende des Dokuments ausgeben
         pdf.cell(0, 10, txt=safe_enjoy, ln=True, align='C')
         
         return pdf.output()
     except Exception as e:
-        print(f"PDF Debug: {e}")
-        return None        
+        st.sidebar.error(f"PDF Error: {e}") # Zeigt den Fehler in der Sidebar für dich
+        return None
+        
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="👨‍🍳")
 if "last_params" not in st.session_state:
@@ -644,6 +664,9 @@ if st.button(c['ui_create'], use_container_width=True) or params_changed:
             if trans or desc:
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
                 if res:
+                    st.session_state.recipe_result = res
+                    # NEU: Wir speichern den Koch im State!
+                    st.session_state.recipe_chef = chef
                     # Titel-Extraktion
                     if "RECIPE_TITLE:" in res:
                         parts = res.split("###", 1)
@@ -706,7 +729,8 @@ if st.session_state.recipe_result:
     st.markdown(instructions)
     
     # 5. PDF Download Button
-    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, c)
+    current_chef = st.session_state.get("recipe_chef", "Chef")
+    pdf_output = create_pdf(st.session_state.recipe_result, st.session_state.recipe_title, current_chef, v_url, c)
     if pdf_output is not None:
         st.download_button(
             label=c['ui_dl'],
@@ -726,12 +750,6 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
-
-
-
-
-
-
 
 
 
