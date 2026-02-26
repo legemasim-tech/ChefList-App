@@ -309,17 +309,16 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
 
     # VERBESSERTER SYSTEM PROMPT MIT FOKUS AUF MATHEMATIK
     system_prompt = f"""
-    You are a professional chef and a precise mathematician. Respond in {config['ai_lang']}.
+    You are a professional chef. Respond in {config['ai_lang']}.
     
-    TARGET SERVINGS: {portions}
     TARGET UNITS: {u_inst}
 
     ### CORE TASK:
     1. START your response with the line: "RECIPE_TITLE: [Translated catchy name of the dish]"
     2. Then write "###" as a separator.
-    3. ANALYZE: Identify the original serving size from the transcript (usually 1, 2, or 4). If not mentioned, assume 4 servings.
-    4. CALCULATE: Divide original amounts by original servings, then multiply by {portions}. 
-    5. VERIFY: The amounts in your table MUST be different if {portions} is not the original serving size. 
+    3. EXTRACT: Identify all ingredients and their EXACT amounts as mentioned in the video.
+    4. NO CALCULATION: Do not change any quantities. Use exactly what the chef uses.
+    5. UNITS: Use {u_inst}.
     
     ### STRUCTURE:
     RECIPE_TITLE: ...
@@ -648,9 +647,11 @@ st.subheader(c['ui_header'])
 
 v_url = st.text_input(c['ui_input_label'], placeholder="https://...")
 
-col1, col2 = st.columns(2)
-ports = col1.slider(c['ui_servings'], 1, 10, 4)
-units = col2.radio(c['ui_units'], c['ui_unit_opts'], horizontal=True)
+units = st.radio(c['ui_units'], c['ui_unit_opts'], horizontal=True)
+
+#col1, col2 = st.columns(2)
+#ports = col1.slider(c['ui_servings'], 1, 10, 4)
+#units = col2.radio(c['ui_units'], c['ui_unit_opts'], horizontal=True)
 
 # Prüfen, ob sich Parameter geändert haben, während ein Rezept aktiv ist
 current_params = {"url": v_url, "ports": ports, "units": units}
@@ -662,7 +663,7 @@ if st.button(c['ui_create'], use_container_width=True) or params_changed:
         with st.status(c['ui_wait'].format(ports)) as status:
             t_orig, trans, desc, chef = get_full_video_data(v_url)
             if trans or desc:
-                res = generate_smart_recipe(t_orig, chef, trans, desc, c, ports, units)
+                res = generate_smart_recipe(t_orig, chef, trans, desc, c, "original", units)
                 if res:
                     st.session_state.recipe_result = res
                     # NEU: Wir speichern den Koch im State!
@@ -750,6 +751,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
