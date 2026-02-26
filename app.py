@@ -654,7 +654,7 @@ units = st.radio(c['ui_units'], c['ui_unit_opts'], horizontal=True)
 #units = col2.radio(c['ui_units'], c['ui_unit_opts'], horizontal=True)
 
 # Prüfen, ob sich Parameter geändert haben, während ein Rezept aktiv ist
-current_params = {"url": v_url, "ports": ports, "units": units}
+current_params = {"url": v_url, "units": units}
 params_changed = current_params != st.session_state.last_params and st.session_state.recipe_result is not None
 
 # Der Button ODER eine Änderung der Portionen löst die Erstellung aus
@@ -751,6 +751,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
