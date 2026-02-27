@@ -660,7 +660,7 @@ params_changed = current_params != st.session_state.last_params and st.session_s
 # Der Button ODER eine Änderung der Portionen löst die Erstellung aus
 if st.button(c['ui_create'], use_container_width=True) or params_changed:
     if v_url:
-        with st.status(c['ui_wait'].format(ports)) as status:
+        with st.status(c.get('ui_ready', 'Chef is cooking...')) as status:
             t_orig, trans, desc, chef = get_full_video_data(v_url)
             if trans or desc:
                 res = generate_smart_recipe(t_orig, chef, trans, desc, c, "original", units)
@@ -751,6 +751,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
