@@ -307,7 +307,7 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     base_url = f"https://www.{config['amz']}/s?k="
     tag_part = f"&tag={config['tag']}"
 
-   lang_instruction = ""
+    lang_instruction = ""
     if config['iso'] == 'ja':
         lang_instruction = "IMPORTANT: Since my PDF generator only supports Latin characters, you MUST provide all Japanese text in Romaji (Latin script) or English. Do not use Kanji or Kana."
     elif config['iso'] in ['pl', 'tr']:
@@ -754,6 +754,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
