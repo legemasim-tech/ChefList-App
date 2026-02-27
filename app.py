@@ -307,9 +307,12 @@ def generate_smart_recipe(video_title, channel_name, transcript, description, co
     base_url = f"https://www.{config['amz']}/s?k="
     tag_part = f"&tag={config['tag']}"
 
-    japan_extra = ""
+   lang_instruction = ""
     if config['iso'] == 'ja':
-        japan_extra = "IMPORTANT: Since PDFs don't support Kanji, for every Japanese word, write the English translation in brackets next to it. Example: 水 (Water)."
+        lang_instruction = "IMPORTANT: Since my PDF generator only supports Latin characters, you MUST provide all Japanese text in Romaji (Latin script) or English. Do not use Kanji or Kana."
+    elif config['iso'] in ['pl', 'tr']:
+        lang_instruction = "IMPORTANT: Use only standard Latin characters for the recipe to ensure PDF compatibility."
+        
     # VERBESSERTER SYSTEM PROMPT MIT FOKUS AUF MATHEMATIK
     system_prompt = f"""
     You are a professional chef. Respond in {config['ai_lang']}.
@@ -751,6 +754,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
