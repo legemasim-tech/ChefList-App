@@ -380,16 +380,12 @@ def clean_for_pdf(text):
     for char, rep in replacements.items():
         text = text.replace(char, rep)
         
-    # Sicherheitsnetz für Japanisch & Emojis:
-    # Da Japanisch (Kanji/Kana) nicht in ASCII umgewandelt werden kann, 
-    # sorgt "ignore" dafür, dass diese Zeichen im PDF einfach weggelassen werden, 
-    # anstatt dass die PDF-Erstellung abstürzt.
-    text = text.encode("ascii", "ignore").decode("ascii")
+    test_text = text.encode("ascii", "ignore").decode("ascii").strip()
+ 
+    if not test_text and text:
+        return "[Language characters not supported in PDF - Please see Web View]"
     
-    # Entfernt Markdown-Links [Text](URL) -> Text
-    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
-    
-    return text.strip()
+    return test_text
 
 def create_pdf(text_content, recipe_title, chef, video_url, config): 
     try:
@@ -752,6 +748,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
