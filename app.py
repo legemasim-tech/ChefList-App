@@ -434,22 +434,25 @@ def create_pdf(text_content, recipe_title, chef, video_url, config):
         pdf.set_text_color(0, 0, 0)
         pdf.ln(5)
         
-        # --- INHALT ---
+# --- INHALT VERARBEITUNG ---
         lines = text_content.split('\n')
         is_instruction = False
         
         for line in lines:
             line = line.strip()
-            if not line or '---' in line or '|---|' in line: continue
+            # 1. Zeilen überspringen, die leer sind oder nur Trenner enthalten
+            if not line or '---' in line or '|---|' in line: 
+                continue
             
             clean_line = clean_for_pdf(line)
-            if not clean_line: continue 
+            if not clean_line: 
+                continue 
             
             pdf.set_x(15)
             
-            # 1. Überschriften erkennen
+            # 2. Überschriften (Instructions, Zubereitung...) erkennen
             safe_instr_key = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
-            check_words = ['Instructions', 'Preparation', 'Zubereitung', 'Ingredients', 'Zutaten', safe_instr_key]
+            check_words = ['Instructions', 'Preparation', 'Zubereitung', 'Instrucciones', 'Istruzioni', safe_instr_key]
             
             if any(word.lower() in clean_line.lower() for word in check_words) and len(clean_line) < 50:
                 is_instruction = True
@@ -457,42 +460,42 @@ def create_pdf(text_content, recipe_title, chef, video_url, config):
                 pdf.set_font("Arial", style="B", size=12)
                 pdf.cell(0, 10, txt=clean_line, ln=True)
                 pdf.ln(2)
-                continue
+                continue # Springe zur nächsten Zeile
 
-            # 2. TABELLEN-LOGIK (Filtert den Amazon-Text raus)
+            # 3. TABELLEN-LOGIK (Filtert den Amazon-Text raus)
             if '|' in line and not is_instruction:
                 parts = [p.strip() for p in line.split('|') if p.strip()]
                 
                 if len(parts) >= 2:
-                    # Header ignorieren
+                    # Header ignorieren (Menge, Zutat, Shop etc.)
                     ignore_keywords = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Amazon", "Kaufen", "Buy"]
                     if any(word.lower() in parts[0].lower() or word.lower() in parts[1].lower() for word in ignore_keywords):
                         continue
                     
                     pdf.set_font("Arial", style="B", size=11)
                     
-                    # NUR Spalte 1 und 2 nehmen
+                    # WICHTIG: Wir nehmen NUR die ersten beiden Spalten (Menge & Zutat)
                     c_amount = parts[0].replace('*','').strip()
                     c_ing = parts[1].replace('*','').strip()
-                    display_text = f"{c_amount} {c_ing}"
                     
-                    pdf.cell(175, 8, txt=clean_for_pdf(display_text), ln=True)
+                    # Kombinierten Text säubern und drucken
+                    display_text = clean_for_pdf(f"{c_amount} {c_ing}")
+                    pdf.cell(175, 8, txt=display_text, ln=True)
                     
+                    # Trennlinie
                     pdf.set_draw_color(220, 220, 220)
                     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
                 
-                # WICHTIG: Hier 'continue', damit die Tabellenzeile NICHT unten im 'else' landet
+                # KRITISCH: Dieses 'continue' verhindert, dass die Zeile unten im 'else' landet!
                 continue 
 
-            # 3. Normaler Text (Anweisungen)
+            # 4. Normaler Text (Anweisungen)
             else:
                 pdf.set_font("Arial", size=10)
                 pdf.set_x(15)
-                # Multi-cell für Zeilenumbrüche bei langen Anweisungen
+                # Multi-cell verhindert, dass Text rechts aus dem PDF ragt
                 pdf.multi_cell(180, 6, txt=clean_line.replace('*', ''), align='L')
                 pdf.ln(2)
-        pdf.set_font("Arial", style="I", size=10)
-        pdf.set_text_color(100, 100, 100) # Dezent grau
         
         # Den Enjoy-Text aus der Config holen und säubern
         safe_enjoy = clean_for_pdf(config.get('pdf_enjoy', 'Happy cooking!'))
@@ -768,6 +771,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
