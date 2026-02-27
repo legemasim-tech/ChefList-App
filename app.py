@@ -459,18 +459,26 @@ def create_pdf(text_content, recipe_title, chef, video_url, config):
                 pdf.ln(2)
                 continue
 
+            # 3. Tabelle (Zutaten) verarbeiten
             if '|' in line and not is_instruction:
                 parts = [p.strip() for p in line.split('|') if p.strip()]
                 if len(parts) >= 2:
-                    # Header der Tabelle ignorieren
+                    # Header ignorieren
                     if any(x in parts[0] for x in ["Amount", "Menge", "Ingredient", "Zutat"]): continue
                     
                     pdf.set_font("Arial", style="B", size=11)
+                    # Wir nehmen NUR Spalte 1 (Menge) und Spalte 2 (Zutat)
+                    # Wir ignorieren Spalte 3 (Amazon Link)
                     c_amount = parts[0].replace('*','').strip()
                     c_ing = parts[1].replace('*','').strip()
-                    pdf.cell(175, 8, txt=clean_for_pdf(f"{c_amount} {c_ing}"), ln=True)
+                    
+                    # Säuberung durchführen (entfernt auch restliche Markdown-Reste)
+                    safe_line = clean_for_pdf(f"{c_amount} {c_ing}")
+                    
+                    pdf.cell(175, 8, txt=safe_line, ln=True)
                     pdf.set_draw_color(220, 220, 220)
                     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+                    
             else:
                 pdf.set_font("Arial", size=10)
                 pdf.set_x(15)
@@ -753,6 +761,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
