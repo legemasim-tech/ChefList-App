@@ -487,8 +487,8 @@ def create_pdf(text_content, recipe_title, chef, video_url, config):
         
 # --- 5. INTERFACE ---
 st.set_page_config(page_title="ChefList Pro Global", page_icon="👨‍🍳")
-if "last_params" not in st.session_state:
-    st.session_state.last_params = {"url": "", "ports": 4, "units": ""}
+#if "last_params" not in st.session_state:
+#    st.session_state.last_params = {"url": "", "ports": 4, "units": ""}
 
 if "recipe_result" not in st.session_state:
     st.session_state.recipe_result = None
@@ -751,6 +751,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
