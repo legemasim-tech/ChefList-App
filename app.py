@@ -387,6 +387,8 @@ def clean_for_pdf(text):
     for char, rep in replacements.items():
         text = text.replace(char, rep)
         
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+    
     test_text = text.encode("ascii", "ignore").decode("ascii").strip()
  
     if not test_text and text:
@@ -751,6 +753,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
