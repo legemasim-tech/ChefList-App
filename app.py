@@ -443,11 +443,11 @@ def create_pdf(text_content, recipe_title, chef, video_url, config):
             if not line or '---' in line or '|---|' in line: continue
             
             clean_line = clean_for_pdf(line)
-            if not clean_line: continue # Sicherheitscheck
+            if not clean_line: continue 
             
             pdf.set_x(15)
             
-            # Überschriften
+            # 1. Überschriften erkennen
             safe_instr_key = clean_for_pdf(config.get('pdf_instr', 'Instructions'))
             check_words = ['Instructions', 'Preparation', 'Zubereitung', 'Ingredients', 'Zutaten', safe_instr_key]
             
@@ -459,43 +459,38 @@ def create_pdf(text_content, recipe_title, chef, video_url, config):
                 pdf.ln(2)
                 continue
 
-          # 3. Tabelle (Zutaten)
-           # --- TABELLEN-LOGIK (NUR Spalte 1 & 2 extrahieren) ---
+            # 2. TABELLEN-LOGIK (Filtert den Amazon-Text raus)
             if '|' in line and not is_instruction:
-                # Wir splitten die Zeile an den Pipes (|)
                 parts = [p.strip() for p in line.split('|') if p.strip()]
                 
-                # Wir brauchen mindestens Menge und Zutat
                 if len(parts) >= 2:
-                    # Prüfen, ob es die Kopfzeile ist (Menge/Zutat/Shop) -> Ignorieren
+                    # Header ignorieren
                     ignore_keywords = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Amazon", "Kaufen", "Buy"]
                     if any(word.lower() in parts[0].lower() or word.lower() in parts[1].lower() for word in ignore_keywords):
                         continue
                     
                     pdf.set_font("Arial", style="B", size=11)
                     
-                    # WICHTIG: Wir nehmen NUR die ersten beiden Spalten
-                    # parts[0] ist die Menge, parts[1] ist die Zutat.
-                    # parts[2] (der Amazon-Text) wird hier einfach ignoriert!
+                    # NUR Spalte 1 und 2 nehmen
                     c_amount = parts[0].replace('*','').strip()
                     c_ing = parts[1].replace('*','').strip()
-                    
-                    # Wir fügen nur Menge und Zutat zusammen
                     display_text = f"{c_amount} {c_ing}"
                     
-                    # Säubern und ins PDF schreiben
                     pdf.cell(175, 8, txt=clean_for_pdf(display_text), ln=True)
                     
-                    # Eine feine Trennlinie nach jeder Zutat
                     pdf.set_draw_color(220, 220, 220)
                     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-                continue # Zeile fertig verarbeitet
-                    
+                
+                # WICHTIG: Hier 'continue', damit die Tabellenzeile NICHT unten im 'else' landet
+                continue 
+
+            # 3. Normaler Text (Anweisungen)
             else:
                 pdf.set_font("Arial", size=10)
                 pdf.set_x(15)
+                # Multi-cell für Zeilenumbrüche bei langen Anweisungen
                 pdf.multi_cell(180, 6, txt=clean_line.replace('*', ''), align='L')
-        pdf.ln(10)
+                pdf.ln(2)
         pdf.set_font("Arial", style="I", size=10)
         pdf.set_text_color(100, 100, 100) # Dezent grau
         
@@ -773,6 +768,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
