@@ -460,29 +460,36 @@ def create_pdf(text_content, recipe_title, chef, video_url, config):
                 continue
 
           # 3. Tabelle (Zutaten)
+           # --- TABELLEN-LOGIK (NUR Spalte 1 & 2 extrahieren) ---
             if '|' in line and not is_instruction:
-                # Wir splitten die Zeile und entfernen leere Einträge
+                # Wir splitten die Zeile an den Pipes (|)
                 parts = [p.strip() for p in line.split('|') if p.strip()]
                 
+                # Wir brauchen mindestens Menge und Zutat
                 if len(parts) >= 2:
-                    # Header der Tabelle ("Menge", "Zutat", "Amazon") überspringen
-                    ignore_keywords = ["Amount", "Menge", "Ingredient", "Zutat", "Amazon", "Kaufen", "Buy"]
-                    if any(word in parts[0] or word in parts[1] for word in ignore_keywords):
+                    # Prüfen, ob es die Kopfzeile ist (Menge/Zutat/Shop) -> Ignorieren
+                    ignore_keywords = ["Amount", "Menge", "Ingredient", "Zutat", "Shop", "Amazon", "Kaufen", "Buy"]
+                    if any(word.lower() in parts[0].lower() or word.lower() in parts[1].lower() for word in ignore_keywords):
                         continue
                     
                     pdf.set_font("Arial", style="B", size=11)
                     
-                    # WICHTIG: Wir nehmen nur parts[0] und parts[1]. 
-                    # parts[2] (Amazon Link) wird ignoriert.
+                    # WICHTIG: Wir nehmen NUR die ersten beiden Spalten
+                    # parts[0] ist die Menge, parts[1] ist die Zutat.
+                    # parts[2] (der Amazon-Text) wird hier einfach ignoriert!
                     c_amount = parts[0].replace('*','').strip()
                     c_ing = parts[1].replace('*','').strip()
                     
-                    display_line = f"{c_amount} {c_ing}"
-                    pdf.cell(175, 8, txt=clean_for_pdf(display_line), ln=True)
+                    # Wir fügen nur Menge und Zutat zusammen
+                    display_text = f"{c_amount} {c_ing}"
                     
-                    # Trennlinie zeichnen
+                    # Säubern und ins PDF schreiben
+                    pdf.cell(175, 8, txt=clean_for_pdf(display_text), ln=True)
+                    
+                    # Eine feine Trennlinie nach jeder Zutat
                     pdf.set_draw_color(220, 220, 220)
                     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+                continue # Zeile fertig verarbeitet
                     
             else:
                 pdf.set_font("Arial", size=10)
@@ -766,6 +773,7 @@ with st.form("fb"):
     if st.form_submit_button(c['fb_btn']):
         with open("user_feedback.txt", "a") as f: f.write(f"[{selected_lang}] {mail}: {txt}\n---\n")
         st.success(c['fb_thx'])
+
 
 
 
