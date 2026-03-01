@@ -1,17 +1,19 @@
 name: Wake up App
 on:
   schedule:
-    - cron: '0 */10 * * *' # Läuft alle 10 Stunden
+    - cron: '0 */6 * * *' # Läuft alle 6 Stunden
+  workflow_dispatch:      # Ermöglicht manuelles Starten zum Testen
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      
       - name: Keep alive commit
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          echo $(date) > last_ping.txt
-          git add last_ping.txt
-          git commit -m "Keep alive ping"
+          # Ein leerer Commit verhindert, dass die Action fehlschlägt, wenn sich nichts geändert hat
+          git commit --allow-empty -m "Keep alive heartbeat"
           git push
